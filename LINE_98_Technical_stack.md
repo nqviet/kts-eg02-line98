@@ -4,13 +4,13 @@
 
 | Layer | Choice | Version line | GDD / vocab ref | Notes |
 |---|---|---|---|---|
-| Engine | **Unity 6 LTS** | `6000.0.x LTS` (pin exact patch) | §1, §36 | Pin in `ProjectSettings/ProjectVersion.txt`; never auto-upgrade mid-milestone |
+| Engine | **Unity 6 LTS** | `6000.6.0f1` (pinned per ADR D1) | §1, §36 | Pinned in `ProjectSettings/ProjectVersion.txt`; never auto-upgrade mid-milestone |
 | Language | C# 9 / .NET Standard 2.1 | Unity 6 default | §25, vocab §4 | `readonly struct`, `Span<T>`, `stackalloc` are load-bearing (`LineDetector`, `Pathfinder`) |
-| Render pipeline | **URP** (`com.unity.render-pipelines.universal`) | 17.x (coupled to editor) | §9 | Forward, SRP Batcher ON, GPU instancing ON, no realtime shadows |
-| Shading | **Shader Graph** (`CrystalBall.shadergraph`) | same as URP | §9, vocab §9 | No hand-written HLSL unless profiling demands it |
+| Render pipeline | **URP** (`com.unity.render-pipelines.universal`) | 17.6.0 | §9 | Forward, SRP Batcher ON, GPU instancing ON, no realtime shadows |
+| Shading | **Shader Graph** (`CrystalBall.shadergraph`) | 17.6.0 | §9, vocab §9 | No hand-written HLSL unless profiling demands it |
 | Rendering API (Android) | **GLES3 primary, Vulkan secondary** | — | §27 | GLES3 first for low-end driver stability; revisit Vulkan at M5 with a device matrix |
-| Input | **Input System** (`com.unity.inputsystem`) | 1.11+ | vocab §1 `TapGesture` | Pointer/touch only. No gamepad, no drag (drag behind a flag) |
-| UI | **uGUI 2.0 + TextMeshPro** (`com.unity.ugui`) | 2.0.x | §11 | TMP ships inside uGUI in Unity 6. 3 canvases (static HUD / dynamic score / popups) |
+| Input | **Input System** (`com.unity.inputsystem`) | 1.20.0 | vocab §1 `TapGesture` | Pointer/touch only. No gamepad, no drag (drag behind a flag) |
+| UI | **uGUI 2.0 + TextMeshPro** (`com.unity.ugui`) | 2.6.0 | §11 | TMP ships inside uGUI in Unity 6. 3 canvases (static HUD / dynamic score / popups) |
 | UI framework (rejected) | UI Toolkit runtime | — | §11 | Evaluated, rejected: pooled dynamic HUD + world-space popups fit uGUI better |
 | Localization | **Unity Localization** | 1.5.x | §28 | EN + VI ship; 8 more prepared. `ui.*` / `ach.*` / `stat.*` keys |
 | Save serialization | **Newtonsoft Json** (`com.unity.nuget.newtonsoft-json`) | 3.2.1 | §23, vocab §10 | `JsonUtility` rejected: dictionaries, versioned migrations, null semantics |
@@ -24,10 +24,10 @@
 | Consent | **UMP** (bundled inside the AdMob plugin) | — | §33 | Consent/privacy flow is a Definition-of-Done item |
 | Analytics | `IAnalyticsService` → **Debug + NoOp for V1** | — | §22, §24 | Vendor adapter is an M4/M5 decision; never in gameplay code |
 | Content delivery | **Addressables** | 2.3+ | §27 | Themes + audio **only**, local groups only (offline-first). No CCD/remote |
-| Tests | **Unity Test Framework** | 1.4.x | §26 | `Line98.Tests.EditMode` (8 suites) + `Line98.Tests.PlayMode` (1 smoke) |
+| Tests | **Unity Test Framework** | 1.8.0 | §26 | `Line98.Tests.EditMode` (8 suites) + `Line98.Tests.PlayMode` (1 smoke) |
 | CI | **GameCI on GitHub Actions** + Git LFS | — | §25, vocab §11 | `-warnaserror`, EditMode suite, PlayMode smoke, IL2CPP AAB size check |
 | Profiling | Profiler + Memory Profiler package + Frame Debugger + Android GPU Inspector | — | §20, §27 | `com.unity.mobile.android-logcat` for device debugging |
-| IDE | Rider (primary) or VS via `com.unity.ide.rider` | — | — | `.editorconfig` at repo root, consistent with CI gate |
+| IDE | Rider (primary) or VS via `com.unity.ide.rider` | 3.0.38 | — | `.editorconfig` at repo root, consistent with CI gate |
 
 ---
 
@@ -38,17 +38,17 @@ Additions only — everything else stays at the editor default.
 ```json
 {
   "dependencies": {
-    "com.unity.render-pipelines.universal": "17.x",
-    "com.unity.ugui": "2.0.0",
-    "com.unity.inputsystem": "1.11.x",
-    "com.unity.localization": "1.5.x",
+    "com.unity.render-pipelines.universal": "17.6.0",
+    "com.unity.ugui": "2.6.0",
+    "com.unity.inputsystem": "1.20.0",
+    "com.unity.localization": "1.5.4",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
-    "com.unity.addressables": "2.3.x",
-    "com.unity.purchasing": "4.12.x",
-    "com.unity.test-framework": "1.4.x",
-    "com.unity.ide.rider": "3.0.x",
-    "com.unity.mobile.android-logcat": "1.4.x",
-    "com.unity.memoryprofiler": "1.1.x"
+    "com.unity.addressables": "2.3.4",
+    "com.unity.purchasing": "4.12.2",
+    "com.unity.test-framework": "1.8.0",
+    "com.unity.ide.rider": "3.0.38",
+    "com.unity.mobile.android-logcat": "1.4.2",
+    "com.unity.memoryprofiler": "1.1.5"
   }
 }
 ```
