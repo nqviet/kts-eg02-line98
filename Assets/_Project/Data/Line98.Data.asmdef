@@ -1,0 +1,16 @@
+{
+  "name": "Line98.Data",
+  "rootNamespace": "Line98.Data",
+  "references": [
+    "Line98.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

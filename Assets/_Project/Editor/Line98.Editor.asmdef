@@ -1,0 +1,27 @@
+{
+  "name": "Line98.Editor",
+  "rootNamespace": "Line98.Editor",
+  "references": [
+    "Line98.Core",
+    "Line98.Data",
+    "Line98.Gameplay",
+    "Line98.Presentation",
+    "Line98.Services",
+    "Line98.App",
+    "Unity.RenderPipelines.Universal.Editor",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Core.Editor",
+    "Unity.RenderPipelines.Core.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

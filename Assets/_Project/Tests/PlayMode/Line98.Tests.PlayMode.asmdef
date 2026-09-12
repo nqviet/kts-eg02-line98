@@ -1,0 +1,26 @@
+{
+  "name": "Line98.Tests.PlayMode",
+  "rootNamespace": "Line98.Tests.PlayMode",
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "Line98.Core",
+    "Line98.Data",
+    "Line98.Gameplay",
+    "Line98.App",
+    "Line98.Presentation"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

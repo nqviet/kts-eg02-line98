@@ -1,0 +1,13 @@
+<linker>
+  <!-- Preserve assemblies needed under High Managed Stripping -->
+  <assembly fullname="Line98.Core" preserve="all"/>
+  <assembly fullname="Line98.Data" preserve="all"/>
+  <assembly fullname="Line98.Gameplay" preserve="all"/>
+  <assembly fullname="Line98.App" preserve="all"/>
+  <assembly fullname="Line98.Presentation" preserve="all"/>
+  <assembly fullname="Line98.Services" preserve="all"/>
+  <assembly fullname="Newtonsoft.Json" preserve="all"/>
+  <assembly fullname="Unity.InputSystem" preserve="all"/>
+  <assembly fullname="Unity.TextMeshPro" preserve="all"/>
+  <assembly fullname="UnityEngine.UI" preserve="all"/>
+</linker>

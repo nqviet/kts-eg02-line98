@@ -64,3 +64,6 @@ Desktop.ini
 
 # App
 .agents/
+
+# Test results
+[Tt]est[Rr]esults/

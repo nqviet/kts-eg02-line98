@@ -1,0 +1,20 @@
+{
+  "name": "Line98.Presentation",
+  "rootNamespace": "Line98.Presentation",
+  "references": [
+    "Line98.Core",
+    "Line98.Data",
+    "Line98.Gameplay",
+    "Unity.TextMeshPro",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

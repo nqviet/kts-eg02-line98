@@ -1,0 +1,30 @@
+{
+  "name": "Line98.Tests.EditMode",
+  "rootNamespace": "Line98.Tests.EditMode",
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "Line98.Core",
+    "Line98.Data",
+    "Line98.Gameplay",
+    "Line98.Services",
+    "Line98.App",
+    "Line98.Presentation",
+    "Line98.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

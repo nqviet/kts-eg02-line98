@@ -1,0 +1,17 @@
+{
+  "name": "Line98.Services",
+  "rootNamespace": "Line98.Services",
+  "references": [
+    "Line98.Core",
+    "Line98.Data"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

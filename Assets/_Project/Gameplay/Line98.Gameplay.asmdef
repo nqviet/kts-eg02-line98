@@ -1,0 +1,17 @@
+{
+  "name": "Line98.Gameplay",
+  "rootNamespace": "Line98.Gameplay",
+  "references": [
+    "Line98.Core",
+    "Line98.Data"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
