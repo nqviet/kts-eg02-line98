@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: VfxCatalog_Default
+  m_EditorClassIdentifier: Assembly-CSharp:Line98.Design:VfxCatalogSO
+  m_SelectPulsePrefab: {fileID: 4413378889369872660, guid: 0bd6bc2f11186b24f97ccc11365cbcd5, type: 3}
+  m_PlacementSettlePrefab: {fileID: 847722937598655659, guid: 331f0cfa53639964b8dee34c87c15151, type: 3}
+  m_ClearTier1Prefab: {fileID: 1327072888836768139, guid: af1e4aae757f70a419cfedbc1257e7a3, type: 3}
+  m_ClearTier2Prefab: {fileID: 6023581425602556764, guid: dabc12dba9351074c942655eadf0fa23, type: 3}
+  m_ClearTier3Prefab: {fileID: 8223207148715074599, guid: 75d5657869806014fba8e34e2143cccd, type: 3}
+  m_ClearTier4Prefab: {fileID: 2835752954992917166, guid: 2e53990e8d614fc49ab04b668400d81f, type: 3}
+  m_PrewarmPoolCapacity: 4

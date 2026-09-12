@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: FeedbackProfile_Tiers
+  m_EditorClassIdentifier: Assembly-CSharp:Line98.Design:FeedbackProfileSO
+  m_Tiers:
+  - MinimumBalls: 5
+    MaximumBalls: 5
+    VfxPrefab: {fileID: 1327072888836768139, guid: af1e4aae757f70a419cfedbc1257e7a3, type: 3}
+    SfxClip: {fileID: 8300000, guid: f5b2a149d49e6c240843d158d1d7e01f, type: 3}
+    CameraShakeIntensity: 0.04
+    TierLabel: Nice!
+  - MinimumBalls: 6
+    MaximumBalls: 7
+    VfxPrefab: {fileID: 6023581425602556764, guid: dabc12dba9351074c942655eadf0fa23, type: 3}
+    SfxClip: {fileID: 8300000, guid: 2a70d0b0ba7e7014fba60b55a7d4d1ac, type: 3}
+    CameraShakeIntensity: 0.08
+    TierLabel: Great!
+  - MinimumBalls: 8
+    MaximumBalls: 8
+    VfxPrefab: {fileID: 8223207148715074599, guid: 75d5657869806014fba8e34e2143cccd, type: 3}
+    SfxClip: {fileID: 8300000, guid: e34a74fa72cfdd048a6c35f32bf12ce7, type: 3}
+    CameraShakeIntensity: 0.14
+    TierLabel: Awesome!
+  - MinimumBalls: 9
+    MaximumBalls: 99
+    VfxPrefab: {fileID: 2835752954992917166, guid: 2e53990e8d614fc49ab04b668400d81f, type: 3}
+    SfxClip: {fileID: 8300000, guid: c93088767f1f85543983806a05462199, type: 3}
+    CameraShakeIntensity: 0.22
+    TierLabel: PERFECT LINE!

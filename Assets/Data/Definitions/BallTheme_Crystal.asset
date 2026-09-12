@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 522e392f18fb29948ae3b07e2d97ca8c, type: 3}
+  m_Name: BallTheme_Crystal
+  m_EditorClassIdentifier: Assembly-CSharp::Line98.Design.BallThemeSO
+  m_BallMaterials:
+  - {fileID: 2100000, guid: e014eb16c158b17408bd933b1a0089fa, type: 2}
+  - {fileID: 2100000, guid: cfd3de2760fb4e44fa976e05862b0afd, type: 2}
+  - {fileID: 2100000, guid: 9bd100e1eb1e92b419afa73fe7f45724, type: 2}
+  - {fileID: 2100000, guid: e5d81706a4086ca49b93db9eb14cfe09, type: 2}
+  - {fileID: 2100000, guid: 417538758deeddf499ad7f3781c23fa0, type: 2}
+  - {fileID: 2100000, guid: 251b640e0f59b9149bae4d75fdc7a826, type: 2}
+  - {fileID: 2100000, guid: dc6eb62039656cf4ba065c5a8356c560, type: 2}
+  m_AccessibilityPatterns: {fileID: 2800000, guid: 83226b06518de914592ac578379c62c8, type: 3}
+  m_InnerRefractionMask: {fileID: 2800000, guid: 0e84e67a9ec45094396258c4f41b0ece, type: 3}
+  m_BlobShadowMaterial: {fileID: 2100000, guid: 2b428a80e9ef7b24d9af250a53cdff19, type: 2}

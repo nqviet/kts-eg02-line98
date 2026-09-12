@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: CameraProfile_Default
+  m_EditorClassIdentifier: Assembly-CSharp:Line98.Design:CameraProfileSO
+  m_FieldOfView: 28
+  m_PitchAngle: 58
+  m_YawAngle: 0
+  m_Distance: 18.5
+  m_ParallaxFactor: 0.05
