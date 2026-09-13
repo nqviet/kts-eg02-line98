@@ -13,9 +13,13 @@ namespace Line98.Presentation
     /// </summary>
     public sealed class BallViewManager
     {
+        private static readonly int s_BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int s_RimColorId = Shader.PropertyToID("_RimColor");
+
         private readonly BallView[] m_ActiveGrid = new BallView[BoardModel.CellCount];
         private readonly List<BallView> m_Pool = new List<BallView>(BoardModel.CellCount);
         private readonly Material[] m_ColorMaterials = new Material[7];
+        private readonly Material[] m_GlowMaterials = new Material[7];
         private Material m_GlowMaterial;
         private Material m_ShadowMaterial;
         private Mesh m_BallMesh;
@@ -53,6 +57,23 @@ namespace Line98.Presentation
                 }
             }
 
+            // Derive 7 shared glow materials tinted from each ball's base color
+            if (m_GlowMaterial != null)
+            {
+                for (int i = 0; i < m_ColorMaterials.Length; i++)
+                {
+                    var glowMat = new Material(m_GlowMaterial);
+                    glowMat.name = $"{m_GlowMaterial.name}_Color_{i}";
+                    if (m_ColorMaterials[i] != null && m_ColorMaterials[i].HasProperty(s_BaseColorId))
+                    {
+                        Color baseColor = m_ColorMaterials[i].GetColor(s_BaseColorId);
+                        Color rimColor = Color.Lerp(baseColor, Color.white, 0.55f);
+                        glowMat.SetColor(s_RimColorId, rimColor);
+                    }
+                    m_GlowMaterials[i] = glowMat;
+                }
+            }
+
             // Prewarm pool of 81 ball views
             for (int i = 0; i < BoardModel.CellCount; i++)
             {
@@ -74,6 +95,16 @@ namespace Line98.Presentation
                 return m_ColorMaterials[index];
             }
             return m_ColorMaterials[0];
+        }
+
+        public Material GetGlowMaterial(BallColor color)
+        {
+            int index = (int)color - 1;
+            if (index >= 0 && index < m_GlowMaterials.Length && m_GlowMaterials[index] != null)
+            {
+                return m_GlowMaterials[index];
+            }
+            return m_GlowMaterial;
         }
 
         public BallView GetBallAt(GridPos pos)
@@ -112,7 +143,7 @@ namespace Line98.Presentation
 
             view.transform.position = worldFloorPos;
             view.gameObject.SetActive(true);
-            view.Setup(pos, color, GetMaterial(color), m_TweenRunner);
+            view.Setup(pos, color, GetMaterial(color), GetGlowMaterial(color), m_TweenRunner);
             m_ActiveGrid[idx] = view;
             return view;
         }
@@ -154,7 +185,7 @@ namespace Line98.Presentation
                     }
                     else if (current.Color != col)
                     {
-                        current.Setup(pos, col, GetMaterial(col), m_TweenRunner);
+                        current.Setup(pos, col, GetMaterial(col), GetGlowMaterial(col), m_TweenRunner);
                     }
                 }
                 else
@@ -176,6 +207,25 @@ namespace Line98.Presentation
                     m_ActiveGrid[i].Release();
                     m_Pool.Add(m_ActiveGrid[i]);
                     m_ActiveGrid[i] = null;
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            for (int i = 0; i < m_GlowMaterials.Length; i++)
+            {
+                if (m_GlowMaterials[i] != null)
+                {
+                    if (Application.isPlaying)
+                    {
+                        UnityEngine.Object.Destroy(m_GlowMaterials[i]);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.DestroyImmediate(m_GlowMaterials[i]);
+                    }
+                    m_GlowMaterials[i] = null;
                 }
             }
         }

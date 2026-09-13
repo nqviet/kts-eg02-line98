@@ -121,5 +121,23 @@ namespace Line98.Tests.EditMode
                     $"Material at {path} is using bare 'Universal Render Pipeline/Lit' placeholder shader instead of custom polished shader.");
             }
         }
+
+        [Test]
+        public void BallGlowShellMaterial_UsesBallRimGlowShader_AndIsTransparentWithoutZWrite()
+        {
+            const string path = "Assets/Art/Materials/M_Ball_GlowShell.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            Assert.IsNotNull(mat, $"Material not found at {path}");
+
+            Assert.AreEqual("Line98/BallRimGlow", mat.shader.name,
+                $"Glow shell material must use 'Line98/BallRimGlow' shader, found: {mat.shader.name}");
+
+            Assert.IsTrue(mat.HasProperty("_RimColor"), "BallRimGlow shader must declare _RimColor property.");
+            Assert.IsTrue(mat.HasProperty("_RimPower"), "BallRimGlow shader must declare _RimPower property.");
+            Assert.IsTrue(mat.HasProperty("_RimIntensity"), "BallRimGlow shader must declare _RimIntensity property.");
+
+            Assert.AreEqual(3000, mat.renderQueue, "Glow shell material must render in Transparent queue (3000).");
+            Assert.AreEqual(0f, mat.GetFloat("_ZWrite"), "Glow shell material must have ZWrite turned off.");
+        }
     }
 }

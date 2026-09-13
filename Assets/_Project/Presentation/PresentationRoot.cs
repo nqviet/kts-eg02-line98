@@ -60,6 +60,7 @@ namespace Line98.Presentation
         public InputRouter InputRouter => m_InputRouter;
         public UIRouter UIRouter => m_UIRouter;
         public HudPresenter HudPresenter => m_HudPresenter;
+        public GameSession Session => m_Session;
 
         public void Initialize(
             GameSession session,
@@ -176,10 +177,22 @@ namespace Line98.Presentation
         }
 
         private GridPos m_LastSelectedPos;
+        private bool m_HasSelectedBall;
 
         private void HandleBallSelected(GridPos pos)
         {
+            if (m_HasSelectedBall && m_LastSelectedPos != pos)
+            {
+                var prevBall = m_BallManager?.GetBallAt(m_LastSelectedPos);
+                if (prevBall != null)
+                {
+                    prevBall.SetSelected(false);
+                    prevBall.SetHeightLift(0f);
+                }
+            }
+
             m_LastSelectedPos = pos;
+            m_HasSelectedBall = true;
             var ball = m_BallManager?.GetBallAt(pos);
             if (ball != null)
             {
@@ -190,11 +203,15 @@ namespace Line98.Presentation
 
         private void HandleBallDeselected()
         {
-            var ball = m_BallManager?.GetBallAt(m_LastSelectedPos);
-            if (ball != null)
+            if (m_HasSelectedBall)
             {
-                ball.SetSelected(false);
-                ball.SetHeightLift(0f);
+                var ball = m_BallManager?.GetBallAt(m_LastSelectedPos);
+                if (ball != null)
+                {
+                    ball.SetSelected(false);
+                    ball.SetHeightLift(0f);
+                }
+                m_HasSelectedBall = false;
             }
         }
 
@@ -228,6 +245,7 @@ namespace Line98.Presentation
                 m_Session.OnBallDeselected -= HandleBallDeselected;
                 m_Session.OnMoveCommitted -= HandleMoveCommitted;
             }
+            m_BallManager?.Dispose();
         }
     }
 }

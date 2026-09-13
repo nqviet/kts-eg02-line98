@@ -29,6 +29,7 @@ namespace Line98.Presentation
         [SerializeField] private Transform m_Visual;
         [SerializeField] private Transform m_GlowShell;
         [SerializeField] private Transform m_BlobShadow;
+        [SerializeField] private float m_GlowShellScale = 1.10f;
 
         private MeshRenderer m_VisualRenderer;
         private MeshRenderer m_GlowRenderer;
@@ -46,6 +47,18 @@ namespace Line98.Presentation
         public bool IsSelected => m_IsSelected;
         public float RestHeight => m_RestHeight;
         public Transform Visual => m_Visual;
+        public float GlowShellScale
+        {
+            get => m_GlowShellScale;
+            set
+            {
+                m_GlowShellScale = value;
+                if (m_GlowShell != null)
+                {
+                    m_GlowShell.localScale = Vector3.one * m_GlowShellScale;
+                }
+            }
+        }
 
         public void InitializeHierarchy(Mesh ballMesh, Mesh shadowMesh, Material glowMaterial, Material shadowMaterial)
         {
@@ -68,7 +81,7 @@ namespace Line98.Presentation
                 var glowGo = new GameObject("GlowShell");
                 glowGo.transform.SetParent(transform, false);
                 m_GlowShell = glowGo.transform;
-                m_GlowShell.localScale = Vector3.one * 1.02f;
+                m_GlowShell.localScale = Vector3.one * m_GlowShellScale;
                 var mf = glowGo.AddComponent<MeshFilter>();
                 mf.sharedMesh = ballMesh;
                 m_GlowRenderer = glowGo.AddComponent<MeshRenderer>();
@@ -77,6 +90,7 @@ namespace Line98.Presentation
             }
             else if (m_GlowShell != null)
             {
+                m_GlowShell.localScale = Vector3.one * m_GlowShellScale;
                 m_GlowRenderer = m_GlowShell.GetComponent<MeshRenderer>();
             }
 
@@ -116,6 +130,11 @@ namespace Line98.Presentation
 
         public void Setup(GridPos pos, BallColor color, Material ballMaterial, TweenRunner runner)
         {
+            Setup(pos, color, ballMaterial, null, runner);
+        }
+
+        public void Setup(GridPos pos, BallColor color, Material ballMaterial, Material glowMaterial, TweenRunner runner)
+        {
             m_GridPos = pos;
             m_Color = color;
             m_TweenRunner = runner;
@@ -124,6 +143,16 @@ namespace Line98.Presentation
             if (m_VisualRenderer != null && ballMaterial != null)
             {
                 m_VisualRenderer.sharedMaterial = ballMaterial;
+            }
+
+            if (m_GlowRenderer == null && m_GlowShell != null)
+            {
+                m_GlowRenderer = m_GlowShell.GetComponent<MeshRenderer>();
+            }
+
+            if (m_GlowRenderer != null && glowMaterial != null)
+            {
+                m_GlowRenderer.sharedMaterial = glowMaterial;
             }
 
             ResetVisuals();
