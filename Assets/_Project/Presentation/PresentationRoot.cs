@@ -187,7 +187,6 @@ namespace Line98.Presentation
                 if (prevBall != null)
                 {
                     prevBall.SetSelected(false);
-                    prevBall.SetHeightLift(0f);
                 }
             }
 
@@ -197,7 +196,6 @@ namespace Line98.Presentation
             if (ball != null)
             {
                 ball.SetSelected(true);
-                ball.SetHeightLift(0.06f * m_BoardView.CellPitch);
             }
         }
 
@@ -209,7 +207,6 @@ namespace Line98.Presentation
                 if (ball != null)
                 {
                     ball.SetSelected(false);
-                    ball.SetHeightLift(0f);
                 }
                 m_HasSelectedBall = false;
             }

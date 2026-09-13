@@ -18,6 +18,9 @@ namespace Line98.Presentation
     [DisallowMultipleComponent]
     public sealed class BallView : MonoBehaviour, ITweenTarget
     {
+        private static readonly Func<float, float> s_GlowPopEase = Easing.OutBack;
+        private static readonly Func<float, float> s_GlowOutEase = Easing.OutCubic;
+
         public const int ActionHop = 1;
         public const int ActionSquash = 2;
         public const int ActionGlow = 3;
@@ -25,11 +28,18 @@ namespace Line98.Presentation
         public const int ActionScaleIn = 5;
         public const int ActionScaleOut = 6;
         public const int ActionShake = 7;
+        public const int ActionGlowBreathe = 8;
+        public const int ActionGlowOut = 9;
 
         [SerializeField] private Transform m_Visual;
         [SerializeField] private Transform m_GlowShell;
         [SerializeField] private Transform m_BlobShadow;
         [SerializeField] private float m_GlowShellScale = 1.10f;
+        [SerializeField] private float m_GlowCollapsedScale = 0.80f;
+        [SerializeField] private float m_GlowPopInDuration = 0.12f;
+        [SerializeField] private float m_GlowBreathePeriod = 0.90f;
+        [SerializeField] private float m_GlowBreatheAmplitude = 0.05f;
+        [SerializeField] private float m_GlowOutDuration = 0.09f;
 
         private MeshRenderer m_VisualRenderer;
         private MeshRenderer m_GlowRenderer;
@@ -41,6 +51,7 @@ namespace Line98.Presentation
         private float m_RestHeight = 0.30f;
         private bool m_IsSelected;
         private TweenRunner m_TweenRunner;
+        private int m_GlowTweenHandle;
 
         public GridPos Position => m_GridPos;
         public BallColor Color => m_Color;
@@ -53,10 +64,7 @@ namespace Line98.Presentation
             set
             {
                 m_GlowShellScale = value;
-                if (m_GlowShell != null)
-                {
-                    m_GlowShell.localScale = Vector3.one * m_GlowShellScale;
-                }
+                SetGlowShellScale(m_GlowShellScale);
             }
         }
 
@@ -81,7 +89,7 @@ namespace Line98.Presentation
                 var glowGo = new GameObject("GlowShell");
                 glowGo.transform.SetParent(transform, false);
                 m_GlowShell = glowGo.transform;
-                m_GlowShell.localScale = Vector3.one * m_GlowShellScale;
+                SetGlowShellScale(m_GlowShellScale);
                 var mf = glowGo.AddComponent<MeshFilter>();
                 mf.sharedMesh = ballMesh;
                 m_GlowRenderer = glowGo.AddComponent<MeshRenderer>();
@@ -90,7 +98,7 @@ namespace Line98.Presentation
             }
             else if (m_GlowShell != null)
             {
-                m_GlowShell.localScale = Vector3.one * m_GlowShellScale;
+                SetGlowShellScale(m_GlowShellScale);
                 m_GlowRenderer = m_GlowShell.GetComponent<MeshRenderer>();
             }
 
@@ -161,14 +169,102 @@ namespace Line98.Presentation
         public void SetSelected(bool selected)
         {
             m_IsSelected = selected;
-            SetGlow(selected);
+            if (selected)
+            {
+                ShowSelectionHalo();
+            }
+            else
+            {
+                CollapseSelectionHalo();
+            }
         }
 
         public void SetGlow(bool active)
         {
+            CancelGlowTween();
+            SetGlowShellScale(m_GlowShellScale);
             if (m_GlowShell != null)
             {
                 m_GlowShell.gameObject.SetActive(active);
+            }
+        }
+
+        private void ShowSelectionHalo()
+        {
+            if (m_GlowShell == null)
+            {
+                return;
+            }
+
+            m_GlowShell.gameObject.SetActive(true);
+            CancelGlowTween();
+
+            if (m_TweenRunner == null)
+            {
+                SetGlowShellScale(m_GlowShellScale);
+                return;
+            }
+
+            PlayGlowPhase(ActionGlow, m_GlowCollapsedScale, 1f, m_GlowPopInDuration, s_GlowPopEase);
+        }
+
+        private void CollapseSelectionHalo()
+        {
+            if (m_GlowShell == null)
+            {
+                return;
+            }
+
+            CancelGlowTween();
+
+            if (m_TweenRunner == null)
+            {
+                SetGlowShellScale(m_GlowShellScale);
+                m_GlowShell.gameObject.SetActive(false);
+                return;
+            }
+
+            float baseScale = Mathf.Max(0.001f, m_GlowShellScale);
+            float currentMultiplier = m_GlowShell.localScale.x / baseScale;
+            PlayGlowPhase(ActionGlowOut, currentMultiplier, m_GlowCollapsedScale, m_GlowOutDuration, s_GlowOutEase);
+        }
+
+        private void PlayGlowPhase(int actionId, float from, float to, float duration, Func<float, float> ease)
+        {
+            var tween = new Tween
+            {
+                From = from,
+                To = to,
+                Duration = duration,
+                Ease = ease,
+                Source = TimeSource.Scaled,
+                Owner = this,
+                ActionId = actionId,
+                Target = this
+            };
+
+            int handle = m_TweenRunner.Play(in tween);
+            if (handle > 0)
+            {
+                m_GlowTweenHandle = handle;
+            }
+        }
+
+        private void CancelGlowTween()
+        {
+            if (m_GlowTweenHandle > 0 && m_TweenRunner != null)
+            {
+                m_TweenRunner.Cancel(m_GlowTweenHandle);
+            }
+
+            m_GlowTweenHandle = 0;
+        }
+
+        private void SetGlowShellScale(float scale)
+        {
+            if (m_GlowShell != null)
+            {
+                m_GlowShell.localScale = Vector3.one * scale;
             }
         }
 
@@ -198,6 +294,7 @@ namespace Line98.Presentation
 
         public void ResetVisuals()
         {
+            CancelGlowTween();
             transform.localScale = Vector3.one;
             transform.localRotation = Quaternion.identity;
             SetHeightLift(0f);
@@ -238,6 +335,16 @@ namespace Line98.Presentation
                 case ActionScaleOut:
                     transform.localScale = Vector3.one * Mathf.Max(0.001f, value);
                     break;
+
+                case ActionGlow:
+                case ActionGlowOut:
+                    SetGlowShellScale(m_GlowShellScale * value);
+                    break;
+
+                case ActionGlowBreathe:
+                    float breathe = Mathf.Sin(value * Mathf.PI * 2f);
+                    SetGlowShellScale(m_GlowShellScale * (1f + m_GlowBreatheAmplitude * breathe));
+                    break;
             }
         }
 
@@ -255,6 +362,30 @@ namespace Line98.Presentation
 
                 case ActionScaleOut:
                     Release();
+                    break;
+
+                case ActionGlow:
+                    SetGlowShellScale(m_GlowShellScale);
+                    if (m_IsSelected)
+                    {
+                        PlayGlowPhase(ActionGlowBreathe, 0f, 1f, m_GlowBreathePeriod, null);
+                    }
+                    break;
+
+                case ActionGlowBreathe:
+                    if (m_IsSelected)
+                    {
+                        PlayGlowPhase(ActionGlowBreathe, 0f, 1f, m_GlowBreathePeriod, null);
+                    }
+                    break;
+
+                case ActionGlowOut:
+                    m_GlowTweenHandle = 0;
+                    SetGlowShellScale(m_GlowShellScale);
+                    if (m_GlowShell != null)
+                    {
+                        m_GlowShell.gameObject.SetActive(false);
+                    }
                     break;
             }
         }

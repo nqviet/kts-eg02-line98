@@ -46,6 +46,8 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _PulseDepth: 0.35
+    - _PulseSpeed: 1.111
     - _QueueOffset: 0
     - _RimIntensity: 1
     - _RimPower: 3.5

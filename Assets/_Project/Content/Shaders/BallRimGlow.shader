@@ -5,6 +5,8 @@ Shader "Line98/BallRimGlow"
         _RimColor ("Rim Color", Color) = (1, 1, 1, 1)
         _RimPower ("Rim Power", Range(0.5, 10.0)) = 3.5
         _RimIntensity ("Rim Intensity", Range(0.0, 5.0)) = 1.0
+        _PulseSpeed ("Pulse Speed (Hz)", Float) = 1.111
+        _PulseDepth ("Pulse Depth", Range(0.0, 1.0)) = 0.35
         [HideInInspector] _ZWrite ("__zw", Float) = 0.0
     }
     SubShader
@@ -49,6 +51,8 @@ Shader "Line98/BallRimGlow"
                 half4 _RimColor;
                 float _RimPower;
                 float _RimIntensity;
+                float _PulseSpeed;
+                float _PulseDepth;
                 float _ZWrite;
             CBUFFER_END
 
@@ -70,9 +74,11 @@ Shader "Line98/BallRimGlow"
                 float3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
 
                 float NdotV = saturate(dot(normalWS, viewDirWS));
-                float rim = pow(saturate(1.0 - NdotV), _RimPower);
+                float breathe = sin(_Time.y * _PulseSpeed * 6.2831853);
+                float rimPower = max(0.1, _RimPower * (1.0 - _PulseDepth * 0.5 * breathe));
+                float rim = pow(saturate(1.0 - NdotV), rimPower);
 
-                half3 color = _RimColor.rgb * _RimIntensity;
+                half3 color = _RimColor.rgb * _RimIntensity * (1.0 + _PulseDepth * breathe);
                 return half4(color, rim * _RimColor.a);
             }
             ENDHLSL

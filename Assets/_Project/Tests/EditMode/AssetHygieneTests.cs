@@ -135,6 +135,10 @@ namespace Line98.Tests.EditMode
             Assert.IsTrue(mat.HasProperty("_RimColor"), "BallRimGlow shader must declare _RimColor property.");
             Assert.IsTrue(mat.HasProperty("_RimPower"), "BallRimGlow shader must declare _RimPower property.");
             Assert.IsTrue(mat.HasProperty("_RimIntensity"), "BallRimGlow shader must declare _RimIntensity property.");
+            Assert.IsTrue(mat.HasProperty("_PulseSpeed"), "BallRimGlow shader must declare _PulseSpeed property.");
+            Assert.IsTrue(mat.HasProperty("_PulseDepth"), "BallRimGlow shader must declare _PulseDepth property.");
+            Assert.Greater(mat.GetFloat("_PulseSpeed"), 0f, "Glow pulse speed must be positive.");
+            Assert.Greater(mat.GetFloat("_PulseDepth"), 0f, "Glow pulse depth must be positive.");
 
             Assert.AreEqual(3000, mat.renderQueue, "Glow shell material must render in Transparent queue (3000).");
             Assert.AreEqual(0f, mat.GetFloat("_ZWrite"), "Glow shell material must have ZWrite turned off.");

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using Line98.Core;
 using Line98.Presentation;
+using Line98.Presentation.Animation;
 
 namespace Line98.Tests.EditMode
 {
@@ -70,6 +71,67 @@ namespace Line98.Tests.EditMode
 
             ballView.SetSelected(false);
             Assert.IsFalse(glowTransform.gameObject.activeSelf, "GlowShell must be inactive when ball is deselected");
+        }
+
+        [Test]
+        public void BallView_SelectionHalo_PopsInBreathesAndCollapses()
+        {
+            var ballGo = new GameObject("AnimatedTestBall");
+            ballGo.transform.SetParent(m_RootGo.transform);
+            var ballView = ballGo.AddComponent<BallView>();
+            var tweenRunner = new TweenRunner();
+            ballView.InitializeHierarchy(m_BallMesh, null, m_GlowMaterial, null);
+            ballView.Setup(new GridPos(0, 0), BallColor.Red, null, m_GlowMaterial, tweenRunner);
+
+            var glowTransform = ballGo.transform.Find("GlowShell");
+            float baseScale = ballView.GlowShellScale;
+            float visualY = ballView.Visual.localPosition.y;
+
+            ballView.SetSelected(true);
+            Assert.IsTrue(glowTransform.gameObject.activeSelf, "GlowShell must activate immediately on selection");
+            Assert.Less(glowTransform.localScale.x, baseScale, "GlowShell must begin from its collapsed scale");
+
+            float minScale = glowTransform.localScale.x;
+            float maxScale = minScale;
+            for (int i = 0; i < 28; i++)
+            {
+                tweenRunner.Tick(0.016f);
+                minScale = Mathf.Min(minScale, glowTransform.localScale.x);
+                maxScale = Mathf.Max(maxScale, glowTransform.localScale.x);
+            }
+
+            Assert.Greater(maxScale - minScale, 0.005f, "GlowShell scale must animate while selected");
+            Assert.GreaterOrEqual(minScale, baseScale * 0.75f);
+            Assert.LessOrEqual(maxScale, baseScale * 1.15f);
+            Assert.AreEqual(visualY, ballView.Visual.localPosition.y, 0.0001f,
+                "Selection halo animation must not lift the visual");
+
+            ballView.SetSelected(false);
+            for (int i = 0; i < 7; i++)
+            {
+                tweenRunner.Tick(0.016f);
+            }
+
+            Assert.IsFalse(glowTransform.gameObject.activeSelf, "GlowShell must hide after its collapse animation");
+            Assert.AreEqual(baseScale, glowTransform.localScale.x, 0.0001f);
+            Assert.AreEqual(0, tweenRunner.ActiveCount);
+        }
+
+        [Test]
+        public void BallView_HaloTween_DoesNotSurvivePoolRelease()
+        {
+            var ballGo = new GameObject("ReleaseTestBall");
+            ballGo.transform.SetParent(m_RootGo.transform);
+            var ballView = ballGo.AddComponent<BallView>();
+            var tweenRunner = new TweenRunner();
+            ballView.InitializeHierarchy(m_BallMesh, null, m_GlowMaterial, null);
+            ballView.Setup(new GridPos(0, 0), BallColor.Red, null, m_GlowMaterial, tweenRunner);
+
+            ballView.SetSelected(true);
+            ballView.Release();
+
+            Assert.AreEqual(0, tweenRunner.ActiveCount, "Pool release must cancel the active halo tween");
+            Assert.IsFalse(ballGo.transform.Find("GlowShell").gameObject.activeSelf, "Released ball must not retain a visible halo");
         }
 
         [Test]
