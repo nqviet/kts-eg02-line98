@@ -36,6 +36,9 @@ namespace Line98.App
             s_Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            Application.targetFrameRate = 60;
+            QualitySettings.vSyncCount = 0;
+
             InitializeServices();
             InitializeGameplay();
 

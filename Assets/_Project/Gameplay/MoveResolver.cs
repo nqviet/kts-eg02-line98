@@ -13,6 +13,7 @@ namespace Line98.Gameplay
     {
         private readonly BoardModel m_ScratchBoard = new BoardModel();
         private readonly List<int> m_EmptyIndexPool = new List<int>(BoardModel.CellCount);
+        private readonly MovePlan m_FallbackPlan = new MovePlan();
 
         public MovePlan Resolve(
             BoardModel board,
@@ -21,9 +22,10 @@ namespace Line98.Gameplay
             in MoveRequest request,
             in ScoreRules scoreRules,
             in SpawnRules spawnRules,
-            int totalLinesCleared)
+            int totalLinesCleared,
+            MovePlan targetPlan = null)
         {
-            var plan = new MovePlan();
+            var plan = targetPlan ?? m_FallbackPlan;
             plan.Reset();
             plan.From = request.From;
             plan.To = request.To;
@@ -71,7 +73,7 @@ namespace Line98.Gameplay
                 // Successful clear suppresses spawn per GDD §2
                 plan.Spawned = SpawnBatch.Empty;
                 plan.PostMoveRng = simulatedRng;
-                plan.NextPreviewQueue = previewQueue.ToArray();
+                previewQueue.CopyTo(plan.NextPreviewQueue);
             }
             else
             {
@@ -84,7 +86,6 @@ namespace Line98.Gameplay
                 int spawnLimit = Math.Min(previewQueue.Capacity, m_EmptyIndexPool.Count);
                 if (spawnLimit > 0)
                 {
-                    SpawnItem[] items = new SpawnItem[spawnLimit];
                     for (int i = 0; i < spawnLimit; i++)
                     {
                         int pickedIndex = simulatedRng.Range(0, m_EmptyIndexPool.Count);
@@ -95,9 +96,9 @@ namespace Line98.Gameplay
                         BallColor color = previewQueue[i];
 
                         m_ScratchBoard.Set(spawnPos, color);
-                        items[i] = new SpawnItem(spawnPos, color);
+                        plan.SpawnItemsBuffer[i] = new SpawnItem(spawnPos, color);
                     }
-                    plan.Spawned = new SpawnBatch(items);
+                    plan.Spawned = new SpawnBatch(plan.SpawnItemsBuffer, spawnLimit);
                 }
                 else
                 {
@@ -106,12 +107,10 @@ namespace Line98.Gameplay
 
                 // Populate next preview queue
                 int activeColors = spawnRules.GetActiveColorCount(totalLinesCleared);
-                BallColor[] nextQueue = new BallColor[previewQueue.Capacity];
-                for (int i = 0; i < nextQueue.Length; i++)
+                for (int i = 0; i < plan.NextPreviewQueue.Length; i++)
                 {
-                    nextQueue[i] = (BallColor)(simulatedRng.Range(0, activeColors) + 1);
+                    plan.NextPreviewQueue[i] = (BallColor)(simulatedRng.Range(0, activeColors) + 1);
                 }
-                plan.NextPreviewQueue = nextQueue;
                 plan.PostMoveRng = simulatedRng;
             }
 

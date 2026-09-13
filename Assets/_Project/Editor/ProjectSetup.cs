@@ -207,8 +207,53 @@ namespace Line98.Editor
                     UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
                     UnityEditor.SceneManagement.NewSceneMode.Single);
                 UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene, scenePath);
-                Debug.Log($"[ProjectSetup] Created scene stub at {scenePath}");
             }
+        }
+
+        private class TestCallbacks : UnityEditor.TestTools.TestRunner.Api.ICallbacks
+        {
+            public void RunStarted(UnityEditor.TestTools.TestRunner.Api.ITestAdaptor testsToRun)
+            {
+                Debug.Log("[TestRunner] Suite started.");
+            }
+
+            public void RunFinished(UnityEditor.TestTools.TestRunner.Api.ITestResultAdaptor results)
+            {
+                if (results.FailCount > 0)
+                {
+                    Debug.LogError($"[TestRunner] Suite FAILED: {results.PassCount} passed, {results.FailCount} failed, {results.InconclusiveCount} inconclusive. Duration: {results.Duration:F2}s");
+                }
+                else
+                {
+                    Debug.Log($"[TestRunner] Suite PASSED: All {results.PassCount} tests passed! Duration: {results.Duration:F2}s");
+                }
+            }
+
+            public void TestStarted(UnityEditor.TestTools.TestRunner.Api.ITestAdaptor test)
+            {
+            }
+
+            public void TestFinished(UnityEditor.TestTools.TestRunner.Api.ITestResultAdaptor result)
+            {
+                if (result.TestStatus == UnityEditor.TestTools.TestRunner.Api.TestStatus.Failed)
+                {
+                    Debug.LogError($"[TestRunner] FAIL: {result.FullName} -> {result.Message}\n{result.StackTrace}");
+                }
+            }
+        }
+
+        [MenuItem("Line98/Tests/Run EditMode Tests")]
+        public static void RunEditModeTests()
+        {
+            var api = ScriptableObject.CreateInstance<UnityEditor.TestTools.TestRunner.Api.TestRunnerApi>();
+            var filter = new UnityEditor.TestTools.TestRunner.Api.Filter
+            {
+                testMode = UnityEditor.TestTools.TestRunner.Api.TestMode.EditMode
+            };
+
+            api.RegisterCallbacks(new TestCallbacks());
+            api.Execute(new UnityEditor.TestTools.TestRunner.Api.ExecutionSettings(filter));
+            Debug.Log("[TestRunner] Dispatched EditMode test run.");
         }
     }
 }

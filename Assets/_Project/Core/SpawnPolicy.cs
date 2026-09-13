@@ -20,15 +20,27 @@ namespace Line98.Core
         private static readonly SpawnItem[] s_Empty = Array.Empty<SpawnItem>();
 
         public readonly SpawnItem[] Items;
-        public int Count => Items != null ? Items.Length : 0;
+        private readonly int m_ExplicitCount;
+        private readonly bool m_HasExplicitCount;
+
+        public int Count => m_HasExplicitCount ? m_ExplicitCount : (Items != null ? Items.Length : 0);
         public bool IsEmpty => Count == 0;
 
         public SpawnBatch(SpawnItem[] items)
         {
             Items = items ?? s_Empty;
+            m_ExplicitCount = Items.Length;
+            m_HasExplicitCount = true;
         }
 
-        public static SpawnBatch Empty => new SpawnBatch(s_Empty);
+        public SpawnBatch(SpawnItem[] items, int count)
+        {
+            Items = items ?? s_Empty;
+            m_ExplicitCount = count;
+            m_HasExplicitCount = true;
+        }
+
+        public static SpawnBatch Empty => new SpawnBatch(s_Empty, 0);
     }
 
     /// <summary>
@@ -59,6 +71,13 @@ namespace Line98.Core
             BallColor[] copy = new BallColor[m_Queue.Length];
             Array.Copy(m_Queue, copy, m_Queue.Length);
             return copy;
+        }
+
+        public void CopyTo(BallColor[] destination)
+        {
+            if (destination == null) return;
+            int count = Math.Min(m_Queue.Length, destination.Length);
+            Array.Copy(m_Queue, destination, count);
         }
 
         public void CopyFrom(BallColor[] colors)

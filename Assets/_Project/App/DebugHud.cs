@@ -243,7 +243,7 @@ namespace Line98.App
                 case BallColor.Green: return new Color(0.2f, 0.8f, 0.25f);
                 case BallColor.Cyan: return new Color(0.15f, 0.8f, 0.95f);
                 case BallColor.Purple: return new Color(0.65f, 0.25f, 0.9f);
-                case BallColor.Pink: return new Color(0.95f, 0.4f, 0.75f);
+                case BallColor.Blue: return new Color(0.08f, 0.4f, 0.75f);
                 default: return Color.gray;
             }
         }
@@ -258,7 +258,7 @@ namespace Line98.App
                 case BallColor.Green: return "G";
                 case BallColor.Cyan: return "C";
                 case BallColor.Purple: return "P";
-                case BallColor.Pink: return "Pk";
+                case BallColor.Blue: return "B";
                 default: return "";
             }
         }

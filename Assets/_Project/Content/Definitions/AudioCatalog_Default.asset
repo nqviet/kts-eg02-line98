@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: c1e6c77b367635640979b5324263a8c4, type: 3}
   m_Name: AudioCatalog_Default
-  m_EditorClassIdentifier: Assembly-CSharp:Line98.Design:AudioCatalogSO
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.AudioCatalogSO
   m_BallSelectClip: {fileID: 8300000, guid: fae2cbb19392ce64488ae411afa6dbe8, type: 3}
   m_BallDeselectClip: {fileID: 8300000, guid: 94aa0521e3163474ca9068b788957f24, type: 3}
   m_BallMoveFlightClip: {fileID: 8300000, guid: 956ddcc90fefc66409eb8ae1fcc3c5e1, type: 3}

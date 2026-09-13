@@ -28,6 +28,10 @@ namespace Line98.Gameplay
         private GridPos m_SelectedPos;
         private bool m_HasSelection;
         private GamePhase m_Phase;
+        private readonly MovePlan[] m_PlanBuffer = new[] { new MovePlan(), new MovePlan() };
+        private int m_PlanBufferIndex = 0;
+        private MovePlan m_PendingPlan;
+        private readonly Action m_CommitPendingAction;
 
         // Public event emitters (prefix On per coding conventions)
         public event Action<GridPos> OnBallSelected;
@@ -68,6 +72,7 @@ namespace Line98.Gameplay
             m_Mode = mode ?? new ClassicMode();
             m_Pacer = pacer ?? ImmediatePacer.Instance;
             m_Phase = GamePhase.Boot;
+            m_CommitPendingAction = OnCommitPending;
         }
 
         public void SetMode(IGameModeStrategy mode)
@@ -167,14 +172,18 @@ namespace Line98.Gameplay
             ScoreRules scoreRules = m_Mode.GetScoreRules();
             SpawnRules spawnRules = m_Mode.GetSpawnRules(m_LinesCleared);
 
-            MovePlan plan = m_Resolver.Resolve(
+            MovePlan plan = m_PlanBuffer[m_PlanBufferIndex];
+            m_PlanBufferIndex = (m_PlanBufferIndex + 1) % m_PlanBuffer.Length;
+
+            m_Resolver.Resolve(
                 m_Board,
                 m_PreviewQueue,
                 in m_Rng,
                 in request,
                 in scoreRules,
                 in spawnRules,
-                m_LinesCleared);
+                m_LinesCleared,
+                plan);
 
             if (plan.Outcome == MoveOutcome.Invalid || plan.Outcome == MoveOutcome.NoPath)
             {
@@ -199,9 +208,18 @@ namespace Line98.Gameplay
             SetPhase(GamePhase.Resolving);
             OnMovePlanned?.Invoke(plan);
 
-            // Delegate presentation pacing to IMovePacer
-            m_Pacer.Play(plan, () => Commit(plan));
+            // Delegate presentation pacing to IMovePacer without closure allocation
+            m_PendingPlan = plan;
+            m_Pacer.Play(plan, m_CommitPendingAction);
             return true;
+        }
+
+        private void OnCommitPending()
+        {
+            if (m_PendingPlan != null)
+            {
+                Commit(m_PendingPlan);
+            }
         }
 
         public void Commit(MovePlan plan)
@@ -236,7 +254,7 @@ namespace Line98.Gameplay
                 // Apply spawned batch
                 if (!plan.Spawned.IsEmpty)
                 {
-                    for (int i = 0; i < plan.Spawned.Items.Length; i++)
+                    for (int i = 0; i < plan.Spawned.Count; i++)
                     {
                         SpawnItem item = plan.Spawned.Items[i];
                         m_Board.Set(item.Position, item.Color);

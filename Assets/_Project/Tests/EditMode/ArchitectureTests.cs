@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using Line98.Core;
+using Line98.Gameplay;
 
 namespace Line98.Tests.EditMode
 {
@@ -14,6 +17,37 @@ namespace Line98.Tests.EditMode
         public void SetUp()
         {
             m_ProjectRoot = Application.dataPath;
+        }
+
+        [Test]
+        public void AsmdefEdges_StrictlyMatchArchitectureSpecification()
+        {
+            AssertAsmdefReferences("Line98.Core", new string[0]);
+            AssertAsmdefReferences("Line98.Data", new[] { "Line98.Core" });
+            AssertAsmdefReferences("Line98.Gameplay", new[] { "Line98.Core", "Line98.Data" });
+            AssertAsmdefReferences("Line98.Services", new[] { "Line98.Core", "Line98.Data" });
+            AssertAsmdefReferences("Line98.Presentation", new[] { "Line98.Core", "Line98.Data", "Line98.Gameplay", "Unity.TextMeshPro", "Unity.InputSystem" });
+            AssertAsmdefReferences("Line98.App", new[] { "Line98.Core", "Line98.Data", "Line98.Gameplay", "Line98.Presentation", "Line98.Services" });
+        }
+
+        private void AssertAsmdefReferences(string assemblyName, string[] expectedRefs)
+        {
+            string[] files = Directory.GetFiles(Path.Combine(m_ProjectRoot, "_Project"), $"{assemblyName}.asmdef", SearchOption.AllDirectories);
+            Assert.AreEqual(1, files.Length, $"Assembly {assemblyName}.asmdef not found exactly once");
+
+            string json = File.ReadAllText(files[0]);
+            HashSet<string> expected = new HashSet<string>(expectedRefs);
+
+            int refIdx = json.IndexOf("\"references\":", StringComparison.Ordinal);
+            Assert.IsTrue(refIdx >= 0, $"references not found in {files[0]}");
+            int startBracket = json.IndexOf('[', refIdx);
+            int endBracket = json.IndexOf(']', startBracket);
+            string refsContent = json.Substring(startBracket + 1, endBracket - startBracket - 1);
+
+            string[] tokens = refsContent.Split(new[] { ',', '\r', '\n', '\t', ' ', '"' }, StringSplitOptions.RemoveEmptyEntries);
+            HashSet<string> actual = new HashSet<string>(tokens);
+
+            CollectionAssert.AreEquivalent(expected, actual, $"References mismatch in {assemblyName}.asmdef");
         }
 
         [Test]
@@ -46,7 +80,6 @@ namespace Line98.Tests.EditMode
 
             foreach (string file in csFiles)
             {
-                // Skip this test file itself
                 if (file.Contains("ArchitectureTests.cs")) continue;
 
                 string text = File.ReadAllText(file);
@@ -59,13 +92,65 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
-        public void NoUnityRandom_InCoreOrGameplay()
+        public void NoUnityRandom_InCoreGameplayOrPresentation()
         {
-            string coreDir = Path.Combine(m_ProjectRoot, "_Project/Core");
-            string gameplayDir = Path.Combine(m_ProjectRoot, "_Project/Gameplay");
+            AssertNoUnityRandomInDir(Path.Combine(m_ProjectRoot, "_Project/Core"));
+            AssertNoUnityRandomInDir(Path.Combine(m_ProjectRoot, "_Project/Gameplay"));
+            AssertNoUnityRandomInDir(Path.Combine(m_ProjectRoot, "_Project/Presentation"));
+        }
 
-            AssertNoUnityRandomInDir(coreDir);
-            AssertNoUnityRandomInDir(gameplayDir);
+        [Test]
+        public void AnimationGuardrails_NoAnimationReferencesInCoreGameplayOrServices()
+        {
+            string[] dirs =
+            {
+                Path.Combine(m_ProjectRoot, "_Project/Core"),
+                Path.Combine(m_ProjectRoot, "_Project/Gameplay"),
+                Path.Combine(m_ProjectRoot, "_Project/Services")
+            };
+
+            string[] bannedKeywords = { "UnityEngine.AnimationModule", "AnimationClip", "AnimatorController" };
+
+            foreach (string dir in dirs)
+            {
+                if (!Directory.Exists(dir)) continue;
+                string[] files = Directory.GetFiles(dir, "*.cs", SearchOption.AllDirectories);
+                foreach (string file in files)
+                {
+                    string text = File.ReadAllText(file);
+                    foreach (string banned in bannedKeywords)
+                    {
+                        Assert.IsFalse(text.Contains(banned),
+                            $"Animation reference '{banned}' found in {file}. Animation is banned outside Presentation per Animation plan §12.");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void MoveResolver_Resolve_ZeroAllocations()
+        {
+            BoardModel board = new BoardModel();
+            board.Set(new GridPos(0, 0), BallColor.Red);
+            PreviewQueue preview = new PreviewQueue();
+            XorShift128 rng = new XorShift128(12345);
+            MoveResolver resolver = new MoveResolver();
+            MovePlan targetPlan = new MovePlan();
+            MoveRequest request = new MoveRequest(new GridPos(0, 0), new GridPos(1, 1));
+            ScoreRules scoreRules = ScoreRules.Default;
+            SpawnRules spawnRules = SpawnRules.Default;
+
+            // Warm up
+            resolver.Resolve(board, preview, in rng, in request, in scoreRules, in spawnRules, 0, targetPlan);
+
+            long beforeBytes = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 100; i++)
+            {
+                resolver.Resolve(board, preview, in rng, in request, in scoreRules, in spawnRules, 0, targetPlan);
+            }
+            long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - beforeBytes;
+
+            Assert.AreEqual(0, allocatedBytes, $"MoveResolver.Resolve must allocate 0 bytes per call, but allocated {allocatedBytes} bytes over 100 iterations");
         }
 
         private static void AssertNoUnityRandomInDir(string dir)

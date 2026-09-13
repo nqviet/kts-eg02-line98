@@ -46,13 +46,15 @@ namespace Line98.Core
         public MoveOutcome Outcome { get; set; }
         public GridPos From { get; set; }
         public GridPos To { get; set; }
-        public List<GridPos> Path { get; } = new List<GridPos>();
+        public List<GridPos> Path { get; } = new List<GridPos>(81);
         public ClearGroup Cleared { get; set; }
         public SpawnBatch Spawned { get; set; }
         public int ScoreDelta { get; set; }
         public XorShift128 PostMoveRng { get; set; }
-        public BallColor[] NextPreviewQueue { get; set; }
+        public BallColor[] NextPreviewQueue { get; } = new BallColor[PreviewQueue.DefaultCapacity];
         public bool IsGameOver { get; set; }
+
+        public readonly SpawnItem[] SpawnItemsBuffer = new SpawnItem[PreviewQueue.DefaultCapacity];
 
         public void Reset()
         {
@@ -64,7 +66,6 @@ namespace Line98.Core
             Spawned = SpawnBatch.Empty;
             ScoreDelta = 0;
             PostMoveRng = default;
-            NextPreviewQueue = null;
             IsGameOver = false;
         }
     }

@@ -42,6 +42,31 @@
 - **Rationale:** Enables CLI and MCP-driven headless editor automation and live editor commands.
 - **Status:** Approved.
 
+### D9 (D-A): 7-Color Palette Alignment (Pink to Blue)
+- **Decision:** Swap `BallColor.Pink` to `BallColor.Blue` in the domain model.
+- **Rationale:** Aligns with `LINE_98_Design_assets.md`, `M_Ball_Blue.mat`, `sp_ball_blue.png`, and the icon specification.
+- **Status:** Approved & Implemented.
+
+### D10 (D-B): Zero-Allocation Move Pipeline
+- **Decision:** Use pooled double-buffered `MovePlan` and pre-allocated `SpawnItemsBuffer` with pooled callback slots.
+- **Rationale:** Guarantees 0 bytes allocated per move during gameplay across frame boundaries.
+- **Status:** Approved & Implemented.
+
+### D11 (D-C): Save Data Serialization Format
+- **Decision:** Commit to `Newtonsoft.Json` for atomic, versioned, migration-friendly saves.
+- **Rationale:** Outlined in Technical Stack §1 & Architecture §9.
+- **Status:** Approved.
+
+### D12 (D-D): Service Decomposition Timing
+- **Decision:** Maintain `GameSession` unified command target through M2; extract distinct sub-services during M3 product layer.
+- **Rationale:** Eliminates unnecessary abstraction churn while implementing presentation and game feel.
+- **Status:** Approved.
+
+### D13 (D-E): Quality Tiers & 60 FPS Framerate Target
+- **Decision:** Prune `QualitySettings.asset` to Low, Medium, High; set `targetFrameRate = 60` and `vSyncCount = 0`.
+- **Rationale:** Ensures deterministic benchmarks and prevents battery waste/throttling on mobile devices.
+- **Status:** Approved & Implemented.
+
 ---
 
 ## GDD Gap Resolutions (Concept Vocabularies §14)

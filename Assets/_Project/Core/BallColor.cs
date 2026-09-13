@@ -13,6 +13,6 @@ namespace Line98.Core
         Green = 4,
         Cyan = 5,
         Purple = 6,
-        Pink = 7
+        Blue = 7
     }
 }
