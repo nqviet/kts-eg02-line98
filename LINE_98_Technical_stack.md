@@ -16,7 +16,7 @@
 | Save serialization | **Newtonsoft Json** (`com.unity.nuget.newtonsoft-json`) | 3.2.1 | §23, vocab §10 | `JsonUtility` rejected: dictionaries, versioned migrations, null semantics |
 | Core RNG | **Hand-rolled `XorShift128`** | — | §25, vocab §8 | `UnityEngine.Random` banned in Core and Gameplay. 4×`ulong` state is part of `GameSnapshot` |
 | Tween / pooling / FSM / DI | **Hand-rolled (~300 LOC)** | — | vocab §13 | No DOTween, no Zenject/VContainer, no asset-store frameworks |
-| Camera | **Hand-rolled `CameraRig` + `CameraProfileSO`** | — | §10 | Cinemachine evaluated and rejected — 6 fields, one solver |
+| Camera | **Hand-rolled `CameraRig` + `CameraProfileSO` (3D Orthogonal)** | — | §10 | Cinemachine evaluated and rejected — 3D orthogonal rig with procedural `BoardFitSolver` |
 | VFX | **Pooled `ParticleSystem` + `TrailRenderer`** | — | §20 | VFX Graph rejected — needs compute, hurts low-end Android |
 | Audio | **Unity Audio + `AudioMixer`** | built-in | §19 | 2 music sources + N pooled SFX. FMOD/Wwise rejected (AAB size, workflow) |
 | Ads | **Google Mobile Ads (AdMob) Unity plugin** | v9/v10 line | §21 | Behind `IAdService`. LevelPlay evaluated as the alternative at M4 |
@@ -189,21 +189,21 @@ Each of these either duplicates ~300 LOC of hand-rolled code, adds native size t
 
 ---
 
-# 2.5D Support
+# 2.5D Support & 3D Orthogonal Rendering
 
 ## What "2.5D" means here
 
-**2D gameplay logic + 3D rendering from a locked, tilted perspective camera.** That's GDD §9 ("Modern 2.5D Premium Casual, soft depth, slightly toy-like") and §10 ("slight 2.5D perspective"). It is *not* 2D with stacked-sprite fake depth, and it is *not* an isometric/orthographic game.
+**2D gameplay logic + 3D rendering from a locked 3D orthogonal camera (axonometric tilt ~58° in 3D space with orthographic projection).** That's GDD §9 ("Modern 2.5D Premium Casual, soft depth, slightly toy-like") and §10 ("3D orthogonal camera"). It uses true 3D meshes, PBR lighting, crystal refraction shaders, and soft recessed bevels, combined with orthographic projection so parallel grid lines remain parallel and cell sizes remain completely uniform across the board.
 
-The design's own guardrail — vocab §9 — is the whole trick: **the tilt is visual only; the input raycast and `GridPos` mapping are computed on the board plane.**
+The design's own guardrail — vocab §9 — is the whole trick: **the tilt is visual only; the input raycast and `GridPos` mapping are computed on the board plane via mathematical plane intersection, completely independent of camera projection mode.**
 
 ## What in the stack delivers it
 
 | 2.5D need | Stack element | Why it holds up |
 |---|---|---|
-| Real depth + parallax | URP **3D Forward** + perspective camera | A 2.5D game is just a 3D game with a locked camera. URP doesn't restrict this at all |
+| Real depth + zero distortion | URP **3D Forward** + **3D orthogonal camera** | Full 3D meshes and PBR lighting rendered with orthographic projection: zero trapezoidal perspective distortion, 100% uniform cell size across rows |
 | Crystal/gem read | `CrystalBall.shadergraph` (fresnel rim, specular, inner mask) | Fresnel + specular are what sell "glass" — sprites can't fake this convincingly at 7 hues |
 | Soft depth on the board | Rounded cell mesh + blob-shadow quad + SDF frame shader | No realtime shadows needed; depth reads from geometry + tint, not from shadow maps |
-| Board always fills the screen | `CameraProfileSO` + `BoardFitSolver` | Solver projects the 4 board corners via `WorldToViewportPoint` and iterates distance until they fit 9:16 → 9:22 with padding |
-| 2.5D without arcade imprecision | Ray–**plane** intersection (`Plane.Raycast` on the mathematical board plane), **zero colliders, zero PhysX** | This is the line that makes a tilted camera safe: gameplay precision is identical to a flat grid |
+| Board always fills the screen | `CameraProfileSO` + `BoardFitSolver.SolveOrthographicSize` | Solver projects the 4 board corners via `WorldToViewportPoint` and iterates `orthographicSize` until they fit 9:16 → 9:22 with padding |
+| 2.5D without arcade imprecision | Ray–**plane** intersection (`Plane.Raycast` on the mathematical board plane), **zero colliders, zero PhysX** | Parallel rays from the orthographic camera intersect the horizontal board plane with exact 1:1 isometric mapping |
 | Gameplay untouched by the tilt | `BoardModel` ↔ `BoardView` split, world pos = `origin + (x,0,y) * pitch` on the board root | The tilt lives entirely in `Line98.Presentation`. `Line98.Core` cannot even see it — asmdefs make that structural |

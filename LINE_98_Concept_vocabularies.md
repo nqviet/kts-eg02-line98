@@ -68,7 +68,7 @@ Dependency arrows are read as "depends on". Gameplay must **never** reference Pr
 | 7 | Score table 5→9, combo multiplier, data-driven | Lookup table asset + pure evaluator | `ScoreTableSO`, `ScoreEvaluator.Evaluate(ClearGroup, in ScoreRules)` |
 | 8 | Move + clear sequences, 4 feedback tiers | Presentation-only director, event-driven | `FeedbackDirector`, `MoveAnimator`, `FeedbackProfileSO` (tier 5 / 6-7 / 8 / 9+) |
 | 9 | Modern 2.5D premium casual, crystal balls, 7 hues | URP + Shader Graph + palette asset | `CrystalBall.shadergraph`, `BallThemeSO` (Crystal), `BoardThemeSO` (Classic), `ColorPaletteSO` |
-| 10 | Portrait 2.5D camera, data-driven | Camera rig driven by profile asset | `CameraProfileSO` {fov, tiltX, yaw, distance, padding, parallax}, `CameraRig` |
+| 10 | 3D orthogonal camera, data-driven | Camera rig driven by profile asset | `CameraProfileSO` {isOrtho, orthoSize, fov, tiltX, yaw, distance, parallax}, `CameraRig` |
 | 11 | Top HUD / center board / bottom queue+undo+hint; menu list | uGUI + TMP, safe-area aware | `HudScreen`, `MainMenuScreen`, `UIRouter`, `SafeAreaFitter`, `PreviewQueueView` |
 | 12 | 3 free undos, rewarded undo, full state restore, no fake undo | Command/memento stack | `UndoService` (stack of `GameSnapshot`), `GameSnapshot` {board, score, queue, rngState, moveCount, statsDelta} |
 | 13 | Hint: legal move, highlight only | BFS × candidate search, no execution | `HintService.TryFindBestMove(...)` → `HintResult { from, to, expectedScore }` |
@@ -183,7 +183,7 @@ GDD repeatedly demands "data-driven" (§7, §10, §16, §17, §25). One asset ty
 | `BallThemeSO` | 7 `Color`, `Material`, pattern mask, rim intensity | §9, §16 |
 | `BoardThemeSO` | cell material, frame mesh, bg gradient, shadow intensity | §9, §16 |
 | `ClearEffectSO` | prefab key, pool size, tint source | §16, §20 |
-| `CameraProfileSO` | fov, tiltX, yaw, distance, padding, parallax | §10 |
+| `CameraProfileSO` | isOrtho, orthoSize, fov, tiltX, yaw, distance, parallax | §10 |
 | `AchievementSO` | id, `AchievementMetric`, threshold, locKey, icon | §17 |
 | `AudioCatalogSO` | key → clip, bus, volume, pitch variance | §19 |
 | `VfxCatalogSO` | key → pooled prefab, lifetime, budget | §20 |
@@ -288,14 +288,13 @@ Resolve order is fixed and non-negotiable: **validate → animate → mutate →
 |---|---|---|---|
 | 9 | Crystal/gem balls | URP + `CrystalBall.shadergraph`: base albedo × fresnel rim + specular + subtle inner refraction mask; 1 mesh, 7 tints via `MaterialPropertyBlock` (GPU instancing), ASTC 6×6 masks | 1–2 draw calls for all 81 balls |
 | 9 | Board | Rounded-box cell mesh + SDF-rounded board shader; blob shadow decal under each ball instead of realtime shadows | 1 draw call board, 1 instanced shadow |
-| 9 | Readability | 7 hues at equal luminance spacing + per-color pattern id (dot/stripe/gem-cut) as an accessibility option | — |
-| 10 | 2.5D camera | `CameraRig` applies `CameraProfileSO` (fov ~28, tiltX ~58°, small yaw, distance), `BoardFitSolver` derives cell pitch from viewport so 9×9 always fits 9:16 → 9:22 | Perspective + Orbit-free, no distortion at edges |
+| 10 | 3D orthogonal camera | `CameraRig` applies `CameraProfileSO` (isOrtho = true, orthoSize ~7.5, tiltX ~58°, yaw 0°, distance), `BoardFitSolver.SolveOrthographicSize` solves ortho size so 9×9 always fits 9:16 → 9:22 | Orthogonal + Orbit-free, uniform cell scale, zero edge distortion |
 | 11 | UI | uGUI + TMP, reference 1080×1920, `SafeAreaFitter` on HUD/root, 3 canvases (static HUD / dynamic score / popups) to avoid full-canvas rebuilds | ≤5 draw calls UI |
 | 19 | Audio | `AudioService` with 2 music sources + 1 SFX source per simultaneous sound (pool), `MainMixer` groups, Zen snapshot (no ducking, ambience bus), toggles persisted | ≤8 voices |
 | 20 | VFX | Pooled `ParticleSystem` prefabs (no VFX Graph — needs compute, hurts low-end Android): select glow, place pulse, line burst, combo ring, game-over; `TrailRenderer` per moving ball only; score popup = world-space TMP with DOT-less coroutine tween | ≤4 concurrent bursts, 0 alloc/frame |
 | 30 | Icon | 3 crystal balls (red/green/cyan) on a subtle 3×3 grid, top-left lit, no text; exported 1024 → validated at 48/72/96 px | — |
 
-**Camera decision:** a slight perspective tilt reads as "premium 2.5D" but costs arcade precision. Compromise: tilt is visual only — the input raycast and `GridPos` mapping are computed on the board plane, so gameplay is exactly as precise as a flat top-down grid while *looking* 2.5D.
+**Camera decision:** a 3D orthogonal camera (axonometric tilt ~58° with orthographic projection) delivers the optimal blend of modern tactile 3D depth and pure arcade precision. In an orthogonal projection, parallel grid lines remain parallel, guaranteeing uniform cell sizing and touch targets across all rows without trapezoidal perspective distortion, while the tilted 3D angle preserves rich specular crystal highlights, recessed cell bevels, and blob shadows. Input is calculated via mathematical plane raycast directly on the board plane.
 
 ---
 
@@ -381,4 +380,4 @@ The GDD is unusually complete, but these 12 points will force a decision during 
 | 9 | §21 interstitial placement | Only on `GameOver → New Game` transitions and menu returns; minimum 150 s; never within the first session's first 3 games. |
 | 10 | §15 "shareable result" on Android | V1: emoji-grid text → clipboard via `GUIUtility.systemCopyBuffer`. Native share sheet in V1.1. |
 | 11 | §9 7-color readability for color-vision deficiency | Ship a "Pattern hints" accessibility toggle (per-color shape overlay). Cheap, uses the theme's pattern mask. |
-| 12 | §10 "camera settings data-driven" scope | Exactly the 6 fields in `CameraProfileSO`; board fit is solved procedurally, not authored per device. |
+| 12 | §10 "camera settings data-driven" scope | Fields in `CameraProfileSO` (isOrtho, orthoSize, fov, tiltX, yaw, distance, parallax); board fit is solved procedurally via `BoardFitSolver.SolveOrthographicSize`, not authored per device. |

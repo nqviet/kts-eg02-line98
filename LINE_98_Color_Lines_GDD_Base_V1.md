@@ -344,15 +344,16 @@ The board must remain readable immediately.
 
 Portrait mobile.
 
-Use a slight 2.5D perspective.
+Use a 3D orthogonal camera (axonometric tilt ~58° in 3D space with orthographic projection).
 
 Requirements:
 - Board clearly readable
-- Balls visually separated
-- Minimal distortion
+- Uniform cell scale across all rows (no perspective foreshortening)
+- Balls visually separated with 3D depth and crystal shading
+- Zero distortion at screen edges
 - Comfortable one-handed play
 
-Keep camera settings data-driven.
+Keep camera settings data-driven (`CameraProfileSO`).
 
 ---
 

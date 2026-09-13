@@ -13,7 +13,7 @@ Per **GDD §35**: *"The original Line 98 mechanic is the asset. The player shoul
 - Spawned balls do not trigger immediate line clears.
 
 ### 2. Modern Premium Casual Execution (Does it feel modern?)
-- 2.5D perspective camera (FOV 28°, Pitch 58°) with zero touch-offset penalties.
+- 3D orthogonal camera (Orthographic projection, Pitch 58°) with uniform cell scale, zero edge distortion, and zero touch-offset penalties.
 - Tactile recessed board with soft ambient shadows and rounded ceramic aesthetic.
 - Glossy crystal gemstone spheres with fresnel rims and inner refraction depth.
 - Fluid ball motion: Selection Feedback → Path Flight → Soft Settle Bounce.

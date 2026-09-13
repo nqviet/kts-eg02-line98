@@ -10,7 +10,7 @@ namespace Line98.Presentation
     /// <summary>
     /// Master visual orchestrator for Line 98.
     /// Manages the visual board, pooled ball instances, procedural tween runner,
-    /// 2.5D camera rig, mathematical input router, and move pacing.
+    /// 3D orthogonal camera rig, mathematical input router, and move pacing.
     /// Dispatches a single unified Tick(dt) across all presentation sub-systems.
     /// </summary>
     [DisallowMultipleComponent]

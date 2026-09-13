@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1af9bbe8170359a42a82cc9f15ac5f60, type: 3}
   m_Name: CameraProfile_Default
   m_EditorClassIdentifier: Line98.Data::Line98.Data.CameraProfileSO
+  m_IsOrthographic: 1
+  m_OrthographicSize: 7.5
   m_FieldOfView: 28
   m_PitchAngle: 58
   m_YawAngle: 0

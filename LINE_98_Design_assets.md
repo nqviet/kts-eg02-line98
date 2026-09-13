@@ -26,7 +26,7 @@ The visual target in `main_scene_mockup.png` perfectly executes the core mandate
 1. **Physicality & Tactility:** The 9×9 grid is not a flat bitmap; it is a recessed ceramic/acrylic tray with soft ambient occlusions, containing glossy, light-refracting crystal spheres.
 2. **Neumorphic Soft-Depth UI:** The HUD elements (Score, Next, Best) and footer action buttons feature rounded chamfers, gentle top-highlights, and soft drop shadows that float cleanly above the scenic background.
 3. **Harmonious Nature Backdrop:** A serene alpine mountain lake at sunrise provides an expansive, calming contrast to the colorful board, anchoring both **Classic Mode** and **Zen Mode** (GDD §3).
-4. **Instant Readability & Precision:** Even with a tilted 2.5D perspective (FOV ~28°, Pitch ~58°), input remains 100% arcade-precise via plane raycasting (Architecture §6).
+4. **Instant Readability & Precision:** 3D orthogonal camera (Orthographic projection, Pitch ~58°) eliminates edge distortion and trapezoidal foreshortening, ensuring 100% uniform cell touch targets while mathematical plane raycasting guarantees arcade precision (Architecture §6).
 
 ---
 
@@ -114,9 +114,11 @@ As architected in **LINE_98_Technical_stack.md §2.5D Support** and **LINE_98_Ar
 ```
 
 ### Camera & Environment Configuration (`CameraProfileSO`)
-- **Field of View:** `28.0°` (reduces edge perspective distortion).
-- **Pitch Angle (Tilt X):** `58.0°` (provides clear 3D ball depth while keeping grid cells easily touchable).
+- **Projection:** Orthographic (3D Orthogonal Camera).
+- **Pitch Angle (Tilt X):** `58.0°` (provides rich 3D ball depth, crystal bevels, and recessed cell cavities while keeping grid cells easily touchable).
 - **Yaw Angle:** `0.0°` (perfect center alignment).
+- **Orthographic Size:** Procedurally solved via `BoardFitSolver.SolveOrthographicSize` (~6.8–7.5 baseline) to fit 9:16 through 9:22 portrait screens cleanly without edge distortion.
+- **Distance:** `18.5` (defines view frustum clipping bounds along camera look vector).
 - **Parallax Background Factor:** `0.05` (slight gyro/drag camera reaction for premium feel).
 - **Post-Processing (Low-cost Mobile Tier):**
   - ACES Tonemapping.
@@ -255,7 +257,7 @@ The bridge between raw art assets and architectural runtime systems is strictly 
  Assets/_Project/Content/Definitions/
   ├── BallTheme_Crystal.asset         --> References 7 Materials + T_Ball_Accessibility_Patterns
   ├── BoardTheme_Classic.asset        --> References SM_BoardFrame, SM_BoardCell, M_BoardCell
-  ├── CameraProfile_Default.asset     --> FOV: 28, Tilt: 58, Dist: 18.5, Parallax: 0.05
+  ├── CameraProfile_Default.asset     --> IsOrtho: true, OrthoSize: 7.5, Tilt: 58, Dist: 18.5, Parallax: 0.05
   ├── FeedbackProfile_Tiers.asset     --> Maps 5, 6-7, 8, 9+ to VFX, SFX, and Camera Shake
   ├── VfxCatalog_Default.asset        --> Pre-warmed pool capacities (Burst: 4, Popups: 8)
   └── AudioCatalog_Default.asset      --> AudioClips mapped to bus and volume variances

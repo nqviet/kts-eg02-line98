@@ -93,5 +93,5 @@
     V1 formats a shareable emoji/text grid copied directly to the clipboard via `GUIUtility.systemCopyBuffer`. Native OS share sheet deferred to V1.1.
 11. **Accessibility / Color-Vision Deficiency (§9):**
     Provide a toggleable pattern hint overlay (shape glyphs per color) rendered via accessibility texture masks.
-12. **Camera Tuning Scope (§10):**
-    Camera parameters strictly governed by `CameraProfileSO` (FOV 28°, Pitch 58°, Yaw 0°, Distance 18.5, Parallax 0.05). Screen adaptation across aspect ratios (9:16 to 9:22) is procedurally handled by `BoardFitSolver`.
+12. **Camera Tuning Scope & 3D Orthogonal Camera (§10):**
+    Camera architecture uses a **3D orthogonal camera** (orthographic projection tilted in 3D space at Pitch 58°, Yaw 0°), strictly governed by `CameraProfileSO` (`IsOrthographic = true`, `OrthographicSize = 7.5`, Pitch 58°, Yaw 0°, Distance 18.5, Parallax 0.05). This eliminates perspective foreshortening and edge distortion, ensuring perfectly uniform cell sizing and touch targets across all rows while preserving full 3D lighting, bevel depth, crystal reflections, and procedural screen adaptation across portrait aspect ratios (9:16 to 9:22) via `BoardFitSolver.SolveOrthographicSize`.
