@@ -18,6 +18,8 @@ namespace Line98.App
 
         public GameSession ActiveSession => m_ActiveSession;
 
+        public event Action<IGameModeStrategy> OnModeChanged;
+
         public GameManager(GameSession session = null)
         {
             s_Instance = this;
@@ -26,21 +28,27 @@ namespace Line98.App
 
         public void StartClassicGame(uint? customSeed = null)
         {
-            m_ActiveSession.SetMode(new ClassicMode());
+            var mode = new ClassicMode();
+            m_ActiveSession.SetMode(mode);
             m_ActiveSession.StartNewGame(customSeed);
+            OnModeChanged?.Invoke(mode);
         }
 
         public void StartDailyChallenge(string dateString = null)
         {
             string date = dateString ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
-            m_ActiveSession.SetMode(new DailyChallengeMode(date));
+            var mode = new DailyChallengeMode(date);
+            m_ActiveSession.SetMode(mode);
             m_ActiveSession.StartNewGame();
+            OnModeChanged?.Invoke(mode);
         }
 
         public void StartZenMode()
         {
-            m_ActiveSession.SetMode(new ZenMode());
+            var mode = new ZenMode();
+            m_ActiveSession.SetMode(mode);
             m_ActiveSession.StartNewGame();
+            OnModeChanged?.Invoke(mode);
         }
     }
 }

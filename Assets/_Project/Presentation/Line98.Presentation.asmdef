@@ -6,7 +6,8 @@
     "Line98.Data",
     "Line98.Gameplay",
     "Unity.TextMeshPro",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

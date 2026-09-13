@@ -56,6 +56,31 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
+        public void MockupRowDepth_AllCellCentersAndEdgesRemainPickable()
+        {
+            var theme = ScriptableObject.CreateInstance<Line98.Data.BoardThemeSO>();
+            try
+            {
+                var serialized = new UnityEditor.SerializedObject(theme);
+                float scale = 1f / Mathf.Sin(58f * Mathf.Deg2Rad);
+                serialized.FindProperty("m_RowPitchScale").floatValue = scale;
+                serialized.ApplyModifiedProperties();
+                m_BoardView.Initialize(theme);
+                m_BoardGo.transform.position = new Vector3(2f,0f,3f);
+                for (int y=0;y<9;y++)
+                for (int x=0;x<9;x++)
+                {
+                    var expected = new GridPos(x,y);
+                    var world = m_BoardView.GridToWorld(expected);
+                    Assert.IsTrue(m_BoardView.WorldToGrid(world + new Vector3(.49f,0,.49f*scale),out var actual));
+                    Assert.AreEqual(expected,actual);
+                }
+                Assert.IsFalse(m_BoardView.WorldToGrid(m_BoardView.GridToWorld(new GridPos(4,8)) + new Vector3(0,0,.51f*scale),out _));
+            }
+            finally { Object.DestroyImmediate(theme); }
+        }
+
+        [Test]
         public void CenterCell_IsLocatedAtBoardOrigin()
         {
             GridPos center = new GridPos(4, 4);

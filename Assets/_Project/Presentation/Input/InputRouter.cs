@@ -40,6 +40,7 @@ namespace Line98.Presentation
         public bool HasSelection => m_State == InputState.BallSelected;
         public GridPos SelectedPos => m_SelectedPos;
         public bool IsLocked => m_State == InputState.Locked || Time.time < m_LockUntilTime;
+        public bool IsPointerOverUi => UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
         public void Initialize(Camera cam, BoardView boardView, GameSession session)
         {
@@ -104,6 +105,11 @@ namespace Line98.Presentation
             }
 
             if (!pressed) return;
+
+            if (pointer != null && UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(pointer.deviceId))
+            {
+                return;
+            }
 
             if (IsLocked)
             {

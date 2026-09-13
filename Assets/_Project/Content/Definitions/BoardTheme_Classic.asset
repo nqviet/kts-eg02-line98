@@ -16,3 +16,4 @@ MonoBehaviour:
   m_BoardCellPrefab: {fileID: 0}
   m_BoardCellMaterial: {fileID: 2100000, guid: 2336dc8052f58ab4bab9ceb71c2c5621, type: 2}
   m_BoardFrameMaterial: {fileID: 2100000, guid: eca17fb4af95afe44a71ca853ca572ef, type: 2}
+  m_RowPitchScale: 1.1791784

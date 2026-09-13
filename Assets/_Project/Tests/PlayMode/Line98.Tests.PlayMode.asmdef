@@ -2,13 +2,16 @@
   "name": "Line98.Tests.PlayMode",
   "rootNamespace": "Line98.Tests.PlayMode",
   "references": [
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner",
     "Line98.Core",
     "Line98.Data",
     "Line98.Gameplay",
     "Line98.App",
-    "Line98.Presentation"
+    "Line98.Presentation",
+    "Unity.InputSystem",
+    "UnityEngine.UI"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

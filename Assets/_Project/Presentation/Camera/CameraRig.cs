@@ -26,19 +26,53 @@ namespace Line98.Presentation
         private Vector3 m_BoardCenter = Vector3.zero;
         private float m_BoardExtentX = 9.0f;
         private float m_BoardExtentZ = 9.0f;
+        private Vector2 m_MinViewport = BoardFitSolver.DefaultMinViewport;
+        private Vector2 m_MaxViewport = BoardFitSolver.DefaultMaxViewport;
+        private Renderer m_Backdrop;
+
+        public void SetBackdrop(Renderer backdrop)
+        {
+            m_Backdrop = backdrop;
+            if (m_Backdrop == null) return;
+            m_Backdrop.transform.SetParent(m_Camera.transform, false);
+            UpdateBackdrop();
+        }
+
+        private void UpdateBackdrop()
+        {
+            if (m_Backdrop == null) return;
+            const float depth = 70f;
+            float height = m_Camera.orthographic ? m_Camera.orthographicSize * 2f
+                : 2f * depth * Mathf.Tan(m_Camera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            Texture texture = m_Backdrop.sharedMaterial.mainTexture;
+            float aspect = texture != null ? (float)texture.width / texture.height : 9f / 16f;
+            height = Mathf.Max(height, height * m_Camera.aspect / aspect);
+            m_Backdrop.transform.localPosition = new Vector3(0f, 0f, depth);
+            m_Backdrop.transform.localRotation = Quaternion.identity;
+            m_Backdrop.transform.localScale = new Vector3(height * aspect, height, 1f);
+        }
 
         public Camera Camera => m_Camera;
         public CamShake CamShake => m_CamShake;
         public float SolvedDistance => m_SolvedDistance;
         public float SolvedOrthographicSize => m_SolvedOrthographicSize;
         public bool IsOrthographic => m_Camera != null && m_Camera.orthographic;
+        public Vector2 MinViewport => m_MinViewport;
+        public Vector2 MaxViewport => m_MaxViewport;
 
-        public void Initialize(CameraProfileSO profile, Vector3 boardCenter, float boardSize = 9.0f)
+        public void SetTargetViewport(Vector2 minViewport, Vector2 maxViewport)
+        {
+            m_MinViewport = minViewport;
+            m_MaxViewport = maxViewport;
+            RefitCamera();
+        }
+
+        public void Initialize(CameraProfileSO profile, Vector3 boardCenter, float boardSize = 9.0f, float boardDepth = 0f)
         {
             m_Profile = profile;
             m_BoardCenter = boardCenter;
             m_BoardExtentX = boardSize;
-            m_BoardExtentZ = boardSize;
+            m_BoardExtentZ = boardDepth > 0f ? boardDepth : boardSize;
 
             EnsureRigHierarchy();
             ApplyProfile();
@@ -131,8 +165,8 @@ namespace Line98.Presentation
                     m_BoardCenter,
                     pitch,
                     yaw,
-                    BoardFitSolver.DefaultMinViewport,
-                    BoardFitSolver.DefaultMaxViewport,
+                    m_MinViewport,
+                    m_MaxViewport,
                     minOrthoSize: 2f,
                     maxOrthoSize: 30f);
 
@@ -148,14 +182,22 @@ namespace Line98.Presentation
                     m_BoardCenter,
                     pitch,
                     yaw,
-                    BoardFitSolver.DefaultMinViewport,
-                    BoardFitSolver.DefaultMaxViewport,
+                    m_MinViewport,
+                    m_MaxViewport,
                     minDistance: 8f,
                     maxDistance: 40f);
             }
 
-            m_Camera.transform.localPosition = new Vector3(0f, 0f, -m_SolvedDistance);
+            // Center the board inside the HUD's reserved rectangle, including on tall screens.
+            Vector2 viewportCenter = (m_MinViewport + m_MaxViewport) * 0.5f;
+            Vector3 framingOffset = m_Camera.orthographic
+                ? new Vector3((0.5f - viewportCenter.x) * 2f * m_SolvedOrthographicSize * m_Camera.aspect,
+                    (0.5f - viewportCenter.y) * 2f * m_SolvedOrthographicSize, 0f)
+                : Vector3.zero;
+            m_Camera.transform.localPosition = new Vector3(0f, 0f, -m_SolvedDistance) + framingOffset;
             m_Camera.transform.localRotation = Quaternion.identity;
+
+            UpdateBackdrop();
 
             m_LastScreenWidth = Screen.width;
             m_LastScreenHeight = Screen.height;

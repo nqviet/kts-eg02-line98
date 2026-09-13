@@ -26,7 +26,7 @@ namespace Line98.Tests.EditMode
             AssertAsmdefReferences("Line98.Data", new[] { "Line98.Core" });
             AssertAsmdefReferences("Line98.Gameplay", new[] { "Line98.Core", "Line98.Data" });
             AssertAsmdefReferences("Line98.Services", new[] { "Line98.Core", "Line98.Data" });
-            AssertAsmdefReferences("Line98.Presentation", new[] { "Line98.Core", "Line98.Data", "Line98.Gameplay", "Unity.TextMeshPro", "Unity.InputSystem" });
+            AssertAsmdefReferences("Line98.Presentation", new[] { "Line98.Core", "Line98.Data", "Line98.Gameplay", "Unity.TextMeshPro", "Unity.InputSystem", "UnityEngine.UI" });
             AssertAsmdefReferences("Line98.App", new[] { "Line98.Core", "Line98.Data", "Line98.Gameplay", "Line98.Presentation", "Line98.Services" });
         }
 

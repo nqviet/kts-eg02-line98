@@ -24,6 +24,7 @@ namespace Line98.Presentation
         [SerializeField] private BoardThemeSO m_BoardTheme;
 
         [Header("Art Assets")]
+        [SerializeField] private Renderer m_Backdrop;
         [SerializeField] private Mesh m_CellMesh;
         [SerializeField] private Mesh m_FrameMesh;
         [SerializeField] private Mesh m_BallMesh;
@@ -38,6 +39,9 @@ namespace Line98.Presentation
         [SerializeField] private CameraRig m_CameraRig;
         [SerializeField] private BoardView m_BoardView;
         [SerializeField] private InputRouter m_InputRouter;
+        [SerializeField] private UIRouter m_UIRouter;
+        [SerializeField] private HudPresenter m_HudPresenter;
+        [SerializeField] private UiThemeSO m_UiTheme;
 
         private GameSession m_Session;
         private TweenRunner m_TweenRunner;
@@ -54,6 +58,8 @@ namespace Line98.Presentation
         public TweenRunner TweenRunner => m_TweenRunner;
         public MovePacer MovePacer => m_MovePacer;
         public InputRouter InputRouter => m_InputRouter;
+        public UIRouter UIRouter => m_UIRouter;
+        public HudPresenter HudPresenter => m_HudPresenter;
 
         public void Initialize(
             GameSession session,
@@ -89,7 +95,15 @@ namespace Line98.Presentation
                 camGo.transform.SetParent(transform, false);
                 m_CameraRig = camGo.AddComponent<CameraRig>();
             }
-            m_CameraRig.Initialize(m_CameraProfile, m_BoardView.transform.position, m_BoardView.BoardExtent);
+            m_CameraRig.Initialize(m_CameraProfile, m_BoardView.transform.position, m_BoardView.BoardExtent + 0.4f,
+                m_BoardView.BoardDepth + 0.4f * m_BoardView.RowPitchScale);
+            m_CameraRig.SetBackdrop(m_Backdrop);
+
+            // Fit camera into UI solver board viewport
+            var layout = HudLayoutSolver.Solve(HudLayoutSolver.ReferenceWidth, HudLayoutSolver.ReferenceHeight);
+            m_CameraRig.SetTargetViewport(layout.BoardViewportRect.min, layout.BoardViewportRect.max);
+            if (m_HudPresenter != null)
+                m_HudPresenter.GetComponent<SafeAreaFitter>()?.RefreshSafeArea(force: true);
 
             // 4. Initialize BallViewManager & prewarm 81 instances
             var ballsRoot = transform.Find("Balls_Root");
@@ -135,6 +149,17 @@ namespace Line98.Presentation
 
                 // Sync initial board state (e.g. 5 initial balls)
                 m_BallManager.SyncFromBoard(m_Session.Board, m_BoardView);
+            }
+
+            // 8. Initialize UI Router and HUD Presenter
+            if (m_UIRouter != null)
+            {
+                m_UIRouter.Initialize(m_TweenRunner);
+            }
+
+            if (m_HudPresenter != null && m_Session != null)
+            {
+                m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme);
             }
 
             m_IsInitialized = true;
@@ -186,6 +211,7 @@ namespace Line98.Presentation
             m_CameraRig.Tick(dt);
             m_MovePacer.Tick(dt);
             m_InputRouter.Tick(dt);
+            m_UIRouter?.Tick(dt);
         }
 
         private void Update()

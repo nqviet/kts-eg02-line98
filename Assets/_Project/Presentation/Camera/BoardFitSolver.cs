@@ -49,6 +49,12 @@ namespace Line98.Presentation
             camera.transform.rotation = rotation;
             camera.transform.position = center + rotation * new Vector3(0f, 0f, -20.0f);
 
+            // Fit size independently of the reserved rectangle's location. CameraRig applies
+            // the matching screen-space translation after solving.
+            Vector2 viewportHalfSize = (maxViewport - minViewport) * 0.5f;
+            minViewport = Vector2.one * 0.5f - viewportHalfSize;
+            maxViewport = Vector2.one * 0.5f + viewportHalfSize;
+
             // 24 binary search iterations yield sub-millimeter precision
             for (int i = 0; i < 24; i++)
             {

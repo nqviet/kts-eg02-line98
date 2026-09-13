@@ -255,5 +255,41 @@ namespace Line98.Editor
             api.Execute(new UnityEditor.TestTools.TestRunner.Api.ExecutionSettings(filter));
             Debug.Log("[TestRunner] Dispatched EditMode test run.");
         }
+
+        [MenuItem("Line98/Tests/Run PlayMode Tests")]
+        public static void RunPlayModeTests()
+        {
+            var api = ScriptableObject.CreateInstance<UnityEditor.TestTools.TestRunner.Api.TestRunnerApi>();
+            var filter = new UnityEditor.TestTools.TestRunner.Api.Filter
+            {
+                testMode = UnityEditor.TestTools.TestRunner.Api.TestMode.PlayMode
+            };
+
+            api.RegisterCallbacks(new TestCallbacks());
+            api.Execute(new UnityEditor.TestTools.TestRunner.Api.ExecutionSettings(filter));
+            Debug.Log("[TestRunner] Dispatched PlayMode test run.");
+        }
+
+        [MenuItem("Line98/Tests/Run All Tests")]
+        public static void RunAllTests()
+        {
+            var api = ScriptableObject.CreateInstance<UnityEditor.TestTools.TestRunner.Api.TestRunnerApi>();
+            var filter = new UnityEditor.TestTools.TestRunner.Api.Filter
+            {
+                testMode = UnityEditor.TestTools.TestRunner.Api.TestMode.EditMode | UnityEditor.TestTools.TestRunner.Api.TestMode.PlayMode
+            };
+
+            api.RegisterCallbacks(new TestCallbacks());
+            api.Execute(new UnityEditor.TestTools.TestRunner.Api.ExecutionSettings(filter));
+            Debug.Log("[TestRunner] Dispatched All tests run.");
+        }
+
+        [MenuItem("Line98/Debug/Capture Screenshot In PlayMode")]
+        public static void CaptureScreenshotInPlayMode()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "game_playmode_screen.png");
+            ScreenCapture.CaptureScreenshot(path);
+            Debug.Log($"[Screenshot] Capture dispatched to {path}");
+        }
     }
 }

@@ -54,6 +54,7 @@ namespace Line98.Core
         private readonly BallColor[] m_Queue;
 
         public int Capacity => m_Queue.Length;
+        public int Count => m_Queue.Length;
 
         public PreviewQueue(int capacity = DefaultCapacity)
         {

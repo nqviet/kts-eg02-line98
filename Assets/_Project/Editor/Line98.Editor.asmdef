@@ -12,7 +12,10 @@
     "Unity.RenderPipelines.Universal.Runtime",
     "Unity.RenderPipelines.Core.Editor",
     "Unity.RenderPipelines.Core.Runtime",
-    "UnityEditor.TestRunner"
+    "UnityEditor.TestRunner",
+    "Unity.TextMeshPro",
+    "Unity.InputSystem",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [
     "Editor"

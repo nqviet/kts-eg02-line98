@@ -84,6 +84,34 @@ namespace Line98.Tests.EditMode
             Assert.LessOrEqual(size, 30.0f);
         }
 
+        [TestCase(1920f)]
+        [TestCase(2340f)]
+        [TestCase(2640f)]
+        public void HudViewport_ContainsSquareBoardAndCentersIt(float height)
+        {
+            var rigGo = new GameObject("TestHudRig");
+            try
+            {
+                var rig = rigGo.AddComponent<CameraRig>();
+                float depth = 9.4f / Mathf.Sin(58f * Mathf.Deg2Rad);
+                rig.Initialize(null,Vector3.zero,9.4f,depth);
+                rig.Camera.aspect = 1080f / height;
+                var rect = HudLayoutSolver.Solve(1080f,height,60f,48f).BoardViewportRect;
+                rig.SetTargetViewport(rect.min,rect.max);
+                var center = rig.Camera.WorldToViewportPoint(Vector3.zero);
+                Assert.AreEqual(rect.center.x,center.x,.001f);
+                Assert.AreEqual(rect.center.y,center.y,.001f);
+                var lower = rig.Camera.WorldToViewportPoint(new Vector3(-4.7f,0,-depth*.5f));
+                var upper = rig.Camera.WorldToViewportPoint(new Vector3(4.7f,0,depth*.5f));
+                Assert.GreaterOrEqual(lower.x,rect.xMin-.001f);
+                Assert.GreaterOrEqual(lower.y,rect.yMin-.001f);
+                Assert.LessOrEqual(upper.x,rect.xMax+.001f);
+                Assert.LessOrEqual(upper.y,rect.yMax+.001f);
+                Assert.AreEqual((upper.x-lower.x)*1080,(upper.y-lower.y)*height,1f);
+            }
+            finally { Object.DestroyImmediate(rigGo); }
+        }
+
         [Test]
         public void SolveOrthographicSize_TighterViewportRequiresGreaterSize()
         {

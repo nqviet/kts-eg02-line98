@@ -1,8 +1,12 @@
 using System.Collections;
 using Line98.Core;
 using Line98.Gameplay;
+using Line98.Presentation;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Line98.Tests.PlayMode
@@ -61,6 +65,60 @@ namespace Line98.Tests.PlayMode
             // Non-clearing move spawned 3 balls: 3 initial + 3 spawned = 6 occupied
             Assert.AreEqual(6, session.Board.OccupiedCount);
             Assert.AreEqual(75, session.Board.EmptyCount);
+        }
+
+        [UnityTest]
+        public IEnumerator UI_ArchitectureAndSortingOrders_SmokeTest()
+        {
+            // Ensure Game scene is active
+            if (!SceneManager.GetActiveScene().name.Equals("Game"))
+            {
+                yield return SceneManager.LoadSceneAsync("Game");
+            }
+
+            yield return null;
+
+            // 1. Verify UI_Root and UIRouter
+            var uiRoot = GameObject.Find("UI_Root");
+            Assert.IsNotNull(uiRoot, "UI_Root GameObject must exist in Game scene");
+
+            var router = uiRoot.GetComponent<UIRouter>();
+            Assert.IsNotNull(router, "UIRouter component must exist on UI_Root");
+
+            // 2. Verify Canvases and Sorting Orders (0 / 10 / 20)
+            Assert.IsNotNull(router.StaticCanvas, "StaticCanvas must exist");
+            Assert.IsNotNull(router.DynamicCanvas, "DynamicCanvas must exist");
+            Assert.IsNotNull(router.PopupCanvas, "PopupCanvas must exist");
+
+            Assert.AreEqual(0, router.StaticCanvas.sortingOrder, "Canvas_StaticHUD sortingOrder must be 0");
+            Assert.AreEqual(10, router.DynamicCanvas.sortingOrder, "Canvas_DynamicHUD sortingOrder must be 10");
+            Assert.AreEqual(20, router.PopupCanvas.sortingOrder, "Canvas_Popups sortingOrder must be 20");
+
+            // 3. Verify EventSystem uses InputSystemUIInputModule
+            var eventSystem = Object.FindAnyObjectByType<EventSystem>();
+            Assert.IsNotNull(eventSystem, "EventSystem must exist in Game scene");
+            var inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+            Assert.IsNotNull(inputModule, "EventSystem must use InputSystemUIInputModule");
+
+            // 4. Verify PresentationRoot & CameraRig Viewport contract
+            var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
+            Assert.IsNotNull(presRoot, "PresentationRoot must exist in Game scene");
+
+            var layout = HudLayoutSolver.Solve(HudLayoutSolver.ReferenceWidth, HudLayoutSolver.ReferenceHeight);
+            Assert.AreEqual(layout.BoardViewportRect.min.x, presRoot.CameraRig.MinViewport.x, 0.01f, "CameraRig MinViewport.x must match solver");
+            Assert.AreEqual(layout.BoardViewportRect.min.y, presRoot.CameraRig.MinViewport.y, 0.01f, "CameraRig MinViewport.y must match solver");
+            Assert.AreEqual(layout.BoardViewportRect.max.x, presRoot.CameraRig.MaxViewport.x, 0.01f, "CameraRig MaxViewport.x must match solver");
+            Assert.AreEqual(layout.BoardViewportRect.max.y, presRoot.CameraRig.MaxViewport.y, 0.01f, "CameraRig MaxViewport.y must match solver");
+
+            // 5. Verify HudPresenter is wired
+            var presenter = uiRoot.GetComponent<HudPresenter>();
+            Assert.IsNotNull(presenter, "HudPresenter must exist on UI_Root");
+            Assert.IsNotNull(presenter.ScoreNumber, "ScoreNumber must be bound");
+            Assert.IsNotNull(presenter.BestNumber, "BestNumber must be bound");
+            Assert.IsNotNull(presenter.PreviewView, "PreviewView must be bound");
+            Assert.IsNotNull(presenter.UndoButtonView, "UndoButtonView must be bound");
+
+            yield return null;
         }
     }
 }

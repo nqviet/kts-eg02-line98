@@ -9,10 +9,12 @@ namespace Line98.Data
         [SerializeField] private GameObject m_BoardCellPrefab;
         [SerializeField] private Material m_BoardCellMaterial;
         [SerializeField] private Material m_BoardFrameMaterial;
+        [SerializeField, Min(0.1f)] private float m_RowPitchScale = 1f;
 
         public GameObject BoardFramePrefab => m_BoardFramePrefab;
         public GameObject BoardCellPrefab => m_BoardCellPrefab;
         public Material BoardCellMaterial => m_BoardCellMaterial;
         public Material BoardFrameMaterial => m_BoardFrameMaterial;
+        public float RowPitchScale => m_RowPitchScale;
     }
 }

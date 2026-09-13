@@ -30,6 +30,8 @@ namespace Line98.Presentation
 
         public float CellPitch => m_CellPitch;
         public float BoardExtent => BoardDimension * m_CellPitch;
+        public float RowPitchScale => m_Theme != null ? m_Theme.RowPitchScale : 1f;
+        public float BoardDepth => BoardExtent * RowPitchScale;
         public bool IsInitialized => m_IsInitialized;
 
         public void Initialize(BoardThemeSO theme = null, Mesh cellMesh = null, Material cellMat = null, Mesh frameMesh = null, Material frameMat = null)
@@ -107,7 +109,7 @@ namespace Line98.Presentation
         public Vector3 GridToWorld(GridPos pos)
         {
             float worldX = (pos.X - 4) * m_CellPitch;
-            float worldZ = (pos.Y - 4) * m_CellPitch;
+            float worldZ = (pos.Y - 4) * m_CellPitch * RowPitchScale;
             return transform.position + new Vector3(worldX, 0f, worldZ);
         }
 
@@ -115,7 +117,7 @@ namespace Line98.Presentation
         {
             Vector3 localPos = worldPos - transform.position;
             float fx = localPos.x / m_CellPitch + 4f;
-            float fz = localPos.z / m_CellPitch + 4f;
+            float fz = localPos.z / (m_CellPitch * RowPitchScale) + 4f;
 
             int x = Mathf.RoundToInt(fx);
             int y = Mathf.RoundToInt(fz);

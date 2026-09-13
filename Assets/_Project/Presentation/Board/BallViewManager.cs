@@ -68,7 +68,7 @@ namespace Line98.Presentation
 
         public Material GetMaterial(BallColor color)
         {
-            int index = (int)color;
+            int index = (int)color - 1;
             if (index >= 0 && index < m_ColorMaterials.Length)
             {
                 return m_ColorMaterials[index];

@@ -2,8 +2,6 @@
   "name": "Line98.Tests.EditMode",
   "rootNamespace": "Line98.Tests.EditMode",
   "references": [
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner",
     "Line98.Core",
     "Line98.Data",
     "Line98.Gameplay",
@@ -11,6 +9,9 @@
     "Line98.App",
     "Line98.Presentation",
     "Line98.Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
   ],
   "includePlatforms": [
     "Editor"
