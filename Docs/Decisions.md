@@ -67,6 +67,36 @@
 - **Rationale:** Ensures deterministic benchmarks and prevents battery waste/throttling on mobile devices.
 - **Status:** Approved & Implemented.
 
+### D14: Mockup Asset Promotion via GUID-Preserving Move
+- **Decision:** Move polished mockup materials and meshes into canonical paths under `Assets/Art/Materials/` and `Assets/Art/Meshes/` rather than re-authoring from scratch.
+- **Rationale:** Moving assets preserves GUIDs, keeping all scene references and fine-tuned shader parameters (`_Size`, `_Radius`, `_Border`, `_Inset`, `_Padding`, `_Feather`, render queues) byte-for-byte identical without risk of visual drift or regression.
+- **Status:** Approved & Implemented.
+
+### D15: Ordered Replacement of Canonical Placeholders
+- **Decision:** Pre-wire theme ScriptableObjects to mockup assets first, delete unpolished placeholder materials (`Universal Render Pipeline/Lit`), and then promote polished assets to canonical paths.
+- **Rationale:** Prevents dangling missing-reference GUIDs in `BallThemeSO` and `BoardThemeSO` while establishing the canonical `M_Ball_*` and `M_Board*` naming.
+- **Status:** Approved & Implemented.
+
+### D16: Single Canonical Background Consolidation
+- **Decision:** Retain the high-resolution stylized anime alpine lake painting as the canonical `T_Background_AlpineLake.png` and remove duplicate/stock photo textures.
+- **Rationale:** Perfectly matches the game's modern 2.5D visual aesthetic and eliminates 4.8 MB of redundant texture storage.
+- **Status:** Approved & Implemented.
+
+### D17: Design Reference Isolation
+- **Decision:** Move `main_scene_mockup.png` out of `Assets/` to `Docs/Design/main_scene_mockup.png`, served in-editor via an ephemeral non-saving overlay tool (`[MenuItem("Line98/Dev/Show Design Reference Overlay _F9")]`).
+- **Rationale:** Prevents design mockups from being imported by Unity's AssetDatabase, generating meta files, or bundling into release builds.
+- **Status:** Approved & Implemented.
+
+### D18: Strict UI Element Ownership & Sprite Deprecation
+- **Decision:** Enforce that uGUI `Image` components carry either a Sprite or a procedural material (`M_Ui_*`), never both or stale unreferenced references. Remove orphaned UI bitmap textures superseded by procedural frosted panel shaders and vector graphics (`VectorIconGraphic`).
+- **Rationale:** Eliminates 13 orphaned UI sprites, prevents canvas redraws on duplicate image layers, and reduces package download size.
+- **Status:** Approved & Implemented.
+
+### D19: Theme ScriptableObjects as Single Source of Truth
+- **Decision:** Make `BallThemeSO` and `BoardThemeSO` authoritative for ball/board meshes and materials, establishing a data-driven pipeline for future cosmetic themes (GDD §16).
+- **Rationale:** Eliminates duplicated asset references in `PresentationRoot`, decouples scene composition from visual themes, and enables runtime theme swapping.
+- **Status:** Approved & Implemented.
+
 ---
 
 ## GDD Gap Resolutions (Concept Vocabularies §14)

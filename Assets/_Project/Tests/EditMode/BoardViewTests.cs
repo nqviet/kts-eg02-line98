@@ -56,7 +56,7 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
-        public void MockupRowDepth_AllCellCentersAndEdgesRemainPickable()
+        public void RowDepth_AllCellCentersAndEdgesRemainPickable()
         {
             var theme = ScriptableObject.CreateInstance<Line98.Data.BoardThemeSO>();
             try

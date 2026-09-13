@@ -8,7 +8,7 @@ namespace Line98.Tests.EditMode
     public class UiLayoutTests
     {
         [Test]
-        public void Solve_ReferenceResolution_MatchesMockupLayoutSpec()
+        public void Solve_ReferenceResolution_MatchesDesignLayoutSpec()
         {
             var result = HudLayoutSolver.Solve(1080f, 1920f, 0f, 0f);
 

@@ -47,13 +47,18 @@ All 3D assets will be modeled in Blender 4.x and imported via `.fbx` with a stri
 
 ### Mesh Asset Inventory
 
-| Asset Name | Target Geometry | Budget (Tris) | UV Channels | Technical Function & Layer |
-|---|---|---|---|---|
-| `SM_Ball_Gem.fbx` | UV-Sphere / Rounded Gem with subtle bevels | 500–700 tris | UV0: MatCap / Pattern mask | Pooled `BallView` presentation object. Shared across all 7 colors. |
-| `SM_BoardCell.fbx` | Beveled rounded-box cell with concave depression | 120–180 tris | UV0: Lightmap/AO mapping | Instanced 81 times on the board grid to form the 9×9 tray. |
-| `SM_BoardFrame.fbx` | Rounded-rectangle outer bezel & raised rim | 400–600 tris | UV0: Tiling border gradient | Outer housing holding the 81 cells with bottom drop shadow. |
-| `SM_BlobShadow.fbx` | Single plane quad (`0.85 × 0.85` cell units) | 2 tris (4 verts) | UV0: Normalized 0..1 quad | Contact shadow decal beneath each occupied ball position. |
-| `SM_BackgroundBackdrop.fbx` | Curved backdrop plane | 40–80 tris | UV0: Panoramic backdrop | Receives scenic alpine background and parallax drift. |
+The project utilizes both DCC source models (`SM_*` in `Assets/Art/Models/`) and baked runtime meshes (`MESH_*` in `Assets/Art/Meshes/`):
+
+| Asset Name | Target Path | Budget (Tris) | Technical Function & Layer |
+|---|---|---|---|
+| `MESH_Ball_Gem_Centered.asset` | `Assets/Art/Meshes/` | ~640 tris | Runtime ball gem mesh. Pivot baked with floor z-shift contract ($\Delta Z = 0.30/\tan 58^\circ \approx 0.18746$). Shared across all 7 colors. |
+| `MESH_BoardCell.asset` | `Assets/Art/Meshes/` | ~120 tris | Beveled cell cavity. Instanced 81 times on the board grid to form the 9×9 tray. |
+| `MESH_BoardFrame.asset` | `Assets/Art/Meshes/` | ~480 tris | Outer housing holding the 81 cells with outer bevel and drop shadow. |
+| `MESH_Backdrop_Quad.asset` | `Assets/Art/Meshes/` | 2 tris | Screen-aligned quad displaying the scenic alpine lake backdrop. |
+| `SM_BlobShadow.obj` | `Assets/Art/Models/` | 2 tris | Contact shadow decal quad beneath each resting ball position. |
+| `SM_Ball_Gem.fbx` | `Assets/Art/Models/` | 500–700 tris | DCC master source for future Blender re-authoring (M2). |
+| `SM_BoardCell.fbx` | `Assets/Art/Models/` | 120–180 tris | DCC master source for cell geometry. |
+| `SM_BoardFrame.fbx` | `Assets/Art/Models/` | 400–600 tris | DCC master source for frame geometry. |
 
 ---
 
@@ -74,18 +79,33 @@ graph LR
 
 ### Material Inventory
 
+#### 3D Board & Ball Materials (`Assets/Art/Materials/`)
+
 | Material Name | Shader | Color / Palette Reference | Key Properties | Draw Call Cost |
 |---|---|---|---|---|
-| `M_Ball_Red` | `CrystalBall.shadergraph` | `#E52E2E` (Ruby Crimson) | Smoothness: 0.95, Fresnel Tint: `#FFAAAA` | 1 DC (Instanced) |
-| `M_Ball_Orange` | `CrystalBall.shadergraph` | `#F57C00` (Vibrant Amber) | Smoothness: 0.95, Fresnel Tint: `#FFE0B2` | 1 DC (Instanced) |
-| `M_Ball_Yellow` | `CrystalBall.shadergraph` | `#FDD835` (Sunlit Topaz) | Smoothness: 0.96, Fresnel Tint: `#FFFDE7` | 1 DC (Instanced) |
-| `M_Ball_Green` | `CrystalBall.shadergraph` | `#2E7D32` (Emerald Green) | Smoothness: 0.95, Fresnel Tint: `#C8E6C9` | 1 DC (Instanced) |
-| `M_Ball_Cyan` | `CrystalBall.shadergraph` | `#00B0FF` (Azure Sky) | Smoothness: 0.96, Fresnel Tint: `#E1F5FE` | 1 DC (Instanced) |
-| `M_Ball_Purple` | `CrystalBall.shadergraph` | `#8E24AA` (Royal Amethyst) | Smoothness: 0.95, Fresnel Tint: `#F3E5F5` | 1 DC (Instanced) |
-| `M_Ball_Blue` | `CrystalBall.shadergraph` | `#1565C0` (Deep Sapphire) | Smoothness: 0.95, Fresnel Tint: `#BBDEFB` | 1 DC (Instanced) |
-| `M_BoardCell` | `BoardCell.shadergraph` | `#E8EDF2` (Soft Periwinkle Grey) | Inner cavity AO, soft top highlight, baked corner rounding | 1 DC (SRP Batch) |
-| `M_BoardFrame` | `URP/Lit` | `#F8FAFC` (Clean Neumorphic Frame) | Smoothness: 0.8, Bevel highlight, outer drop shadow | 1 DC |
+| `M_Ball_Red` | `Line98/PolishedBall` | `#E52E2E` (Ruby Crimson) | Smoothness: 0.95, Fresnel Tint: `#FFAAAA` | 1 DC (Instanced) |
+| `M_Ball_Orange` | `Line98/PolishedBall` | `#F57C00` (Vibrant Amber) | Smoothness: 0.95, Fresnel Tint: `#FFE0B2` | 1 DC (Instanced) |
+| `M_Ball_Yellow` | `Line98/PolishedBall` | `#FDD835` (Sunlit Topaz) | Smoothness: 0.96, Fresnel Tint: `#FFFDE7` | 1 DC (Instanced) |
+| `M_Ball_Green` | `Line98/PolishedBall` | `#2E7D32` (Emerald Green) | Smoothness: 0.95, Fresnel Tint: `#C8E6C9` | 1 DC (Instanced) |
+| `M_Ball_Cyan` | `Line98/PolishedBall` | `#00B0FF` (Azure Sky) | Smoothness: 0.96, Fresnel Tint: `#E1F5FE` | 1 DC (Instanced) |
+| `M_Ball_Purple` | `Line98/PolishedBall` | `#8E24AA` (Royal Amethyst) | Smoothness: 0.95, Fresnel Tint: `#F3E5F5` | 1 DC (Instanced) |
+| `M_Ball_Blue` | `Line98/PolishedBall` | `#1565C0` (Deep Sapphire) | Smoothness: 0.95, Fresnel Tint: `#BBDEFB` | 1 DC (Instanced) |
+| `M_BoardCell` | `Universal Render Pipeline/Lit` | `#E8EDF2` (Soft Periwinkle Grey) | Inner cavity AO, soft top highlight, corner rounding | 1 DC (SRP Batch) |
+| `M_BoardFrame` | `Universal Render Pipeline/Lit` | `#F8FAFC` (Clean Neumorphic Frame) | Smoothness: 0.8, Bevel highlight, outer drop shadow | 1 DC |
+| `M_Backdrop` | `Universal Render Pipeline/Unlit` | Textures/`T_Background_AlpineLake.png` | Scenic background matte painting | 1 DC |
 | `M_BlobShadow` | `BlobShadow.shadergraph` | `#0D1B2A` (Multiply Alpha 0.45) | Soft radial falloff decay decal | 1 DC (Instanced) |
+
+#### Neumorphic UI Materials (`Assets/Art/Materials/UI/`)
+
+| Material Name | Shader | Queue | Description & Usage |
+|---|---|---|---|
+| `M_Ui_Card.mat` | `Line98/FrostedPanel` | 3000 | Frosted glass neumorphic container card for Score, Next, Best displays. |
+| `M_Ui_Action.mat` | `Line98/FrostedPanel` | 3000 | Primary action button surfaces (Undo, New Game). |
+| `M_Ui_Square.mat` | `Line98/FrostedPanel` | 3000 | Square button surfaces (Settings, Statistics). |
+| `M_Ui_Tray.mat` | `Line98/FrostedPanel` | 3000 | Recessed tray cavity behind preview balls. |
+| `M_Ui_Hint.mat` | `Line98/FrostedPanel` | 3000 | Subtle accent indicator panels. |
+| `M_Ui_HintGlow.mat` | `Line98/FrostedPanel` | 3000 | Glowing cyan directional pad / nav surface. |
+| `M_Ui_Shadow_*.mat` (7 mats) | `Line98/FrostedPanel` | 2999 | Procedural blurred drop shadow quads behind HUD cards and buttons. |
 
 ### Texture & Compression Specifications
 
@@ -147,25 +167,39 @@ Per **Architecture §6**, UI is strictly partitioned into **3 Canvases** under `
        ========================================================
 ```
 
-### UI Sprite Inventory (`UI_MainScene_Atlas`)
+### UI Sprite Inventory & Procedural Presentation
 
-Exported as single ASTC 6×6 Sprite Atlas (`2048 × 2048`, Mipmaps OFF, Tight Packing):
+Under **Decision D18**, UI styling is strictly divided between procedural shader materials (`Assets/Art/Materials/UI/M_Ui_*.mat`), procedural vector icons (`VectorIconGraphic`), and raster sprites (`Assets/Art/Sprites/`):
 
-| Sprite Asset Name | Dimensions | Slicing / Type | Description & Mockup Element |
+#### Active Live Sprites
+
+| Sprite Asset Name | Location | Dimensions | Purpose & Usage |
 |---|---|---|---|
-| `ui_brand_logo_text.png` | 420 × 120 | Simple Sprite | "Line 98" (Deep Blue gradient) + "Color Lines" subtitle. |
-| `ui_brand_ball_quad.png` | 100 × 100 | Simple Sprite | 2×2 cluster of Red, Yellow, Blue, Green glossy balls next to logo. |
-| `ui_button_square_neumorphic.png` | 128 × 128 | 9-Sliced (32px) | Rounded square button for Settings (gear) and Statistics (charts). |
-| `ui_icon_settings_gear.png` | 64 × 64 | Simple Sprite | Dark Slate minimalist gear icon. |
-| `ui_icon_statistics_chart.png` | 64 × 64 | Simple Sprite | Dark Slate 3-bar graph icon. |
-| `ui_card_hud_container.png` | 280 × 160 | 9-Sliced (40px) | Soft-bevel white card container for Score, Next, and Best displays. |
-| `ui_tray_next_balls_recessed.png` | 240 × 100 | 9-Sliced (30px) | Indented grey pill cavity inside "NEXT" card to cradle 3 preview balls. |
-| `ui_icon_crown_gold.png` | 48 × 40 | Simple Sprite | Golden crown icon positioned above "BEST" score text. |
-| `ui_btn_action_undo.png` | 260 × 160 | 9-Sliced (40px) | Neumorphic white card with curved undo arrow + "Undo" label. |
-| `ui_btn_action_newgame.png` | 260 × 160 | 9-Sliced (40px) | Neumorphic white card with circular refresh arrow + "New Game" label. |
-| `ui_btn_center_nav_dpad.png` | 200 × 200 | Simple / Sliced | Glowing cyan/blue rounded action button containing 4 directional arrows. |
-| `ui_badge_undo_counter.png` | 48 × 48 | Simple Sprite | Badge indicating remaining free undos (`3`, `2`, `1`, or ad icon). |
-| `ui_overlay_modal_scrim.png` | 32 × 32 | Simple Sprite | 60% black radial scrim for modal popups. |
+| `sp_ball_{red,orange,yellow,green,cyan,purple,blue}.png` | `Assets/Art/Sprites/Balls/` | 128 × 128 | 2D preview balls rendered in `PreviewQueueView` (Next Tray HUD). |
+| `ui_icon_crown_gold.png` | `Assets/Art/Sprites/UI/` | 48 × 40 | Golden crown icon above the "BEST" score text. |
+| `ui_brand_ball_quad.png` | `Assets/Art/Sprites/UI/` | 100 × 100 | 2×2 cluster of colored spheres in the top brand header. |
+| `ui_badge_undo_counter.png` | `Assets/Art/Sprites/UI/` | 48 × 48 | Badge indicator showing remaining free undos (`3`, `2`, `1`). |
+| `ui_overlay_modal_scrim.png` | `Assets/Art/Sprites/UI/` | 32 × 32 | Semi-transparent radial scrim overlay for popup dialogs. |
+
+#### Superseded Sprites (Retired in Phase 5 Cleanup)
+
+The following bitmap sprites were retired and deleted after being replaced by superior procedural vector rendering and mathematical shaders:
+
+| Retired Sprite | Replacement Mechanism | Rationale |
+|---|---|---|
+| `ui_card_hud_container.png` | `M_Ui_Card.mat` (`Line98/FrostedPanel`) | Procedural rounded chamfers, inner highlight, and dynamic aspect-ratio scaling. |
+| `ui_tray_next_balls_recessed.png` | `M_Ui_Tray.mat` + `Recess_Slot_*` | Procedural inner cavity shadow and slot alignment. |
+| `ui_btn_action_undo.png` | `M_Ui_Action.mat` + `VectorIconGraphic` | Crisp resolution-independent rendering on 4K/retina displays. |
+| `ui_btn_action_newgame.png` | `M_Ui_Action.mat` + `VectorIconGraphic` | Crisp resolution-independent refresh arrow icon. |
+| `ui_button_square_neumorphic.png` | `M_Ui_Square.mat` (`Line98/FrostedPanel`) | Procedural frosted neumorphic glass bevels. |
+| `ui_btn_center_nav_dpad.png` | `M_Ui_HintGlow.mat` + `VectorIconGraphic` | Procedural glowing cyan navigation d-pad. |
+| `ui_icon_settings_gear.png` | `VectorIconGraphic` (Gear) | Clean mathematical vector geometry. |
+| `ui_icon_statistics_chart.png` | `VectorIconGraphic` (BarChart) | Clean mathematical vector geometry. |
+| `ui_icon_undo_arrow.png` | `VectorIconGraphic` (UndoArrow) | Clean mathematical vector geometry. |
+| `ui_icon_newgame_refresh.png` | `VectorIconGraphic` (RefreshArrow) | Clean mathematical vector geometry. |
+| `ui_brand_logo_text.png` | TextMeshPro `TMP_Header_Brand` | Dynamic font rendering with localization support (GDD §28). |
+| `ui_cell_recessed.png` | `MESH_BoardCell.asset` + `M_BoardCell.mat` | Full 3D instanced lighting, shadows, and bevels. |
+| `ui_board_frame.png` | `MESH_BoardFrame.asset` + `M_BoardFrame.mat` | Full 3D beveled outer frame housing. |
 
 ### Typography & Fonts (`Line98.Presentation/UI`)
 Per **Technical Stack §4**, full Vietnamese language support is mandatory for V1 launch (**GDD §28**).
@@ -255,8 +289,8 @@ The bridge between raw art assets and architectural runtime systems is strictly 
 
 ```
  Assets/_Project/Content/Definitions/
-  ├── BallTheme_Crystal.asset         --> References 7 Materials + T_Ball_Accessibility_Patterns
-  ├── BoardTheme_Classic.asset        --> References SM_BoardFrame, SM_BoardCell, M_BoardCell
+  ├── BallTheme_Crystal.asset         --> References 7 canonical materials (M_Ball_*.mat) + MESH_Ball_Gem_Centered.asset
+  ├── BoardTheme_Classic.asset        --> References MESH_BoardCell, MESH_BoardFrame, M_BoardCell, M_BoardFrame, m_RowPitchScale=1.1791784
   ├── CameraProfile_Default.asset     --> IsOrtho: true, OrthoSize: 7.5, Tilt: 58, Dist: 18.5, Parallax: 0.05
   ├── FeedbackProfile_Tiers.asset     --> Maps 5, 6-7, 8, 9+ to VFX, SFX, and Camera Shake
   ├── VfxCatalog_Default.asset        --> Pre-warmed pool capacities (Burst: 4, Popups: 8)

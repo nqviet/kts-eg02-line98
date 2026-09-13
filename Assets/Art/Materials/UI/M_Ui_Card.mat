@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Ball_Cyan
-  m_Shader: {fileID: 4800000, guid: 49ebc6df8baa7b241b2c427fd1b2882b, type: 3}
+  m_Name: M_Ui_Card
+  m_Shader: {fileID: 4800000, guid: 43478434a86d20b40ac0260776327386, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -22,10 +22,21 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _Border: 3
+    - _Feather: 0
+    - _Inset: 0
+    - _Padding: 0
+    - _Radius: 34
     m_Colors:
-    - _BaseColor: {r: 0.0627451, g: 0.77254903, b: 0.93333334, a: 1}
+    - _Fill: {r: 0.81, g: 0.91, b: 1, a: 0.5}
+    - _Rim: {r: 1, g: 1, b: 1, a: 0.96}
+    - _Size: {r: 318, g: 176, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

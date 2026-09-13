@@ -11,9 +11,14 @@ using Line98.Presentation;
 
 namespace Line98.Editor
 {
+    /// <summary>
+    /// Dev utility to scaffold the full LINE 98 UI hierarchy.
+    /// NOTE: The authored Game.unity scene is the primary source of truth;
+    /// this builder is preserved only as a developer reference utility.
+    /// </summary>
     public static class UIHierarchyBuilder
     {
-        [MenuItem("Line98/UI/Build Game Scene UI")]
+        [MenuItem("Line98/Dev/Build Game Scene UI")]
         public static void BuildUI()
         {
             var scene = EditorSceneManager.GetActiveScene();
@@ -39,7 +44,6 @@ namespace Line98.Editor
             var fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
             var theme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Definitions/UiTheme_Default.asset");
             var clickClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Art/Audio/sfx_ui_button_click.wav");
-            var mockupSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Textures/main_scene_mockup.png");
 
             var spBallQuad = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/UI/ui_brand_ball_quad.png");
             var spBrandLogo = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/UI/ui_brand_logo_text.png");
@@ -71,11 +75,6 @@ namespace Line98.Editor
             var safeAreaFitter = uiRoot.AddComponent<SafeAreaFitter>();
             var uiRouter = uiRoot.AddComponent<UIRouter>();
             var hudPresenter = uiRoot.AddComponent<HudPresenter>();
-
-#if UNITY_EDITOR
-            var mockupOverlay = uiRoot.AddComponent<MockupOverlayDebug>();
-            mockupOverlay.SetMockupSprite(mockupSprite);
-#endif
 
             // Helper to configure Canvas
             Canvas CreateCanvas(string name, int sortingOrder)
