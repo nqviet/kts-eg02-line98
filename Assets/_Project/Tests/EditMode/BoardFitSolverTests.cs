@@ -131,6 +131,25 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
+        public void SolveOrthographicSize_DegenerateViewport_UsesSafeFallbackInsteadOfMaxSize()
+        {
+            float size = BoardFitSolver.SolveOrthographicSize(
+                m_Camera,
+                boardExtentX: 9.0f,
+                boardExtentZ: 9.0f,
+                center: Vector3.zero,
+                pitchAngle: 58.0f,
+                yawAngle: 0.0f,
+                minViewport: new Vector2(0.5f, 0.5f),
+                maxViewport: new Vector2(0.5f, 0.5f),
+                minOrthoSize: 2.0f,
+                maxOrthoSize: 30.0f);
+
+            Assert.GreaterOrEqual(size, 2.0f);
+            Assert.Less(size, 30.0f, "A degenerate viewport must fall back to a usable framing rectangle.");
+        }
+
+        [Test]
         public void SolveOrthographicSize_CornersFitWithinViewportBounds()
         {
             Vector2 minVp = BoardFitSolver.DefaultMinViewport;
@@ -145,6 +164,10 @@ namespace Line98.Tests.EditMode
             m_Camera.transform.rotation = rot;
             m_Camera.transform.position = rot * new Vector3(0f, 0f, -20f);
 
+            Vector2 viewportHalfSize = (maxVp - minVp) * 0.5f;
+            Vector2 centeredMin = Vector2.one * 0.5f - viewportHalfSize;
+            Vector2 centeredMax = Vector2.one * 0.5f + viewportHalfSize;
+
             Vector3[] corners =
             {
                 new Vector3(-4.5f, 0f, -4.5f),
@@ -156,10 +179,10 @@ namespace Line98.Tests.EditMode
             foreach (var corner in corners)
             {
                 Vector3 vp = m_Camera.WorldToViewportPoint(corner);
-                Assert.GreaterOrEqual(vp.x, minVp.x - 0.01f, $"Corner {corner} vp.x must be >= minVp.x");
-                Assert.LessOrEqual(vp.x, maxVp.x + 0.01f, $"Corner {corner} vp.x must be <= maxVp.x");
-                Assert.GreaterOrEqual(vp.y, minVp.y - 0.01f, $"Corner {corner} vp.y must be >= minVp.y");
-                Assert.LessOrEqual(vp.y, maxVp.y + 0.01f, $"Corner {corner} vp.y must be <= maxVp.y");
+                Assert.GreaterOrEqual(vp.x, centeredMin.x - 0.01f, $"Corner {corner} vp.x must be >= centeredMin.x");
+                Assert.LessOrEqual(vp.x, centeredMax.x + 0.01f, $"Corner {corner} vp.x must be <= centeredMax.x");
+                Assert.GreaterOrEqual(vp.y, centeredMin.y - 0.01f, $"Corner {corner} vp.y must be >= centeredMin.y");
+                Assert.LessOrEqual(vp.y, centeredMax.y + 0.01f, $"Corner {corner} vp.y must be <= centeredMax.y");
             }
         }
     }

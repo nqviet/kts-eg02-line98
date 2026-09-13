@@ -97,6 +97,31 @@
 - **Rationale:** Eliminates duplicated asset references in `PresentationRoot`, decouples scene composition from visual themes, and enables runtime theme swapping.
 - **Status:** Approved & Implemented.
 
+### D20: Bottom-Anchored Action Bar
+- **Decision:** Keep the action bar pinned above the safe bottom edge with a designed 240-unit margin; place only a capped share of surplus portrait height above the board.
+- **Rationale:** Preserves the 1080×1920 mockup while keeping Undo, Hint, and New Game within the thumb zone on tall phones.
+- **Status:** Approved & Implemented.
+
+### D21: Degraded-Aspect Layout Column
+- **Decision:** For safe areas squarer than 9:16, scale the entire HUD into a centred 9:16 layout column instead of allowing chrome or the board to overflow.
+- **Rationale:** It preserves element proportions, produces non-negative board and camera viewport dimensions, and leaves the backdrop to absorb surplus horizontal space.
+- **Status:** Approved & Implemented.
+
+### D22: Action-Button Geometry Source
+- **Decision:** Use the live mockup-matching action-card measurements: 296×162 units, with 71/73-unit outer margins.
+- **Rationale:** These are the authored scene values and match the reference composition; keeping them in the solver and hierarchy builder eliminates badge and button drift.
+- **Status:** Approved & Implemented.
+
+### D23: Landscape V1 Policy
+- **Decision:** Keep the player orientation locked to Portrait; editor and windowed landscape views use the centred layout-column fallback.
+- **Rationale:** V1 remains a portrait-first mobile game while retaining a usable, non-inverted composition during editor resizing and desktop testing.
+- **Status:** Approved & Implemented.
+
+### D24: Canvas-Scaler Width Match
+- **Decision:** Retain `CanvasScaler.MatchWidthOrHeight = 0` with a 1080×1920 reference resolution.
+- **Rationale:** Existing horizontal artwork is authored for this width. The fitter now derives both canvas axes from the scaler formula, so inset conversion remains correct if the setting changes later.
+- **Status:** Approved & Implemented.
+
 ---
 
 ## GDD Gap Resolutions (Concept Vocabularies §14)

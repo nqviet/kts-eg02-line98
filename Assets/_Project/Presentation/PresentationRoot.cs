@@ -100,11 +100,15 @@ namespace Line98.Presentation
                 m_BoardView.BoardDepth + 0.4f * m_BoardView.RowPitchScale);
             m_CameraRig.SetBackdrop(m_Backdrop);
 
-            // Fit camera into UI solver board viewport
-            var layout = HudLayoutSolver.Solve(HudLayoutSolver.ReferenceWidth, HudLayoutSolver.ReferenceHeight);
-            m_CameraRig.SetTargetViewport(layout.BoardViewportRect.min, layout.BoardViewportRect.max);
-            if (m_HudPresenter != null)
-                m_HudPresenter.GetComponent<SafeAreaFitter>()?.RefreshSafeArea(force: true);
+            // SafeAreaFitter owns the one authoritative HUD solve and supplies the matching viewport.
+            SafeAreaFitter safeAreaFitter = m_HudPresenter != null
+                ? m_HudPresenter.GetComponent<SafeAreaFitter>()
+                : null;
+            if (safeAreaFitter != null)
+            {
+                safeAreaFitter.SetCameraRig(m_CameraRig);
+                safeAreaFitter.RefreshSafeArea(force: true);
+            }
 
             // 4. Initialize BallViewManager & prewarm 81 instances
             var ballsRoot = transform.Find("Balls_Root");

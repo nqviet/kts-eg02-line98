@@ -104,7 +104,9 @@ namespace Line98.Tests.PlayMode
             var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
             Assert.IsNotNull(presRoot, "PresentationRoot must exist in Game scene");
 
-            var layout = HudLayoutSolver.Solve(HudLayoutSolver.ReferenceWidth, HudLayoutSolver.ReferenceHeight);
+            var safeAreaFitter = uiRoot.GetComponent<SafeAreaFitter>();
+            Assert.IsNotNull(safeAreaFitter, "SafeAreaFitter component must exist on UI_Root");
+            var layout = safeAreaFitter.CurrentLayout;
             Assert.AreEqual(layout.BoardViewportRect.min.x, presRoot.CameraRig.MinViewport.x, 0.01f, "CameraRig MinViewport.x must match solver");
             Assert.AreEqual(layout.BoardViewportRect.min.y, presRoot.CameraRig.MinViewport.y, 0.01f, "CameraRig MinViewport.y must match solver");
             Assert.AreEqual(layout.BoardViewportRect.max.x, presRoot.CameraRig.MaxViewport.x, 0.01f, "CameraRig MaxViewport.x must match solver");

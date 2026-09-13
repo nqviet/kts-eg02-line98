@@ -25,6 +25,20 @@ namespace Line98.Presentation
 
         private TweenRunner m_TweenRunner;
         private bool m_IsOpen;
+        private bool m_HasResponsiveBaseline;
+        private Vector2 m_ModalSize;
+        private Vector2 m_TitlePosition;
+        private Vector2 m_TitleSize;
+        private float m_TitleFontSize;
+        private Vector2 m_BodyPosition;
+        private Vector2 m_BodySize;
+        private float m_BodyFontSize;
+        private Vector2 m_PrimaryPosition;
+        private Vector2 m_PrimarySize;
+        private Vector2 m_SecondaryPosition;
+        private Vector2 m_SecondarySize;
+        private Vector2 m_ClosePosition;
+        private Vector2 m_CloseSize;
 
         public bool IsOpen => m_IsOpen;
         public CanvasGroup CanvasGroup => m_CanvasGroup;
@@ -37,6 +51,7 @@ namespace Line98.Presentation
         {
             if (m_CanvasGroup == null) m_CanvasGroup = GetComponent<CanvasGroup>();
             if (m_ModalContainer == null) m_ModalContainer = transform as RectTransform;
+            CacheResponsiveBaseline();
 
             if (m_CloseButton != null)
             {
@@ -53,6 +68,112 @@ namespace Line98.Presentation
         {
             if (m_TitleText != null) m_TitleText.text = title;
             if (m_BodyText != null) m_BodyText.text = body;
+        }
+
+        /// <summary>
+        /// Constrains the modal to the responsive HUD column and keeps its content readable
+        /// when a short window or a landscape editor view leaves little vertical space.
+        /// </summary>
+        public void ApplyResponsiveLayout(float layoutWidth, float middleHeight)
+        {
+            CacheResponsiveBaseline();
+            if (!m_HasResponsiveBaseline || m_ModalContainer == null)
+            {
+                return;
+            }
+
+            float width = Mathf.Max(0f, Mathf.Min(m_ModalSize.x, layoutWidth - 96f));
+            float height = Mathf.Max(0f, Mathf.Min(m_ModalSize.y, middleHeight - 96f));
+            float scale = Mathf.Min(
+                1f,
+                m_ModalSize.x > 0f ? width / m_ModalSize.x : 1f,
+                m_ModalSize.y > 0f ? height / m_ModalSize.y : 1f);
+
+            m_ModalContainer.anchorMin = new Vector2(0.5f, 0.5f);
+            m_ModalContainer.anchorMax = new Vector2(0.5f, 0.5f);
+            m_ModalContainer.pivot = new Vector2(0.5f, 0.5f);
+            m_ModalContainer.sizeDelta = new Vector2(width, height);
+
+            ApplyScaledRect(m_TitleText != null ? m_TitleText.rectTransform : null, m_TitlePosition, m_TitleSize, scale);
+            ApplyScaledRect(m_BodyText != null ? m_BodyText.rectTransform : null, m_BodyPosition, m_BodySize, scale);
+            ApplyScaledRect(m_PrimaryButton != null ? m_PrimaryButton.GetComponent<RectTransform>() : null, m_PrimaryPosition, m_PrimarySize, scale);
+            ApplyScaledRect(m_SecondaryButton != null ? m_SecondaryButton.GetComponent<RectTransform>() : null, m_SecondaryPosition, m_SecondarySize, scale);
+            ApplyScaledRect(m_CloseButton != null ? m_CloseButton.GetComponent<RectTransform>() : null, m_ClosePosition, m_CloseSize, scale);
+
+            if (m_TitleText != null)
+            {
+                m_TitleText.fontSize = m_TitleFontSize * scale;
+            }
+
+            if (m_BodyText != null)
+            {
+                m_BodyText.enableAutoSizing = true;
+                m_BodyText.fontSizeMin = Mathf.Min(12f, m_BodyFontSize * scale);
+                m_BodyText.fontSizeMax = Mathf.Max(m_BodyText.fontSizeMin, m_BodyFontSize * scale);
+                m_BodyText.fontSize = m_BodyFontSize * scale;
+            }
+        }
+
+        private void CacheResponsiveBaseline()
+        {
+            if (m_HasResponsiveBaseline)
+            {
+                return;
+            }
+
+            if (m_ModalContainer == null) m_ModalContainer = transform as RectTransform;
+            if (m_ModalContainer == null)
+            {
+                return;
+            }
+
+            m_ModalSize = m_ModalContainer.sizeDelta;
+            CacheTextRect(m_TitleText, out m_TitlePosition, out m_TitleSize, out m_TitleFontSize);
+            CacheTextRect(m_BodyText, out m_BodyPosition, out m_BodySize, out m_BodyFontSize);
+            CacheButtonRect(m_PrimaryButton, out m_PrimaryPosition, out m_PrimarySize);
+            CacheButtonRect(m_SecondaryButton, out m_SecondaryPosition, out m_SecondarySize);
+            CacheButtonRect(m_CloseButton, out m_ClosePosition, out m_CloseSize);
+            m_HasResponsiveBaseline = true;
+        }
+
+        private static void CacheTextRect(TMP_Text text, out Vector2 position, out Vector2 size, out float fontSize)
+        {
+            if (text == null)
+            {
+                position = Vector2.zero;
+                size = Vector2.zero;
+                fontSize = 0f;
+                return;
+            }
+
+            position = text.rectTransform.anchoredPosition;
+            size = text.rectTransform.sizeDelta;
+            fontSize = text.fontSize;
+        }
+
+        private static void CacheButtonRect(Button button, out Vector2 position, out Vector2 size)
+        {
+            RectTransform rect = button != null ? button.GetComponent<RectTransform>() : null;
+            if (rect == null)
+            {
+                position = Vector2.zero;
+                size = Vector2.zero;
+                return;
+            }
+
+            position = rect.anchoredPosition;
+            size = rect.sizeDelta;
+        }
+
+        private static void ApplyScaledRect(RectTransform rect, Vector2 position, Vector2 size, float scale)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            rect.anchoredPosition = position * scale;
+            rect.sizeDelta = size * scale;
         }
 
         public virtual void Show(Action onComplete = null)

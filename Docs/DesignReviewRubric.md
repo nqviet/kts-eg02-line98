@@ -25,4 +25,4 @@ Per **GDD §35**: *"The original Line 98 mechanic is the asset. The player shoul
 - Responsive touch controls (<250ms tap gesture).
 - Clear, non-punitive audio feedback for invalid moves.
 - Rich acoustic and crystalline soundscape routed through 5 dedicated mixer buses.
-- Seamless safe-area adaptation across 9:16 to 9:22 portrait screens.
+- Seamless safe-area adaptation across 9:16 to 9:24 portrait screens, with a centred degraded-aspect layout column for tablet, editor, and landscape windows.

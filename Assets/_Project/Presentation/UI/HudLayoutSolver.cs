@@ -1,19 +1,17 @@
-using System;
 using UnityEngine;
 
 namespace Line98.Presentation
 {
     /// <summary>
-    /// Pure, deterministic static layout solver for LINE 98 UI.
-    /// Solves pixel-perfect metrics matching main_scene_mockup.png on a 1080x1920 reference frame.
-    /// Handles safe-area insets and tall aspect ratios (9:16 -> 9:22) by absorbing surplus height into the bottom margin.
+    /// Pure, deterministic layout solver for the LINE 98 HUD.
+    /// Coordinates use a top-left origin with Y increasing downwards.
     /// </summary>
     public static class HudLayoutSolver
     {
         public const float ReferenceWidth = 1080f;
         public const float ReferenceHeight = 1920f;
 
-        // Baseline rhythm metrics (at 1080x1920 reference)
+        // Baseline rhythm metrics at 1080 x 1920.
         public const float TopMargin = 60f;
         public const float BrandHeight = 120f;
         public const float GapBrandToHud = 44f;
@@ -22,17 +20,30 @@ namespace Line98.Presentation
         public const float BoardUnits = 9.4f;
         public const float GapBoardToActions = 54f;
         public const float ActionsHeight = 200f;
-        public const float MinBottomMargin = 240f;
+        public const float MinBottomMargin = 96f;
+        public const float DesignedBottomMargin = 240f;
 
-        // Card & button horizontal specifications
+        // Horizontal specifications at the reference width.
+        public const float BoardHorizontalMargin = 88f;
         public const float CardWidth = 318f;
         public const float CardGap = 18f;
-        public const float ActionCardWidth = 280f;
-        public const float ActionCardHeight = 160f;
+        public const float ActionCardWidth = 296f;
+        public const float ActionCardHeight = 162f;
         public const float CenterButtonSize = 200f;
+        public const float UndoLeftMargin = 71f;
+        public const float NewGameRightMargin = 73f;
+
+        private const float PortraitAspect = 9f / 16f;
+        private const float BoardSurplusShare = 0.35f;
+        private const float MaxBoardSurplusOffset = 240f;
 
         public readonly struct LayoutResult
         {
+            public readonly Rect LayoutRect;
+            public readonly Rect TopGroupRect;
+            public readonly Rect MiddleRect;
+            public readonly Rect BottomGroupRect;
+
             public readonly Rect BrandRect;
             public readonly Rect HudRect;
             public readonly Rect BoardRect;
@@ -46,11 +57,16 @@ namespace Line98.Presentation
             public readonly Rect HintBtnRect;
             public readonly Rect NewGameBtnRect;
 
+            public readonly float Scale;
             public readonly float Pitch;
             public readonly float BottomMargin;
-            public readonly Rect BoardViewportRect; // Normalized min/max: xMin, yMin, xMax, yMax
+            public readonly Rect BoardViewportRect;
 
             public LayoutResult(
+                Rect layoutRect,
+                Rect topGroupRect,
+                Rect middleRect,
+                Rect bottomGroupRect,
                 Rect brandRect,
                 Rect hudRect,
                 Rect boardRect,
@@ -61,10 +77,15 @@ namespace Line98.Presentation
                 Rect undoBtnRect,
                 Rect hintBtnRect,
                 Rect newGameBtnRect,
+                float scale,
                 float pitch,
                 float bottomMargin,
                 Rect boardViewportRect)
             {
+                LayoutRect = layoutRect;
+                TopGroupRect = topGroupRect;
+                MiddleRect = middleRect;
+                BottomGroupRect = bottomGroupRect;
                 BrandRect = brandRect;
                 HudRect = hudRect;
                 BoardRect = boardRect;
@@ -75,6 +96,7 @@ namespace Line98.Presentation
                 UndoBtnRect = undoBtnRect;
                 HintBtnRect = hintBtnRect;
                 NewGameBtnRect = newGameBtnRect;
+                Scale = scale;
                 Pitch = pitch;
                 BottomMargin = bottomMargin;
                 BoardViewportRect = boardViewportRect;
@@ -82,69 +104,100 @@ namespace Line98.Presentation
         }
 
         /// <summary>
-        /// Solves layout rects and board pitch given canvas dimensions and safe area insets.
-        /// Coordinates returned are origin top-left, Y down (matching mockup specifications).
+        /// Solves the HUD inside the supplied canvas and safe-area insets.
+        /// Portrait layouts use the full safe width. Squarer and landscape windows use a
+        /// centred 9:16 column, so the board can never receive a negative extent.
         /// </summary>
-        public static LayoutResult Solve(float canvasWidth, float canvasHeight, float safeTop = 0f, float safeBottom = 0f)
+        public static LayoutResult Solve(
+            float canvasWidth,
+            float canvasHeight,
+            float safeTop = 0f,
+            float safeBottom = 0f,
+            float safeLeft = 0f,
+            float safeRight = 0f)
         {
-            float safeW = canvasWidth;
-            float safeH = canvasHeight - safeTop - safeBottom;
+            canvasWidth = Mathf.Max(0f, canvasWidth);
+            canvasHeight = Mathf.Max(0f, canvasHeight);
+            safeTop = Mathf.Clamp(safeTop, 0f, canvasHeight);
+            safeBottom = Mathf.Clamp(safeBottom, 0f, canvasHeight - safeTop);
+            safeLeft = Mathf.Clamp(safeLeft, 0f, canvasWidth);
+            safeRight = Mathf.Clamp(safeRight, 0f, canvasWidth - safeLeft);
 
-            // Pitch calculation: min(safeW - 88, safeH - 624) / 9.4 -> 105.5f at 1080x1920
-            float pitch = Mathf.Min(safeW - 88f, safeH - 624f) / BoardUnits;
-            pitch = (float)Math.Round(pitch, 1);
+            float safeWidth = Mathf.Max(0f, canvasWidth - safeLeft - safeRight);
+            float safeHeight = Mathf.Max(0f, canvasHeight - safeTop - safeBottom);
+            float layoutWidth = Mathf.Min(safeWidth, safeHeight * PortraitAspect);
+            float layoutX = safeLeft + (safeWidth - layoutWidth) * 0.5f;
+            float scale = ReferenceWidth > 0f ? layoutWidth / ReferenceWidth : 0f;
 
-            float boardSize = (float)Math.Round(BoardUnits * pitch, 0); // ~992 at pitch 105.5
+            float topMargin = TopMargin * scale;
+            float brandHeight = BrandHeight * scale;
+            float gapBrandToHud = GapBrandToHud * scale;
+            float hudHeight = HudHeight * scale;
+            float gapHudToBoard = GapHudToBoard * scale;
+            float gapBoardToActions = GapBoardToActions * scale;
+            float actionsHeight = ActionsHeight * scale;
+            float bottomMargin = Mathf.Min(
+                Mathf.Max(MinBottomMargin, DesignedBottomMargin * scale),
+                Mathf.Max(0f, safeHeight - actionsHeight));
 
-            // Stack top-down starting from safeTop + TopMargin
-            float curY = safeTop + TopMargin;
-            Rect brandRect = new Rect(0f, curY, canvasWidth, BrandHeight);
+            float fixedTop = topMargin + brandHeight + gapBrandToHud + hudHeight + gapHudToBoard;
+            float fixedBottom = gapBoardToActions + actionsHeight + bottomMargin;
+            float boardWidthLimit = Mathf.Max(0f, layoutWidth - BoardHorizontalMargin * scale);
+            float boardHeightLimit = Mathf.Max(0f, safeHeight - fixedTop - fixedBottom);
+            float boardSize = Mathf.Round(Mathf.Min(boardWidthLimit, boardHeightLimit));
+            float usedHeight = fixedTop + boardSize + fixedBottom;
+            float surplus = Mathf.Max(0f, safeHeight - usedHeight);
+            float boardSurplusOffset = Mathf.Min(surplus * BoardSurplusShare, MaxBoardSurplusOffset * scale);
 
-            curY += BrandHeight + GapBrandToHud;
-            Rect hudRect = new Rect(0f, curY, canvasWidth, HudHeight);
+            float brandY = safeTop + topMargin;
+            Rect brandRect = new Rect(layoutX, brandY, layoutWidth, brandHeight);
 
-            // Three HUD cards (centered horizontally)
-            float totalCardsWidth = (3f * CardWidth) + (2f * CardGap); // 318*3 + 18*2 = 990
-            float cardsStartX = (canvasWidth - totalCardsWidth) * 0.5f; // 45 at 1080
+            float hudY = brandRect.yMax + gapBrandToHud;
+            Rect hudRect = new Rect(layoutX, hudY, layoutWidth, hudHeight);
 
-            Rect scoreCardRect = new Rect(cardsStartX, curY, CardWidth, HudHeight);
-            Rect nextCardRect = new Rect(cardsStartX + CardWidth + CardGap, curY, CardWidth, HudHeight);
-            Rect bestCardRect = new Rect(cardsStartX + (CardWidth + CardGap) * 2f, curY, CardWidth, HudHeight);
+            float boardY = hudRect.yMax + gapHudToBoard + boardSurplusOffset;
+            float boardX = layoutX + (layoutWidth - boardSize) * 0.5f;
+            Rect boardRect = new Rect(boardX, boardY, boardSize, boardSize);
 
-            curY += HudHeight + GapHudToBoard;
-            float boardX = (canvasWidth - boardSize) * 0.5f;
-            Rect boardRect = new Rect(boardX, curY, boardSize, boardSize);
+            float actionY = safeTop + safeHeight - bottomMargin - actionsHeight;
+            Rect actionRect = new Rect(layoutX, actionY, layoutWidth, actionsHeight);
 
-            curY += boardSize + GapBoardToActions;
-            Rect actionRect = new Rect(0f, curY, canvasWidth, ActionsHeight);
+            float cardWidth = CardWidth * scale;
+            float cardGap = CardGap * scale;
+            float totalCardsWidth = cardWidth * 3f + cardGap * 2f;
+            float cardsStartX = layoutX + (layoutWidth - totalCardsWidth) * 0.5f;
+            Rect scoreCardRect = new Rect(cardsStartX, hudY, cardWidth, hudHeight);
+            Rect nextCardRect = new Rect(cardsStartX + cardWidth + cardGap, hudY, cardWidth, hudHeight);
+            Rect bestCardRect = new Rect(cardsStartX + (cardWidth + cardGap) * 2f, hudY, cardWidth, hudHeight);
 
-            // Action bar items
-            float undoX = 79f;
-            float undoY = curY + 25f; // 1480 + 25 = 1505
-            Rect undoBtnRect = new Rect(undoX, undoY, ActionCardWidth, ActionCardHeight);
+            float actionCardWidth = ActionCardWidth * scale;
+            float actionCardHeight = ActionCardHeight * scale;
+            float undoY = actionY + 24f * scale;
+            Rect undoBtnRect = new Rect(layoutX + UndoLeftMargin * scale, undoY, actionCardWidth, actionCardHeight);
+            float hintSize = CenterButtonSize * scale;
+            Rect hintBtnRect = new Rect(
+                layoutX + (layoutWidth - hintSize) * 0.5f,
+                actionY + Mathf.Min(10f * scale, bottomMargin),
+                hintSize,
+                hintSize);
+            Rect newGameBtnRect = new Rect(
+                layoutX + layoutWidth - NewGameRightMargin * scale - actionCardWidth,
+                undoY,
+                actionCardWidth,
+                actionCardHeight);
 
-            float hintX = (canvasWidth - CenterButtonSize) * 0.5f; // 440 at 1080
-            float hintY = curY + 10f; // 1480 + 10 = 1490
-            Rect hintBtnRect = new Rect(hintX, hintY, CenterButtonSize, CenterButtonSize);
+            Rect topGroupRect = Rect.MinMaxRect(layoutX, safeTop, layoutX + layoutWidth, hudRect.yMax);
+            Rect middleRect = Rect.MinMaxRect(layoutX, hudRect.yMax, layoutX + layoutWidth, Mathf.Max(hudRect.yMax, actionRect.yMin));
+            Rect bottomGroupRect = Rect.MinMaxRect(layoutX, actionRect.yMin, layoutX + layoutWidth, safeTop + safeHeight);
 
-            float newGameX = canvasWidth - 81f - ActionCardWidth; // 719 at 1080 (matching xMax 999)
-            float newGameY = undoY;
-            Rect newGameBtnRect = new Rect(newGameX, newGameY, ActionCardWidth, ActionCardHeight);
-
-            float bottomMargin = (canvasHeight - safeBottom) - (curY + ActionsHeight);
-
-            // Normalized viewport rect for CameraRig / BoardFitSolver:
-            // In Unity viewport coords: (0,0) is bottom-left, (1,1) is top-right.
-            // The supplied board extent includes its rim; extra padding would oversize it.
-            float frameRimPadding = 0f;
-            float vpMinX = Mathf.Clamp01((boardRect.xMin - frameRimPadding) / canvasWidth);
-            float vpMaxX = Mathf.Clamp01((boardRect.xMax + frameRimPadding) / canvasWidth);
-            float vpMinY = Mathf.Clamp01((canvasHeight - boardRect.yMax - frameRimPadding) / canvasHeight);
-            float vpMaxY = Mathf.Clamp01((canvasHeight - boardRect.yMin + frameRimPadding) / canvasHeight);
-
-            Rect boardViewportRect = Rect.MinMaxRect(vpMinX, vpMinY, vpMaxX, vpMaxY);
+            float pitch = boardSize > 0f ? Mathf.Round(boardSize / BoardUnits * 10f) * 0.1f : 0f;
+            Rect boardViewportRect = BuildViewportRect(boardRect, canvasWidth, canvasHeight);
 
             return new LayoutResult(
+                new Rect(layoutX, safeTop, layoutWidth, safeHeight),
+                topGroupRect,
+                middleRect,
+                bottomGroupRect,
                 brandRect,
                 hudRect,
                 boardRect,
@@ -155,9 +208,28 @@ namespace Line98.Presentation
                 undoBtnRect,
                 hintBtnRect,
                 newGameBtnRect,
+                scale,
                 pitch,
                 bottomMargin,
                 boardViewportRect);
+        }
+
+        private static Rect BuildViewportRect(Rect boardRect, float canvasWidth, float canvasHeight)
+        {
+            if (canvasWidth <= 0f || canvasHeight <= 0f || boardRect.width <= 0f || boardRect.height <= 0f)
+            {
+                return Rect.MinMaxRect(
+                    BoardFitSolver.DefaultMinViewport.x,
+                    BoardFitSolver.DefaultMinViewport.y,
+                    BoardFitSolver.DefaultMaxViewport.x,
+                    BoardFitSolver.DefaultMaxViewport.y);
+            }
+
+            float minX = Mathf.Clamp01(boardRect.xMin / canvasWidth);
+            float maxX = Mathf.Clamp01(boardRect.xMax / canvasWidth);
+            float minY = Mathf.Clamp01((canvasHeight - boardRect.yMax) / canvasHeight);
+            float maxY = Mathf.Clamp01((canvasHeight - boardRect.yMin) / canvasHeight);
+            return Rect.MinMaxRect(minX, minY, maxX, maxY);
         }
     }
 }

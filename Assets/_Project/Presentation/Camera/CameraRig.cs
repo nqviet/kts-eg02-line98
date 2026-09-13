@@ -62,8 +62,13 @@ namespace Line98.Presentation
 
         public void SetTargetViewport(Vector2 minViewport, Vector2 maxViewport)
         {
-            m_MinViewport = minViewport;
-            m_MaxViewport = maxViewport;
+            m_MinViewport = new Vector2(Mathf.Clamp01(minViewport.x), Mathf.Clamp01(minViewport.y));
+            m_MaxViewport = new Vector2(Mathf.Clamp01(maxViewport.x), Mathf.Clamp01(maxViewport.y));
+            if (m_MaxViewport.x <= m_MinViewport.x || m_MaxViewport.y <= m_MinViewport.y)
+            {
+                m_MinViewport = BoardFitSolver.DefaultMinViewport;
+                m_MaxViewport = BoardFitSolver.DefaultMaxViewport;
+            }
             RefitCamera();
         }
 

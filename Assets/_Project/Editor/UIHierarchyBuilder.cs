@@ -239,13 +239,13 @@ namespace Line98.Editor
             actionBar.anchoredPosition = new Vector2(0f, 240f);
             actionBar.sizeDelta = new Vector2(0f, 200f);
 
-            // BtnUndo (280x160)
+            // BtnUndo (296x162)
             var (btnUndo, rectUndo) = CreateButtonChild(actionBar.gameObject, "BtnUndo", spBtnUndo, Image.Type.Sliced, clickClip);
             rectUndo.anchorMin = new Vector2(0f, 0.5f);
             rectUndo.anchorMax = new Vector2(0f, 0.5f);
             rectUndo.pivot = new Vector2(0.5f, 0.5f);
             rectUndo.anchoredPosition = new Vector2(219f, -5f);
-            rectUndo.sizeDelta = new Vector2(280f, 160f);
+            rectUndo.sizeDelta = new Vector2(296f, 162f);
 
             var iconUndo = CreateImageChild(btnUndo.gameObject, "Icon", spIconUndo);
             iconUndo.rectTransform.anchoredPosition = new Vector2(0f, 14f);
@@ -268,13 +268,13 @@ namespace Line98.Editor
             rectHint.anchoredPosition = new Vector2(0f, 10f);
             rectHint.sizeDelta = new Vector2(200f, 200f);
 
-            // BtnNewGame (280x160)
+            // BtnNewGame (296x162)
             var (btnNewGame, rectNewGame) = CreateButtonChild(actionBar.gameObject, "BtnNewGame", spBtnNewGame, Image.Type.Sliced, clickClip);
             rectNewGame.anchorMin = new Vector2(1f, 0.5f);
             rectNewGame.anchorMax = new Vector2(1f, 0.5f);
             rectNewGame.pivot = new Vector2(0.5f, 0.5f);
             rectNewGame.anchoredPosition = new Vector2(-221f, -5f);
-            rectNewGame.sizeDelta = new Vector2(280f, 160f);
+            rectNewGame.sizeDelta = new Vector2(296f, 162f);
 
             var iconNewGame = CreateImageChild(btnNewGame.gameObject, "Icon", spIconNewGame);
             iconNewGame.rectTransform.anchoredPosition = new Vector2(0f, 14f);

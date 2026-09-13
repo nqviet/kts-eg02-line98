@@ -28,6 +28,7 @@ namespace Line98.Presentation
             float maxOrthoSize = 40.0f)
         {
             if (camera == null) return 7.5f;
+            SanitizeViewport(ref minViewport, ref maxViewport);
 
             Quaternion rotation = Quaternion.Euler(pitchAngle, yawAngle, 0f);
             float low = minOrthoSize;
@@ -115,6 +116,7 @@ namespace Line98.Presentation
         {
             if (camera == null) return 18.5f;
             if (camera.orthographic) return 18.5f;
+            SanitizeViewport(ref minViewport, ref maxViewport);
 
             Quaternion rotation = Quaternion.Euler(pitchAngle, yawAngle, 0f);
             float low = minDistance;
@@ -172,6 +174,17 @@ namespace Line98.Presentation
             }
 
             return optimalDistance;
+        }
+
+        private static void SanitizeViewport(ref Vector2 minViewport, ref Vector2 maxViewport)
+        {
+            minViewport = new Vector2(Mathf.Clamp01(minViewport.x), Mathf.Clamp01(minViewport.y));
+            maxViewport = new Vector2(Mathf.Clamp01(maxViewport.x), Mathf.Clamp01(maxViewport.y));
+            if (maxViewport.x <= minViewport.x || maxViewport.y <= minViewport.y)
+            {
+                minViewport = DefaultMinViewport;
+                maxViewport = DefaultMaxViewport;
+            }
         }
     }
 }
