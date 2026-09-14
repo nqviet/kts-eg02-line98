@@ -15,6 +15,8 @@ namespace Line98.Presentation
         [SerializeField] private Image[] m_SlotImages = new Image[3];
         [SerializeField] private CanvasGroup[] m_SlotCanvasGroups = new CanvasGroup[3];
 
+        [SerializeField] private UiPreviewSpriteSetSO m_SpriteSet;
+
         [Header("Ball Sprites (7 Colors)")]
         [SerializeField] private Sprite m_SpriteRed;
         [SerializeField] private Sprite m_SpriteOrange;
@@ -29,6 +31,11 @@ namespace Line98.Presentation
         public const float ShortfallAlpha = 0.35f;
 
         public Image[] SlotImages => m_SlotImages;
+
+        public void SetSpriteSet(UiPreviewSpriteSetSO spriteSet)
+        {
+            m_SpriteSet = spriteSet;
+        }
 
         private void Awake()
         {
@@ -110,6 +117,11 @@ namespace Line98.Presentation
 
         public Sprite GetSpriteForColor(BallColor color)
         {
+            if (m_SpriteSet != null)
+            {
+                return m_SpriteSet.GetSprite(color);
+            }
+
             switch (color)
             {
                 case BallColor.Red: return m_SpriteRed;

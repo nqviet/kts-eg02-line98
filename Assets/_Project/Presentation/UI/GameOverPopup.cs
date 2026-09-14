@@ -11,7 +11,7 @@ namespace Line98.Presentation
     /// total moves, and revive / new game options per GDD [P1.7].
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GameOverPopup : PopupView
+    public sealed class GameOverPopup : UiPopupBase
     {
         [Header("Game Over Fields")]
         [SerializeField] private TMP_Text m_FinalScoreText;

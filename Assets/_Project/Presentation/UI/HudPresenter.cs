@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using Line98.Core;
 using Line98.Data;
 using Line98.Gameplay;
@@ -33,6 +34,14 @@ namespace Line98.Presentation
         [SerializeField] private Button m_SettingsButton;
         [SerializeField] private Button m_StatsButton;
 
+        [Header("Semantic Action Controls")]
+        [SerializeField] private UiActionButton m_UndoActionButton;
+        [SerializeField] private UiActionButton m_HintActionButton;
+        [SerializeField] private UiActionButton m_NewGameActionButton;
+        [SerializeField] private UiActionButton m_SettingsActionButton;
+        [SerializeField] private UiActionButton m_StatsActionButton;
+        [SerializeField] private UiActionButton m_GameOverNewGameActionButton;
+
         [Header("Sub-Systems & Theme")]
         [SerializeField] private UIRouter m_UIRouter;
         [SerializeField] private UiThemeSO m_Theme;
@@ -41,6 +50,7 @@ namespace Line98.Presentation
         private TweenRunner m_TweenRunner;
         private int m_BestScore;
         private bool m_HasPoppedCrownThisSession;
+        private bool m_AreButtonsBound;
 
         public RollingNumber ScoreNumber => m_ScoreNumber;
         public RollingNumber BestNumber => m_BestNumber;
@@ -54,6 +64,7 @@ namespace Line98.Presentation
         public void Initialize(GameSession session, UIRouter uiRouter, TweenRunner tweenRunner, UiThemeSO theme = null)
         {
             UnbindSession();
+            UnbindButtons();
 
             m_Session = session;
             m_UIRouter = uiRouter;
@@ -67,44 +78,52 @@ namespace Line98.Presentation
 
         private void BindButtons()
         {
-            if (m_UndoButtonView != null && m_UndoButtonView.Button != null)
+            Subscribe(m_UndoActionButton, m_UndoButtonView != null ? m_UndoButtonView.Button : null, OnUndoClicked);
+            Subscribe(m_HintActionButton, m_HintButton, OnHintClicked);
+            Subscribe(m_NewGameActionButton, m_NewGameButton, OnNewGameClicked);
+            Subscribe(m_SettingsActionButton, m_SettingsButton, OnSettingsClicked);
+            Subscribe(m_StatsActionButton, m_StatsButton, OnStatsClicked);
+            Subscribe(m_GameOverNewGameActionButton, m_UIRouter != null && m_UIRouter.GameOverPopup != null ? m_UIRouter.GameOverPopup.NewGameButton : null, OnGameOverNewGameClicked);
+            m_AreButtonsBound = true;
+        }
+
+        private void UnbindButtons()
+        {
+            if (!m_AreButtonsBound)
             {
-                m_UndoButtonView.Button.onClick.RemoveAllListeners();
-                m_UndoButtonView.Button.onClick.AddListener(OnUndoClicked);
+                return;
             }
 
-            if (m_HintButton != null)
-            {
-                m_HintButton.onClick.RemoveAllListeners();
-                m_HintButton.onClick.AddListener(OnHintClicked);
-            }
+            Unsubscribe(m_UndoActionButton, m_UndoButtonView != null ? m_UndoButtonView.Button : null, OnUndoClicked);
+            Unsubscribe(m_HintActionButton, m_HintButton, OnHintClicked);
+            Unsubscribe(m_NewGameActionButton, m_NewGameButton, OnNewGameClicked);
+            Unsubscribe(m_SettingsActionButton, m_SettingsButton, OnSettingsClicked);
+            Unsubscribe(m_StatsActionButton, m_StatsButton, OnStatsClicked);
+            Unsubscribe(m_GameOverNewGameActionButton, m_UIRouter != null && m_UIRouter.GameOverPopup != null ? m_UIRouter.GameOverPopup.NewGameButton : null, OnGameOverNewGameClicked);
+            m_AreButtonsBound = false;
+        }
 
-            if (m_NewGameButton != null)
+        private static void Subscribe(UiActionButton semanticButton, Button legacyButton, UnityAction callback)
+        {
+            if (semanticButton != null)
             {
-                m_NewGameButton.onClick.RemoveAllListeners();
-                m_NewGameButton.onClick.AddListener(OnNewGameClicked);
+                semanticButton.OnPressed += callback;
             }
-
-            if (m_SettingsButton != null)
+            else if (legacyButton != null)
             {
-                m_SettingsButton.onClick.RemoveAllListeners();
-                m_SettingsButton.onClick.AddListener(OnSettingsClicked);
+                legacyButton.onClick.AddListener(callback);
             }
+        }
 
-            if (m_StatsButton != null)
+        private static void Unsubscribe(UiActionButton semanticButton, Button legacyButton, UnityAction callback)
+        {
+            if (semanticButton != null)
             {
-                m_StatsButton.onClick.RemoveAllListeners();
-                m_StatsButton.onClick.AddListener(OnStatsClicked);
+                semanticButton.OnPressed -= callback;
             }
-
-            if (m_UIRouter != null && m_UIRouter.GameOverPopup != null && m_UIRouter.GameOverPopup.NewGameButton != null)
+            else if (legacyButton != null)
             {
-                m_UIRouter.GameOverPopup.NewGameButton.onClick.RemoveAllListeners();
-                m_UIRouter.GameOverPopup.NewGameButton.onClick.AddListener(() =>
-                {
-                    m_UIRouter.GameOverPopup.Hide();
-                    m_Session?.StartNewGame();
-                });
+                legacyButton.onClick.RemoveListener(callback);
             }
         }
 
@@ -249,12 +268,16 @@ namespace Line98.Presentation
 
             if (m_HintButton != null)
             {
-                m_HintButton.interactable = isPlaying && m_Session.Mode.HintsAllowed;
+                bool interactable = isPlaying && m_Session.Mode.HintsAllowed;
+                if (m_HintActionButton != null) m_HintActionButton.SetInteractable(interactable);
+                else m_HintButton.interactable = interactable;
             }
 
             if (m_NewGameButton != null)
             {
-                m_NewGameButton.interactable = isPlaying || m_Session.Phase == GamePhase.GameOver;
+                bool interactable = isPlaying || m_Session.Phase == GamePhase.GameOver;
+                if (m_NewGameActionButton != null) m_NewGameActionButton.SetInteractable(interactable);
+                else m_NewGameButton.interactable = interactable;
             }
         }
 
@@ -342,6 +365,16 @@ namespace Line98.Presentation
             }
         }
 
+        private void OnGameOverNewGameClicked()
+        {
+            if (m_UIRouter != null && m_UIRouter.GameOverPopup != null)
+            {
+                m_UIRouter.GameOverPopup.Hide();
+            }
+
+            m_Session?.StartNewGame();
+        }
+
         private void OnStatsClicked()
         {
             if (m_UIRouter != null && m_Session != null)
@@ -358,6 +391,7 @@ namespace Line98.Presentation
         private void OnDestroy()
         {
             UnbindSession();
+            UnbindButtons();
         }
     }
 }

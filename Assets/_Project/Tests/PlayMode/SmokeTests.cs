@@ -120,6 +120,23 @@ namespace Line98.Tests.PlayMode
             Assert.IsNotNull(presenter.PreviewView, "PreviewView must be bound");
             Assert.IsNotNull(presenter.UndoButtonView, "UndoButtonView must be bound");
 
+            // 6. Verify extracted prefab behaviours remain present in their placed instances.
+            Assert.IsNotNull(GameObject.Find("UI_Root/Canvas_StaticHUD/ActionBar/BtnUndo").GetComponent<UiActionButton>());
+            Assert.IsNotNull(GameObject.Find("UI_Root/Canvas_DynamicHUD/PreviewQueue").GetComponent<UiPreviewTray>());
+
+            PopupView[] popupViews =
+            {
+                router.GameOverPopup,
+                router.ConfirmPopup,
+                router.SettingsPopup,
+                router.StatisticsPopup
+            };
+            for (int i = 0; i < popupViews.Length; i++)
+            {
+                Assert.IsNotNull(popupViews[i]);
+                Assert.IsNotNull(popupViews[i].GetComponent<UiResponsiveModal>());
+            }
+
             yield return null;
         }
     }

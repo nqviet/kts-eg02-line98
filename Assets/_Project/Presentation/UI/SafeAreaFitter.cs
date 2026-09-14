@@ -48,18 +48,22 @@ namespace Line98.Presentation
         private readonly List<ResponsiveText> m_DynamicTexts = new List<ResponsiveText>();
 
         private RectTransform m_RectTransform;
-        private RectTransform m_StaticCanvas;
-        private RectTransform m_DynamicCanvas;
-        private RectTransform m_BrandBar;
-        private RectTransform m_CardRow;
-        private RectTransform m_ActionBar;
-        private RectTransform m_ScoreValue;
-        private RectTransform m_BestValue;
-        private RectTransform m_PreviewQueue;
-        private RectTransform m_UndoBadge;
+        [Header("HUD Slots")]
+        [SerializeField] private RectTransform m_StaticCanvas;
+        [SerializeField] private RectTransform m_DynamicCanvas;
+        [SerializeField] private RectTransform m_BrandBar;
+        [SerializeField] private RectTransform m_CardRow;
+        [SerializeField] private RectTransform m_ActionBar;
+        [SerializeField] private RectTransform m_ScoreValue;
+        [SerializeField] private RectTransform m_BestValue;
+        [SerializeField] private RectTransform m_PreviewQueue;
+        [SerializeField] private RectTransform m_UndoBadge;
         private UnityEngine.UI.CanvasScaler m_CanvasScaler;
         private CameraRig m_CameraRig;
-        private PopupView[] m_PopupViews;
+
+        [Header("Responsive Popups")]
+        [SerializeField] private PopupView[] m_PopupViews = Array.Empty<PopupView>();
+        private readonly List<UiResponsiveModal> m_ResponsivePopups = new List<UiResponsiveModal>();
 
         private Rect m_LastSafeArea = Rect.zero;
         private Vector2Int m_LastScreenSize = Vector2Int.zero;
@@ -80,6 +84,40 @@ namespace Line98.Presentation
         public void SetCameraRig(CameraRig cameraRig)
         {
             m_CameraRig = cameraRig;
+        }
+
+        /// <summary>
+        /// Registers a placed or runtime-created popup with the current safe-area solution.
+        /// Runtime popup factories must call this once after instantiation.
+        /// </summary>
+        public void RegisterPopup(PopupView popup)
+        {
+            if (popup == null)
+            {
+                return;
+            }
+
+            UiResponsiveModal responsiveModal = popup.GetComponent<UiResponsiveModal>();
+            if (responsiveModal == null)
+            {
+                responsiveModal = popup.gameObject.AddComponent<UiResponsiveModal>();
+            }
+
+            RegisterResponsivePopup(responsiveModal);
+        }
+
+        public void UnregisterPopup(PopupView popup)
+        {
+            if (popup == null)
+            {
+                return;
+            }
+
+            UiResponsiveModal responsiveModal = popup.GetComponent<UiResponsiveModal>();
+            if (responsiveModal != null)
+            {
+                m_ResponsivePopups.Remove(responsiveModal);
+            }
         }
 
         private void Awake()
@@ -147,15 +185,7 @@ namespace Line98.Presentation
 
         private void CacheReferences()
         {
-            m_StaticCanvas = FindRect("Canvas_StaticHUD");
-            m_DynamicCanvas = FindRect("Canvas_DynamicHUD");
-            m_BrandBar = FindRect("Canvas_StaticHUD/BrandBar");
-            m_CardRow = FindRect("Canvas_StaticHUD/CardRow");
-            m_ActionBar = FindRect("Canvas_StaticHUD/ActionBar");
-            m_ScoreValue = FindRect("Canvas_DynamicHUD/ScoreValue");
-            m_BestValue = FindRect("Canvas_DynamicHUD/BestValue");
-            m_PreviewQueue = FindRect("Canvas_DynamicHUD/PreviewQueue");
-            m_UndoBadge = FindRect("Canvas_DynamicHUD/UndoBadge");
+            ValidateSlots();
 
             if (m_StaticCanvas != null)
             {
@@ -171,18 +201,31 @@ namespace Line98.Presentation
             CacheTexts(m_DynamicCanvas, m_DynamicTexts);
 
             m_CameraRig = UnityEngine.Object.FindAnyObjectByType<CameraRig>();
-            m_PopupViews = GetComponentsInChildren<PopupView>(true);
+            for (int i = 0; i < m_PopupViews.Length; i++)
+            {
+                RegisterPopup(m_PopupViews[i]);
+            }
         }
 
-        private RectTransform FindRect(string path)
+        private void ValidateSlots()
         {
-            RectTransform rect = transform.Find(path) as RectTransform;
-            if (rect == null)
+            if (m_StaticCanvas == null || m_DynamicCanvas == null || m_BrandBar == null ||
+                m_CardRow == null || m_ActionBar == null || m_ScoreValue == null ||
+                m_BestValue == null || m_PreviewQueue == null || m_UndoBadge == null)
             {
-                Debug.LogError($"[SafeAreaFitter] Required UI rect was not found: {path}", this);
+                Debug.LogError("[SafeAreaFitter] One or more serialized HUD slots are not assigned.", this);
+            }
+        }
+
+        private void RegisterResponsivePopup(UiResponsiveModal responsiveModal)
+        {
+            if (responsiveModal == null || m_ResponsivePopups.Contains(responsiveModal))
+            {
+                return;
             }
 
-            return rect;
+            m_ResponsivePopups.Add(responsiveModal);
+            responsiveModal.ApplyResponsiveLayout(m_CurrentLayout.LayoutRect.width, m_CurrentLayout.MiddleRect.height);
         }
 
         private static void CacheResponsiveChildren(RectTransform root, List<ResponsiveRect> elements)
@@ -288,17 +331,16 @@ namespace Line98.Presentation
                 m_CameraRig.SetTargetViewport(layout.BoardViewportRect.min, layout.BoardViewportRect.max);
             }
 
-            if (m_PopupViews == null)
+            for (int i = m_ResponsivePopups.Count - 1; i >= 0; i--)
             {
-                return;
-            }
-
-            for (int i = 0; i < m_PopupViews.Length; i++)
-            {
-                if (m_PopupViews[i] != null)
+                UiResponsiveModal responsivePopup = m_ResponsivePopups[i];
+                if (responsivePopup == null)
                 {
-                    m_PopupViews[i].ApplyResponsiveLayout(layout.LayoutRect.width, layout.MiddleRect.height);
+                    m_ResponsivePopups.RemoveAt(i);
+                    continue;
                 }
+
+                responsivePopup.ApplyResponsiveLayout(layout.LayoutRect.width, layout.MiddleRect.height);
             }
         }
 

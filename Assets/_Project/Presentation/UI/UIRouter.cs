@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using Line98.Core;
 using Line98.Presentation.Animation;
 
@@ -31,6 +32,7 @@ namespace Line98.Presentation
 
         private TweenRunner m_TweenRunner;
         private readonly Stack<PopupView> m_PopupStack = new Stack<PopupView>();
+        private UnityAction m_ConfirmAction;
 
         public Canvas StaticCanvas => m_StaticCanvas;
         public Canvas DynamicCanvas => m_DynamicCanvas;
@@ -90,12 +92,17 @@ namespace Line98.Presentation
 
             if (m_ConfirmPopup.ConfirmButton != null)
             {
-                m_ConfirmPopup.ConfirmButton.onClick.RemoveAllListeners();
-                m_ConfirmPopup.ConfirmButton.onClick.AddListener(() =>
+                if (m_ConfirmAction != null)
+                {
+                    m_ConfirmPopup.ConfirmButton.onClick.RemoveListener(m_ConfirmAction);
+                }
+
+                m_ConfirmAction = () =>
                 {
                     m_ConfirmPopup.Hide();
                     onConfirm?.Invoke();
-                });
+                };
+                m_ConfirmPopup.ConfirmButton.onClick.AddListener(m_ConfirmAction);
             }
 
             PushPopup(m_ConfirmPopup);

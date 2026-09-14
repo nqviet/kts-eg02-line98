@@ -23,9 +23,7 @@ namespace Line98.Presentation
         private float m_CurrentScale = 1.0f;
         private AudioSource m_AudioSource;
 
-        private static Line98.Presentation.Audio.AudioService s_AudioService;
-        public static void SetAudioService(Line98.Presentation.Audio.AudioService audioService) => s_AudioService = audioService;
-        public static Line98.Presentation.Audio.AudioService AudioService => s_AudioService;
+        private Line98.Presentation.Audio.AudioService m_AudioService;
 
         public event Action OnClicked;
 
@@ -35,13 +33,23 @@ namespace Line98.Presentation
             m_AudioSource = GetComponent<AudioSource>();
         }
 
-        public void Initialize(TweenRunner tweenRunner, AudioClip clickSfx = null)
+        public void Initialize(
+            TweenRunner tweenRunner,
+            Line98.Presentation.Audio.AudioService audioService = null,
+            AudioClip clickSfx = null)
         {
             m_TweenRunner = tweenRunner;
+            m_AudioService = audioService;
             if (clickSfx != null)
             {
                 m_ClickSfx = clickSfx;
             }
+        }
+
+        /// <summary>Compatibility overload for authored UI utilities that provide only a click clip.</summary>
+        public void Initialize(TweenRunner tweenRunner, AudioClip clickSfx)
+        {
+            Initialize(tweenRunner, null, clickSfx);
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -107,15 +115,15 @@ namespace Line98.Presentation
 
         private void PlayClickSound()
         {
-            if (s_AudioService != null)
+            if (m_AudioService != null)
             {
                 if (m_ClickSfx != null)
                 {
-                    s_AudioService.PlaySfx(m_ClickSfx, Line98.Data.AudioBusType.UI);
+                    m_AudioService.PlaySfx(m_ClickSfx, Line98.Data.AudioBusType.UI);
                 }
                 else
                 {
-                    s_AudioService.PlaySfx("sfx_ui_button_click");
+                    m_AudioService.PlaySfx("sfx_ui_button_click");
                 }
                 return;
             }

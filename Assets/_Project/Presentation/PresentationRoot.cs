@@ -111,7 +111,6 @@ namespace Line98.Presentation
 
             // 1c. Initialize AudioService
             m_AudioService = new AudioService(m_AudioCatalog, m_MainMixer, transform);
-            UiButtonFx.SetAudioService(m_AudioService);
 
             // 2. Initialize BoardView
             if (m_BoardView == null)
@@ -210,7 +209,31 @@ namespace Line98.Presentation
                 m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme);
             }
 
+            InitializeUiBehaviours();
+
             m_IsInitialized = true;
+        }
+
+        private void InitializeUiBehaviours()
+        {
+            UiServices services = new UiServices(m_TweenRunner, m_AudioService, m_UiTheme, m_UIRouter, m_Session);
+            UiButtonFx[] buttonEffects = FindObjectsByType<UiButtonFx>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < buttonEffects.Length; i++)
+            {
+                buttonEffects[i].Initialize(m_TweenRunner, m_AudioService);
+            }
+
+            UiActionButton[] actionButtons = FindObjectsByType<UiActionButton>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < actionButtons.Length; i++)
+            {
+                actionButtons[i].Initialize(services);
+            }
+
+            UiThemeApplier[] themeAppliers = FindObjectsByType<UiThemeApplier>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < themeAppliers.Length; i++)
+            {
+                themeAppliers[i].Apply(services.Theme);
+            }
         }
 
         private void Start()

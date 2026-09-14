@@ -8,7 +8,7 @@ namespace Line98.Presentation
     /// In-game Settings popup with Audio toggles (Music, SFX) and close button.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SettingsPopup : PopupView
+    public sealed class SettingsPopup : UiPopupBase
     {
         [SerializeField] private Toggle m_MusicToggle;
         [SerializeField] private Toggle m_SfxToggle;

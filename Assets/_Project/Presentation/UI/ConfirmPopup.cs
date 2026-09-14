@@ -8,7 +8,7 @@ namespace Line98.Presentation
     /// Confirmation dialog for actions like starting a New Game mid-session.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ConfirmPopup : PopupView
+    public sealed class ConfirmPopup : UiPopupBase
     {
         [SerializeField] private Button m_ConfirmButton;
         [SerializeField] private Button m_CancelButton;

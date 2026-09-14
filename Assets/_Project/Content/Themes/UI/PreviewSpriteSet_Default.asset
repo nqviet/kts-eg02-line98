@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6b534356ba6f6d4887c10f40dbc5f64, type: 3}
+  m_Name: PreviewSpriteSet_Default
+  m_EditorClassIdentifier: Line98.Presentation::Line98.Presentation.UiPreviewSpriteSetSO
+  m_Sprites:
+  - {fileID: 21300000, guid: 39af020c64f3d394f9bf3d133617b5b5, type: 3}
+  - {fileID: 21300000, guid: 7cec1f2454848704c8ff113f99c334ad, type: 3}
+  - {fileID: 21300000, guid: 401bbc81e2ac4b64094abbc6b9b2bdf3, type: 3}
+  - {fileID: 21300000, guid: 08e8105fef4fbb54f821727f899463ff, type: 3}
+  - {fileID: 21300000, guid: b04e333050d79f64aa3012f881597f13, type: 3}
+  - {fileID: 21300000, guid: 66cd34fd42d059449a9020bc7be4648e, type: 3}
+  - {fileID: 21300000, guid: 3bd13d055d5f412418ff2326cddecc0e, type: 3}

@@ -8,7 +8,7 @@ namespace Line98.Presentation
     /// Displays player performance statistics (Games Played, Best Score, Total Lines, Average Score).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class StatisticsPopup : PopupView
+    public sealed class StatisticsPopup : UiPopupBase
     {
         [Header("Statistic Fields")]
         [SerializeField] private TMP_Text m_GamesPlayedText;
