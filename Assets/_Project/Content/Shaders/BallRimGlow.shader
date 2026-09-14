@@ -8,6 +8,10 @@ Shader "Line98/BallRimGlow"
         _PulseSpeed ("Pulse Speed (Hz)", Float) = 1.111
         _PulseDepth ("Pulse Depth", Range(0.0, 1.0)) = 0.35
         [HideInInspector] _ZWrite ("__zw", Float) = 0.0
+
+        [NoScaleOffset] _PatternTex ("Accessibility Pattern Texture", 2D) = "black" {}
+        _PatternRect ("Pattern Rect (x=u, y=v, z=scaleU, w=scaleV)", Vector) = (0, 0, 1, 1)
+        _PatternStrength ("Pattern Strength", Range(0.0, 1.0)) = 0.0
     }
     SubShader
     {
@@ -38,6 +42,7 @@ Shader "Line98/BallRimGlow"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
             };
 
             struct Varyings
@@ -45,16 +50,22 @@ Shader "Line98/BallRimGlow"
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
+                float2 uv : TEXCOORD2;
             };
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _RimColor;
+                float4 _PatternRect;
                 float _RimPower;
                 float _RimIntensity;
                 float _PulseSpeed;
                 float _PulseDepth;
                 float _ZWrite;
+                float _PatternStrength;
             CBUFFER_END
+
+            TEXTURE2D(_PatternTex);
+            SAMPLER(sampler_PatternTex);
 
             Varyings Vert(Attributes input)
             {
@@ -65,6 +76,7 @@ Shader "Line98/BallRimGlow"
                 output.positionCS = posInputs.positionCS;
                 output.positionWS = posInputs.positionWS;
                 output.normalWS = normInputs.normalWS;
+                output.uv = input.uv;
                 return output;
             }
 
@@ -79,7 +91,17 @@ Shader "Line98/BallRimGlow"
                 float rim = pow(saturate(1.0 - NdotV), rimPower);
 
                 half3 color = _RimColor.rgb * _RimIntensity * (1.0 + _PulseDepth * breathe);
-                return half4(color, rim * _RimColor.a);
+                float alpha = rim * _RimColor.a;
+
+                if (_PatternStrength > 0.001)
+                {
+                    float2 patUV = _PatternRect.xy + input.uv * _PatternRect.zw;
+                    half4 patSample = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, patUV);
+                    half mask = saturate(patSample.a * (patSample.r + patSample.g + patSample.b) * 0.3333);
+                    color += color * mask * _PatternStrength * 0.5;
+                }
+
+                return half4(color, alpha);
             }
             ENDHLSL
         }

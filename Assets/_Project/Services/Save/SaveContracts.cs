@@ -135,7 +135,15 @@ namespace Line98.Services
         }
     }
 
-    public sealed class SaveService
+    public interface ISaveService
+    {
+        bool SaveGame(SaveData data);
+        SaveData LoadGame();
+        bool HasSave();
+        void ClearSave();
+    }
+
+    public sealed class SaveService : ISaveService
     {
         private const string s_SaveKey = "line98_save";
         private readonly ISaveBackend m_Backend;

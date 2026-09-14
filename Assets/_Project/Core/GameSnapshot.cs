@@ -16,6 +16,7 @@ namespace Line98.Core
         public int Score { get; set; }
         public int MoveCount { get; set; }
         public int LinesCleared { get; set; }
+        public int LongestLine { get; set; }
         public int SelectedIndex { get; set; } = -1;
 
         public GameSnapshot()
@@ -31,6 +32,7 @@ namespace Line98.Core
             int score,
             int moveCount,
             int linesCleared,
+            int longestLine = 0,
             int selectedIndex = -1)
         {
             var snapshot = new GameSnapshot
@@ -41,6 +43,7 @@ namespace Line98.Core
                 Score = score,
                 MoveCount = moveCount,
                 LinesCleared = linesCleared,
+                LongestLine = longestLine,
                 SelectedIndex = selectedIndex
             };
             return snapshot;
@@ -53,6 +56,7 @@ namespace Line98.Core
             out int score,
             out int moveCount,
             out int linesCleared,
+            out int longestLine,
             out int selectedIndex)
         {
             board.ImportCells(BoardCells);
@@ -61,7 +65,28 @@ namespace Line98.Core
             score = Score;
             moveCount = MoveCount;
             linesCleared = LinesCleared;
+            longestLine = LongestLine;
             selectedIndex = SelectedIndex;
+        }
+
+        public void RestoreTo(
+            BoardModel board,
+            PreviewQueue previewQueue,
+            out XorShift128 rng,
+            out int score,
+            out int moveCount,
+            out int linesCleared,
+            out int selectedIndex)
+        {
+            RestoreTo(
+                board,
+                previewQueue,
+                out rng,
+                out score,
+                out moveCount,
+                out linesCleared,
+                out _,
+                out selectedIndex);
         }
     }
 }

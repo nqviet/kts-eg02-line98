@@ -12,10 +12,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fd6bc5dac662d44f856706e3a3c7eff, type: 3}
   m_Name: VfxCatalog_Default
   m_EditorClassIdentifier: Line98.Data::Line98.Data.VfxCatalogSO
-  m_SelectPulsePrefab: {fileID: 0}
-  m_PlacementSettlePrefab: {fileID: 0}
-  m_ClearTier1Prefab: {fileID: 0}
-  m_ClearTier2Prefab: {fileID: 0}
-  m_ClearTier3Prefab: {fileID: 0}
-  m_ClearTier4Prefab: {fileID: 0}
+  m_Entries:
+  - m_Key: BallSelect
+    m_Prefab: {fileID: 8973573380026488149, guid: 31de3977aeb689d46b0528f871dbe424, type: 3}
+    m_PoolSize: 2
+    m_Lifetime: 1
+  - m_Key: BallTrail
+    m_Prefab: {fileID: 9223260958825182967, guid: 77f107b6663370145b1bee1816e0def8, type: 3}
+    m_PoolSize: 2
+    m_Lifetime: 0.22
+  - m_Key: PlacementSettle
+    m_Prefab: {fileID: 3243062858761175364, guid: f9d1beaee2a73b14c9c15af9bc7535ba, type: 3}
+    m_PoolSize: 4
+    m_Lifetime: 0.3
+  - m_Key: InvalidShake
+    m_Prefab: {fileID: 4720175242669648344, guid: 9381c636ffb830c46a83ac18a4aae163, type: 3}
+    m_PoolSize: 2
+    m_Lifetime: 0.18
+  - m_Key: ClearTier1
+    m_Prefab: {fileID: 1867380682130873068, guid: f90fc05b6630e8b4cbf41257a29c81b8, type: 3}
+    m_PoolSize: 4
+    m_Lifetime: 0.6
+  - m_Key: ClearTier2
+    m_Prefab: {fileID: 7422024791678455916, guid: 95b56da5b2786a441b5dd5641d785a8f, type: 3}
+    m_PoolSize: 4
+    m_Lifetime: 0.8
+  - m_Key: ClearTier3
+    m_Prefab: {fileID: 1891359834657966794, guid: d5eda33bcc43b914099301510e9b164a, type: 3}
+    m_PoolSize: 4
+    m_Lifetime: 1.1
+  - m_Key: ClearTier4
+    m_Prefab: {fileID: 2176291134981092092, guid: 3e415c1ffcd7b0740b38da062ddf87e8, type: 3}
+    m_PoolSize: 4
+    m_Lifetime: 1.8
+  - m_Key: ScorePopup
+    m_Prefab: {fileID: 8363451264072076277, guid: f893d722fba0ab54a99009b5f9d59b00, type: 3}
+    m_PoolSize: 8
+    m_Lifetime: 0.75
+  - m_Key: GameOverFrost
+    m_Prefab: {fileID: 4133226116569852768, guid: 8c69187a0a63db14da5d34e6929132cd, type: 3}
+    m_PoolSize: 2
+    m_Lifetime: 1.2
   m_PrewarmPoolCapacity: 4

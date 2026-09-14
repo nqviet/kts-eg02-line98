@@ -179,10 +179,10 @@ namespace Line98.Presentation
             }
         }
 
-        public void SetGlow(bool active)
+        public void SetGlow(bool active, float intensity = 1.0f)
         {
             CancelGlowTween();
-            SetGlowShellScale(m_GlowShellScale);
+            SetGlowShellScale(m_GlowShellScale * intensity);
             if (m_GlowShell != null)
             {
                 m_GlowShell.gameObject.SetActive(active);

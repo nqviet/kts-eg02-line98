@@ -23,6 +23,10 @@ namespace Line98.Presentation
         private float m_CurrentScale = 1.0f;
         private AudioSource m_AudioSource;
 
+        private static Line98.Presentation.Audio.AudioService s_AudioService;
+        public static void SetAudioService(Line98.Presentation.Audio.AudioService audioService) => s_AudioService = audioService;
+        public static Line98.Presentation.Audio.AudioService AudioService => s_AudioService;
+
         public event Action OnClicked;
 
         private void Awake()
@@ -103,6 +107,19 @@ namespace Line98.Presentation
 
         private void PlayClickSound()
         {
+            if (s_AudioService != null)
+            {
+                if (m_ClickSfx != null)
+                {
+                    s_AudioService.PlaySfx(m_ClickSfx, Line98.Data.AudioBusType.UI);
+                }
+                else
+                {
+                    s_AudioService.PlaySfx("sfx_ui_button_click");
+                }
+                return;
+            }
+
             if (m_ClickSfx != null)
             {
                 if (m_AudioSource != null)

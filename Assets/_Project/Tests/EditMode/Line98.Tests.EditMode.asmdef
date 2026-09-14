@@ -8,7 +8,9 @@
     "Line98.Services",
     "Line98.App",
     "Line98.Presentation",
-    "Line98.Editor"
+    "Line98.Editor",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

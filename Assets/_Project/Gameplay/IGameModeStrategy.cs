@@ -76,14 +76,7 @@ namespace Line98.Gameplay
 
         public static uint ComputeFnv1a32(string text)
         {
-            uint hash = 2166136261U;
-            if (string.IsNullOrEmpty(text)) return hash;
-            for (int i = 0; i < text.Length; i++)
-            {
-                hash ^= text[i];
-                hash *= 16777619U;
-            }
-            return hash;
+            return Fnv1a32.Compute(text);
         }
     }
 

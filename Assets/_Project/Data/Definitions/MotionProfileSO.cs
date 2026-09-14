@@ -8,14 +8,14 @@ namespace Line98.Data
     {
         [Header("Procedural Curves")]
         [SerializeField] private AnimationCurve m_OutCubic = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-        [SerializeField] private AnimationCurve m_OutBack = AnimationCurve.Linear(0f, 0f, 1f, 1f);
-        [SerializeField] private AnimationCurve m_InExpo = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        [SerializeField] private AnimationCurve m_OutBack = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.62f, 1.10f), new Keyframe(1f, 1f));
+        [SerializeField] private AnimationCurve m_InExpo = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.5f, 0.05f), new Keyframe(1f, 1f));
         [SerializeField] private AnimationCurve m_InOutQuad = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-        [SerializeField] private AnimationCurve m_Squash = AnimationCurve.Linear(0f, 1f, 1f, 1f);
-        [SerializeField] private AnimationCurve m_Hop = AnimationCurve.Linear(0f, 0f, 1f, 0f);
-        [SerializeField] private AnimationCurve m_Pulse = AnimationCurve.Linear(0f, 1f, 1f, 1f);
-        [SerializeField] private AnimationCurve m_RimRamp = AnimationCurve.Linear(0f, 0f, 1f, 0f);
-        [SerializeField] private AnimationCurve m_FloatUp = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        [SerializeField] private AnimationCurve m_Squash = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.25f, 0.90f), new Keyframe(0.6f, 1.02f), new Keyframe(1f, 1f));
+        [SerializeField] private AnimationCurve m_Hop = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.45f, 1f), new Keyframe(1f, 0f));
+        [SerializeField] private AnimationCurve m_Pulse = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.5f, 1.18f), new Keyframe(1f, 1f));
+        [SerializeField] private AnimationCurve m_RimRamp = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.3f, 1f), new Keyframe(0.7f, 1f), new Keyframe(1f, 0f));
+        [SerializeField] private AnimationCurve m_FloatUp = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 0.6f));
 
         [Header("Durations (ms)")]
         [SerializeField] private float m_MoveBaseMs = 300f;
@@ -25,6 +25,10 @@ namespace Line98.Data
         [SerializeField] private float m_LandingMs = 160f;
         [SerializeField] private float m_StaggerPerCellMs = 22f;
         [SerializeField] private float m_SpawnStaggerMs = 70f;
+
+        [Header("Landing Damped Sine")]
+        [SerializeField] private float m_LandingDecay = 9f;
+        [SerializeField] private float m_LandingFrequency = 28f;
 
         [Header("Scalars")]
         [SerializeField] private float m_ClockScale = 1f;
@@ -49,10 +53,75 @@ namespace Line98.Data
         public float LandingMs => m_LandingMs;
         public float StaggerPerCellMs => m_StaggerPerCellMs;
         public float SpawnStaggerMs => m_SpawnStaggerMs;
+        public float LandingDecay => m_LandingDecay;
+        public float LandingFrequency => m_LandingFrequency;
 
         public float ClockScale => m_ClockScale;
         public float AnimationScale => m_AnimationScale;
         public float ShakeScale => m_ShakeScale;
         public int MaxFlightWaypoints => m_MaxFlightWaypoints;
+
+        private static MotionProfileSO s_Default;
+        public static MotionProfileSO Default
+        {
+            get
+            {
+                if (s_Default == null)
+                {
+                    s_Default = CreateInstance<MotionProfileSO>();
+                    s_Default.name = "MotionProfile_CodeDefault";
+                }
+                return s_Default;
+            }
+        }
+
+        public void Initialize(
+            float moveBaseMs,
+            float perStepMinMs,
+            float perStepMaxMs,
+            float anticipationMs,
+            float landingMs,
+            float staggerPerCellMs,
+            float spawnStaggerMs,
+            float clockScale = 1f,
+            float animationScale = 1f,
+            float shakeScale = 1f,
+            int maxFlightWaypoints = 10,
+            float landingDecay = 9f,
+            float landingFrequency = 28f,
+            AnimationCurve outCubic = null,
+            AnimationCurve outBack = null,
+            AnimationCurve inExpo = null,
+            AnimationCurve inOutQuad = null,
+            AnimationCurve squash = null,
+            AnimationCurve hop = null,
+            AnimationCurve pulse = null,
+            AnimationCurve rimRamp = null,
+            AnimationCurve floatUp = null)
+        {
+            m_MoveBaseMs = moveBaseMs;
+            m_PerStepMinMs = perStepMinMs;
+            m_PerStepMaxMs = perStepMaxMs;
+            m_AnticipationMs = anticipationMs;
+            m_LandingMs = landingMs;
+            m_StaggerPerCellMs = staggerPerCellMs;
+            m_SpawnStaggerMs = spawnStaggerMs;
+            m_ClockScale = clockScale;
+            m_AnimationScale = animationScale;
+            m_ShakeScale = shakeScale;
+            m_MaxFlightWaypoints = maxFlightWaypoints;
+            m_LandingDecay = landingDecay;
+            m_LandingFrequency = landingFrequency;
+
+            if (outCubic != null) m_OutCubic = outCubic;
+            if (outBack != null) m_OutBack = outBack;
+            if (inExpo != null) m_InExpo = inExpo;
+            if (inOutQuad != null) m_InOutQuad = inOutQuad;
+            if (squash != null) m_Squash = squash;
+            if (hop != null) m_Hop = hop;
+            if (pulse != null) m_Pulse = pulse;
+            if (rimRamp != null) m_RimRamp = rimRamp;
+            if (floatUp != null) m_FloatUp = floatUp;
+        }
     }
 }

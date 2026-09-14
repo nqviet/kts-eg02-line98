@@ -1,9 +1,12 @@
 using System;
 using UnityEngine;
+using UnityEngine.Audio;
 using Line98.Core;
 using Line98.Data;
 using Line98.Gameplay;
 using Line98.Presentation.Animation;
+using Line98.Presentation.Audio;
+using Line98.Presentation.Vfx;
 
 namespace Line98.Presentation
 {
@@ -22,6 +25,9 @@ namespace Line98.Presentation
         [SerializeField] private CameraProfileSO m_CameraProfile;
         [SerializeField] private BallThemeSO m_BallTheme;
         [SerializeField] private BoardThemeSO m_BoardTheme;
+        [SerializeField] private VfxCatalogSO m_VfxCatalog;
+        [SerializeField] private AudioCatalogSO m_AudioCatalog;
+        [SerializeField] private AudioMixer m_MainMixer;
 
         [Header("Art Assets")]
         [SerializeField] private Renderer m_Backdrop;
@@ -49,6 +55,8 @@ namespace Line98.Presentation
         private MoveAnimator m_MoveAnimator;
         private BoardAnimator m_BoardAnimator;
         private MovePacer m_MovePacer;
+        private VfxService m_VfxService;
+        private AudioService m_AudioService;
         private bool m_IsInitialized;
 
         public bool IsInitialized => m_IsInitialized;
@@ -57,6 +65,10 @@ namespace Line98.Presentation
         public BallViewManager BallManager => m_BallManager;
         public TweenRunner TweenRunner => m_TweenRunner;
         public MovePacer MovePacer => m_MovePacer;
+        public VfxService VfxService => m_VfxService;
+        public AudioService AudioService => m_AudioService;
+        public AudioCatalogSO AudioCatalog => m_AudioCatalog;
+        public AudioMixer MainMixer => m_MainMixer;
         public InputRouter InputRouter => m_InputRouter;
         public UIRouter UIRouter => m_UIRouter;
         public HudPresenter HudPresenter => m_HudPresenter;
@@ -68,7 +80,10 @@ namespace Line98.Presentation
             FeedbackProfileSO feedbackProfile = null,
             CameraProfileSO cameraProfile = null,
             BallThemeSO ballTheme = null,
-            BoardThemeSO boardTheme = null)
+            BoardThemeSO boardTheme = null,
+            VfxCatalogSO vfxCatalog = null,
+            AudioCatalogSO audioCatalog = null,
+            AudioMixer mainMixer = null)
         {
             m_Session = session;
             if (motionProfile != null) m_MotionProfile = motionProfile;
@@ -76,9 +91,27 @@ namespace Line98.Presentation
             if (cameraProfile != null) m_CameraProfile = cameraProfile;
             if (ballTheme != null) m_BallTheme = ballTheme;
             if (boardTheme != null) m_BoardTheme = boardTheme;
+            if (vfxCatalog != null) m_VfxCatalog = vfxCatalog;
+            if (audioCatalog != null) m_AudioCatalog = audioCatalog;
+            if (mainMixer != null) m_MainMixer = mainMixer;
 
             // 1. Initialize procedural TweenRunner
             m_TweenRunner = new TweenRunner();
+
+            // 1b. Initialize VfxService
+            var vfxRoot = transform.Find("VFX_Root");
+            if (vfxRoot == null)
+            {
+                var vfxGo = new GameObject("VFX_Root");
+                vfxGo.transform.SetParent(transform, false);
+                vfxRoot = vfxGo.transform;
+            }
+            m_VfxService = new VfxService(m_VfxCatalog, vfxRoot);
+            m_VfxService.PrewarmShaders();
+
+            // 1c. Initialize AudioService
+            m_AudioService = new AudioService(m_AudioCatalog, m_MainMixer, transform);
+            UiButtonFx.SetAudioService(m_AudioService);
 
             // 2. Initialize BoardView
             if (m_BoardView == null)
@@ -130,9 +163,18 @@ namespace Line98.Presentation
                 m_BoardView.CellPitch);
 
             // 5. Initialize Animators
+            if (m_MotionProfile == null)
+            {
+                Debug.LogWarning("[PresentationRoot] m_MotionProfile is null, falling back to MotionProfileSO.Default.");
+            }
+            if (m_FeedbackProfile == null)
+            {
+                Debug.LogWarning("[PresentationRoot] m_FeedbackProfile is null, falling back to FeedbackProfileSO.Default.");
+            }
+
             FeedbackRules feedbackRules = m_FeedbackProfile != null ? m_FeedbackProfile.ToRules() : FeedbackRules.Default;
-            m_MoveAnimator = new MoveAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_MotionProfile);
-            m_BoardAnimator = new BoardAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_CameraRig.CamShake, feedbackRules);
+            m_MoveAnimator = new MoveAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_MotionProfile ?? MotionProfileSO.Default, m_VfxService, m_AudioService);
+            m_BoardAnimator = new BoardAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_CameraRig.CamShake, feedbackRules, m_GlowMaterial, m_VfxService, m_AudioService);
 
             // 6. Initialize InputRouter
             if (m_InputRouter == null)
@@ -142,6 +184,7 @@ namespace Line98.Presentation
                 m_InputRouter = inputGo.AddComponent<InputRouter>();
             }
             m_InputRouter.Initialize(m_CameraRig.Camera, m_BoardView, m_Session);
+            m_InputRouter.OnInvalidMoveAttempted += HandleInvalidMoveAttempted;
 
             // 7. Initialize MovePacer and bind to GameSession
             m_MovePacer = new MovePacer(m_MoveAnimator, m_BoardAnimator, m_InputRouter);
@@ -200,6 +243,8 @@ namespace Line98.Presentation
             if (ball != null)
             {
                 ball.SetSelected(true);
+                m_VfxService?.PlayVfx("BallSelect", m_BoardView.GridToWorld(pos));
+                m_AudioService?.PlaySfx("sfx_ball_select");
             }
         }
 
@@ -213,7 +258,13 @@ namespace Line98.Presentation
                     ball.SetSelected(false);
                 }
                 m_HasSelectedBall = false;
+                m_AudioService?.PlaySfx("sfx_ball_deselect");
             }
+        }
+
+        private void HandleInvalidMoveAttempted(GridPos pos)
+        {
+            m_AudioService?.PlaySfx("sfx_ball_invalid");
         }
 
         private void HandleMoveCommitted(MoveResult result)
@@ -230,6 +281,8 @@ namespace Line98.Presentation
             m_MovePacer.Tick(dt);
             m_InputRouter.Tick(dt);
             m_UIRouter?.Tick(dt);
+            m_VfxService?.Tick(dt);
+            m_AudioService?.Tick(dt);
         }
 
         private void Update()
@@ -240,12 +293,17 @@ namespace Line98.Presentation
 
         private void OnDestroy()
         {
+            if (m_InputRouter != null)
+            {
+                m_InputRouter.OnInvalidMoveAttempted -= HandleInvalidMoveAttempted;
+            }
             if (m_Session != null)
             {
                 m_Session.OnBallSelected -= HandleBallSelected;
                 m_Session.OnBallDeselected -= HandleBallDeselected;
                 m_Session.OnMoveCommitted -= HandleMoveCommitted;
             }
+            m_AudioService?.Dispose();
             m_BallManager?.Dispose();
         }
     }

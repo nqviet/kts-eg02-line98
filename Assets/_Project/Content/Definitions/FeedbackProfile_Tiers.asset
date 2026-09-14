@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 546f15cab0341ec429f7f4234125fd52, type: 3}
   m_Name: FeedbackProfile_Tiers
-  m_EditorClassIdentifier: Line98.Data:Line98.Data:FeedbackProfileSO
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.FeedbackProfileSO
   m_Tiers:
   - MinLen: 5
     MaxLen: 5

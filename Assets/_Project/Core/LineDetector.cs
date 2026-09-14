@@ -143,6 +143,126 @@ namespace Line98.Core
             return true;
         }
 
+        public static bool TryBuildAllClearGroups(BoardModel board, out ClearGroup group)
+        {
+            group = ClearGroup.Empty;
+            if (board == null) return false;
+
+            ulong maskLow = 0UL;
+            ulong maskHigh = 0UL;
+            int runCount = 0;
+            int longestRun = 0;
+            BallColor dominantColor = BallColor.None;
+
+            // 1. Horizontal
+            for (int y = 0; y < BoardModel.Size; y++)
+            {
+                int x = 0;
+                while (x < BoardModel.Size)
+                {
+                    BallColor c = board.ColorAt(new GridPos(x, y));
+                    if (c == BallColor.None) { x++; continue; }
+                    int startX = x;
+                    while (x < BoardModel.Size && board.ColorAt(new GridPos(x, y)) == c) x++;
+                    int len = x - startX;
+                    if (len >= MinimumLineLength)
+                    {
+                        runCount++;
+                        if (len > longestRun) longestRun = len;
+                        if (dominantColor == BallColor.None) dominantColor = c;
+                        for (int i = startX; i < x; i++) SetBit(y * BoardModel.Size + i, ref maskLow, ref maskHigh);
+                    }
+                }
+            }
+
+            // 2. Vertical
+            for (int x = 0; x < BoardModel.Size; x++)
+            {
+                int y = 0;
+                while (y < BoardModel.Size)
+                {
+                    BallColor c = board.ColorAt(new GridPos(x, y));
+                    if (c == BallColor.None) { y++; continue; }
+                    int startY = y;
+                    while (y < BoardModel.Size && board.ColorAt(new GridPos(x, y)) == c) y++;
+                    int len = y - startY;
+                    if (len >= MinimumLineLength)
+                    {
+                        runCount++;
+                        if (len > longestRun) longestRun = len;
+                        if (dominantColor == BallColor.None) dominantColor = c;
+                        for (int i = startY; i < y; i++) SetBit(i * BoardModel.Size + x, ref maskLow, ref maskHigh);
+                    }
+                }
+            }
+
+            // 3. Diagonal Ascending
+            for (int startX = 0; startX < BoardModel.Size; startX++)
+                ScanDiagonal(board, startX, 0, 1, 1, ref maskLow, ref maskHigh, ref runCount, ref longestRun, ref dominantColor);
+            for (int startY = 1; startY < BoardModel.Size; startY++)
+                ScanDiagonal(board, 0, startY, 1, 1, ref maskLow, ref maskHigh, ref runCount, ref longestRun, ref dominantColor);
+
+            // 4. Diagonal Descending
+            for (int startX = 0; startX < BoardModel.Size; startX++)
+                ScanDiagonal(board, startX, BoardModel.Size - 1, 1, -1, ref maskLow, ref maskHigh, ref runCount, ref longestRun, ref dominantColor);
+            for (int startY = 0; startY < BoardModel.Size - 1; startY++)
+                ScanDiagonal(board, 0, startY, 1, -1, ref maskLow, ref maskHigh, ref runCount, ref longestRun, ref dominantColor);
+
+            if (runCount == 0) return false;
+
+            int totalUniqueCells = CountBits(maskLow) + CountBits(maskHigh);
+            GridPos[] cells = new GridPos[totalUniqueCells];
+            int writeIdx = 0;
+            for (int i = 0; i < BoardModel.CellCount; i++)
+            {
+                if (IsBitSet(i, maskLow, maskHigh))
+                    cells[writeIdx++] = GridPos.FromIndex(i);
+            }
+
+            group = new ClearGroup(cells, longestRun, runCount, dominantColor);
+            return true;
+        }
+
+        private static void ScanDiagonal(BoardModel board, int startX, int startY, int dx, int dy,
+            ref ulong maskLow, ref ulong maskHigh, ref int runCount, ref int longestRun, ref BallColor dominantColor)
+        {
+            int cx = startX;
+            int cy = startY;
+            while (cx >= 0 && cx < BoardModel.Size && cy >= 0 && cy < BoardModel.Size)
+            {
+                BallColor c = board.ColorAt(new GridPos(cx, cy));
+                if (c == BallColor.None)
+                {
+                    cx += dx;
+                    cy += dy;
+                    continue;
+                }
+
+                int segStartX = cx;
+                int segStartY = cy;
+                int len = 0;
+                while (cx >= 0 && cx < BoardModel.Size && cy >= 0 && cy < BoardModel.Size && board.ColorAt(new GridPos(cx, cy)) == c)
+                {
+                    len++;
+                    cx += dx;
+                    cy += dy;
+                }
+
+                if (len >= MinimumLineLength)
+                {
+                    runCount++;
+                    if (len > longestRun) longestRun = len;
+                    if (dominantColor == BallColor.None) dominantColor = c;
+                    for (int step = 0; step < len; step++)
+                    {
+                        int px = segStartX + dx * step;
+                        int py = segStartY + dy * step;
+                        SetBit(py * BoardModel.Size + px, ref maskLow, ref maskHigh);
+                    }
+                }
+            }
+        }
+
         private static int CountDirection(BoardModel board, int startX, int startY, int dx, int dy, BallColor targetColor)
         {
             int count = 0;

@@ -374,7 +374,7 @@ namespace Line98.Editor
             scrimGroup.blocksRaycasts = false;
 
             // GameOverPopup
-            var gameOverPopup = BuildPopupModal<GameOverPopup>(popupCanvas.gameObject, "GameOverPopup", "GAME OVER", fontAsset, spCardHud, spBtnUndo, spBtnNewGame, clickClip);
+            var gameOverPopup = BuildGameOverModal(popupCanvas.gameObject, fontAsset, spCardHud, spBtnUndo, spBtnNewGame, clickClip);
             // ConfirmPopup
             var confirmPopup = BuildPopupModal<ConfirmPopup>(popupCanvas.gameObject, "ConfirmPopup", "CONFIRM", fontAsset, spCardHud, spBtnUndo, spBtnNewGame, clickClip);
             // SettingsPopup
@@ -522,6 +522,126 @@ namespace Line98.Editor
             SetSerializedField(popupComp, "m_BodyText", bodyTmp);
             SetSerializedField(popupComp, "m_PrimaryButton", btnPrimary);
             SetSerializedField(popupComp, "m_SecondaryButton", btnSecondary);
+
+            go.SetActive(false);
+            return popupComp;
+        }
+
+        private static GameOverPopup BuildGameOverModal(GameObject parent, TMP_FontAsset font, Sprite cardSprite, Sprite btnPrimarySprite, Sprite btnSecondarySprite, AudioClip clickClip)
+        {
+            var go = new GameObject("GameOverPopup", typeof(RectTransform));
+            go.transform.SetParent(parent.transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var cg = go.AddComponent<CanvasGroup>();
+            cg.alpha = 0f;
+            cg.blocksRaycasts = false;
+
+            // Modal card container
+            var container = CreateImageChild(go, "Container", cardSprite, Image.Type.Sliced);
+            container.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            container.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            container.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            container.rectTransform.sizeDelta = new Vector2(880f, 560f);
+
+            var titleTmp = CreateTmpChild(container.gameObject, "Title", "GAME OVER", font, 36f, FontStyles.Bold, new Color(0.04f, 0.06f, 0.20f));
+            titleTmp.alignment = TextAlignmentOptions.Center;
+            titleTmp.rectTransform.anchorMin = new Vector2(0.5f, 1f);
+            titleTmp.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            titleTmp.rectTransform.pivot = new Vector2(0.5f, 1f);
+            titleTmp.rectTransform.anchoredPosition = new Vector2(0f, -40f);
+            titleTmp.rectTransform.sizeDelta = new Vector2(700f, 50f);
+
+            var (btnPrimary, rectPrimary) = CreateButtonChild(container.gameObject, "BtnPrimary", btnPrimarySprite, Image.Type.Sliced, clickClip);
+            rectPrimary.anchorMin = new Vector2(0.5f, 0f);
+            rectPrimary.anchorMax = new Vector2(0.5f, 0f);
+            rectPrimary.pivot = new Vector2(0.5f, 0f);
+            rectPrimary.anchoredPosition = new Vector2(-180f, 40f);
+            rectPrimary.sizeDelta = new Vector2(320f, 100f);
+            var lblPri = CreateTmpChild(btnPrimary.gameObject, "Label", "CONTINUE", font, 26f, FontStyles.Bold, new Color(0.04f, 0.06f, 0.20f));
+            lblPri.alignment = TextAlignmentOptions.Center;
+            lblPri.rectTransform.anchorMin = Vector2.zero;
+            lblPri.rectTransform.anchorMax = Vector2.one;
+            lblPri.rectTransform.offsetMin = Vector2.zero;
+            lblPri.rectTransform.offsetMax = Vector2.zero;
+
+            var (btnSecondary, rectSecondary) = CreateButtonChild(container.gameObject, "BtnSecondary", btnSecondarySprite, Image.Type.Sliced, clickClip);
+            rectSecondary.anchorMin = new Vector2(0.5f, 0f);
+            rectSecondary.anchorMax = new Vector2(0.5f, 0f);
+            rectSecondary.pivot = new Vector2(0.5f, 0f);
+            rectSecondary.anchoredPosition = new Vector2(180f, 40f);
+            rectSecondary.sizeDelta = new Vector2(320f, 100f);
+            var lblSec = CreateTmpChild(btnSecondary.gameObject, "Label", "NEW GAME", font, 26f, FontStyles.Bold, new Color(0.04f, 0.06f, 0.20f));
+            lblSec.alignment = TextAlignmentOptions.Center;
+            lblSec.rectTransform.anchorMin = Vector2.zero;
+            lblSec.rectTransform.anchorMax = Vector2.one;
+            lblSec.rectTransform.offsetMin = Vector2.zero;
+            lblSec.rectTransform.offsetMax = Vector2.zero;
+
+            // StatsRows
+            var rowsGo = new GameObject("StatsRows", typeof(RectTransform));
+            rowsGo.transform.SetParent(container.transform, false);
+            var rowsRect = rowsGo.GetComponent<RectTransform>();
+            rowsRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rowsRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rowsRect.pivot = new Vector2(0.5f, 0.5f);
+            rowsRect.anchoredPosition = new Vector2(0f, 10f);
+            rowsRect.sizeDelta = new Vector2(680f, 260f);
+
+            Color labelColor = new Color(0.28f, 0.39f, 0.57f);
+            Color valueColor = new Color(0.04f, 0.06f, 0.20f);
+
+            (TextMeshProUGUI label, TextMeshProUGUI val) SetupRow(string rowName, string labelText, string initialVal, float yPos)
+            {
+                var rowGo = new GameObject(rowName, typeof(RectTransform));
+                rowGo.transform.SetParent(rowsGo.transform, false);
+                var rRect = rowGo.GetComponent<RectTransform>();
+                rRect.anchorMin = new Vector2(0.5f, 0.5f);
+                rRect.anchorMax = new Vector2(0.5f, 0.5f);
+                rRect.pivot = new Vector2(0.5f, 0.5f);
+                rRect.anchoredPosition = new Vector2(0f, yPos);
+                rRect.sizeDelta = new Vector2(640f, 44f);
+
+                var lTmp = CreateTmpChild(rowGo, "Label", labelText, font, 24f, FontStyles.Bold, labelColor);
+                lTmp.alignment = TextAlignmentOptions.Left;
+                lTmp.rectTransform.anchorMin = new Vector2(0f, 0f);
+                lTmp.rectTransform.anchorMax = new Vector2(0.6f, 1f);
+                lTmp.rectTransform.offsetMin = Vector2.zero;
+                lTmp.rectTransform.offsetMax = Vector2.zero;
+
+                var vTmp = CreateTmpChild(rowGo, "Value", initialVal, font, 28f, FontStyles.Bold, valueColor);
+                vTmp.alignment = TextAlignmentOptions.Right;
+                vTmp.rectTransform.anchorMin = new Vector2(0.6f, 0f);
+                vTmp.rectTransform.anchorMax = new Vector2(1f, 1f);
+                vTmp.rectTransform.offsetMin = Vector2.zero;
+                vTmp.rectTransform.offsetMax = Vector2.zero;
+
+                return (lTmp, vTmp);
+            }
+
+            var (_, finalScoreVal) = SetupRow("Row_FinalScore", "FINAL SCORE", "00000", 96f);
+            var (_, bestScoreVal) = SetupRow("Row_BestScore", "BEST SCORE", "00000", 48f);
+            var (_, linesClearedVal) = SetupRow("Row_LinesCleared", "LINES CLEARED", "0", 0f);
+            var (_, longestLineVal) = SetupRow("Row_LongestLine", "LONGEST LINE", "0", -48f);
+            var (_, totalMovesVal) = SetupRow("Row_TotalMoves", "TOTAL MOVES", "0", -96f);
+
+            var popupComp = go.AddComponent<GameOverPopup>();
+            SetSerializedField(popupComp, "m_ModalContainer", container.rectTransform);
+            SetSerializedField(popupComp, "m_CanvasGroup", cg);
+            SetSerializedField(popupComp, "m_TitleText", titleTmp);
+            SetSerializedField(popupComp, "m_PrimaryButton", btnPrimary);
+            SetSerializedField(popupComp, "m_SecondaryButton", btnSecondary);
+            SetSerializedField(popupComp, "m_FinalScoreText", finalScoreVal);
+            SetSerializedField(popupComp, "m_BestScoreText", bestScoreVal);
+            SetSerializedField(popupComp, "m_LinesClearedText", linesClearedVal);
+            SetSerializedField(popupComp, "m_LongestLineText", longestLineVal);
+            SetSerializedField(popupComp, "m_TotalMovesText", totalMovesVal);
+            SetSerializedField(popupComp, "m_ContinueButton", btnPrimary);
+            SetSerializedField(popupComp, "m_NewGameButton", btnSecondary);
 
             go.SetActive(false);
             return popupComp;

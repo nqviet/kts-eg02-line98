@@ -56,9 +56,9 @@ namespace Line98.App
             }
         }
 
-        private void OnGameOver()
+        private void OnGameOver(SessionSummary summary)
         {
-            m_StatusMessage = "GAME OVER!";
+            m_StatusMessage = $"GAME OVER! Final Score: {summary.FinalScore}, Longest: {summary.LongestLine}";
         }
 
         private void OnGUI()

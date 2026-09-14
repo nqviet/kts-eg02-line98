@@ -106,6 +106,59 @@ namespace Line98.Tests.EditMode
             Assert.LessOrEqual(result.BoardViewportRect.yMax, 1f);
         }
 
+        [TestCase(1080f, 1920f)]
+        [TestCase(1080f, 2340f)]
+        [TestCase(1080f, 2640f)]
+        [TestCase(1080f, 1440.703125f)] // 2048 x 2732 tablet, width-pinned canvas
+        [TestCase(1080f, 1440f)] // 1536 x 2048 iPad, width-pinned canvas
+        [TestCase(1080f, 864f)] // 1280 x 1024 editor window, width-pinned canvas
+        [TestCase(1080f, 607.5f)] // 1920 x 1080 landscape window, width-pinned canvas
+        [TestCase(1080f, 452.09302f)] // 3440 x 1440 ultrawide window, width-pinned canvas
+        public void GameOverPopup_StatsRowsLayout_FitsWithinModalBounds(float canvasWidth, float canvasHeight)
+        {
+            const float modalWidth = 880f;
+            const float modalHeight = 560f;
+            const float titleTopOffset = -40f;
+            const float titleHeight = 50f;
+            const float buttonBottomOffset = 40f;
+            const float buttonHeight = 100f;
+
+            // Stats rows offsets relative to center: FinalScore (0), BestScore (1), LinesCleared (2), LongestLine (3), TotalMoves (4)
+            float[] rowCenterY = new float[] { 96f, 48f, 0f, -48f, -96f };
+            const float rowHeight = 44f;
+            const float rowWidth = 640f;
+
+            float contentTop = modalHeight * 0.5f + titleTopOffset - titleHeight;
+            float contentBottom = -modalHeight * 0.5f + buttonBottomOffset + buttonHeight;
+
+            Assert.Less(rowWidth, modalWidth);
+
+            for (int i = 0; i < rowCenterY.Length; i++)
+            {
+                float rowTop = rowCenterY[i] + rowHeight * 0.5f;
+                float rowBottom = rowCenterY[i] - rowHeight * 0.5f;
+
+                Assert.LessOrEqual(rowTop, contentTop, $"Row {i} top must be below title");
+                Assert.GreaterOrEqual(rowBottom, contentBottom, $"Row {i} bottom must be above buttons");
+
+                if (i > 0)
+                {
+                    float prevRowBottom = rowCenterY[i - 1] - rowHeight * 0.5f;
+                    Assert.GreaterOrEqual(prevRowBottom, rowTop, $"Row {i} must not overlap row {i - 1}");
+                }
+            }
+
+            // Explicitly assert the two new rows: LongestLine (index 3) and TotalMoves (index 4)
+            float longestLineTop = rowCenterY[3] + rowHeight * 0.5f;
+            float longestLineBottom = rowCenterY[3] - rowHeight * 0.5f;
+            float movesTop = rowCenterY[4] + rowHeight * 0.5f;
+            float movesBottom = rowCenterY[4] - rowHeight * 0.5f;
+
+            Assert.Greater(longestLineTop, movesTop);
+            Assert.GreaterOrEqual(longestLineBottom, movesTop);
+            Assert.GreaterOrEqual(movesBottom, contentBottom);
+        }
+
         private static void AssertRectIsFiniteAndNonNegative(Rect rect)
         {
             Assert.IsFalse(float.IsNaN(rect.x));

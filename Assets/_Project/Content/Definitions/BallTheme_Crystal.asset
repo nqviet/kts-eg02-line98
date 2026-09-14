@@ -20,6 +20,7 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 429a54bf7e792d8489d49b1ca7a4102d, type: 2}
   - {fileID: 2100000, guid: 695435f50cdd8374eadb0142049d2fad, type: 2}
   - {fileID: 2100000, guid: 986400a3885076f41a621988b096133d, type: 2}
-  m_AccessibilityPatterns: {fileID: 0}
+  m_AccessibilityPatterns: {fileID: 2800000, guid: 83226b06518de914592ac578379c62c8, type: 3}
   m_InnerRefractionMask: {fileID: 0}
   m_BlobShadowMaterial: {fileID: 2100000, guid: 2b428a80e9ef7b24d9af250a53cdff19, type: 2}
+  m_PatternsOn: 0

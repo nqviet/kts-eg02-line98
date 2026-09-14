@@ -5,6 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Line98.Core;
 using Line98.Gameplay;
+using Line98.Services;
 
 namespace Line98.Tests.EditMode
 {
@@ -151,6 +152,63 @@ namespace Line98.Tests.EditMode
             long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - beforeBytes;
 
             Assert.AreEqual(0, allocatedBytes, $"MoveResolver.Resolve must allocate 0 bytes per call, but allocated {allocatedBytes} bytes over 100 iterations");
+        }
+
+        [Test]
+        public void GddFolderMapping_ResolvesToExistingArchitectureFolders()
+        {
+            var mapping = new Dictionary<string, string[]>
+            {
+                { "Core", new[] { "Core" } },
+                { "Gameplay", new[] { "Gameplay" } },
+                { "UI", new[] { "Presentation/UI" } },
+                { "Audio", new[] { "Presentation/Audio" } },
+                { "VFX", new[] { "Presentation/Vfx" } },
+                { "Data", new[] { "Data" } },
+                { "Services", new[] { "Services" } },
+                { "Monetization", new[] { "Services/Ads", "Services/Iap" } },
+                { "Analytics", new[] { "Services/Analytics" } },
+                { "Editor", new[] { "Editor" } },
+                { "Tests", new[] { "Tests" } },
+            };
+
+            string projectRoot = Path.Combine(m_ProjectRoot, "_Project");
+            foreach (var kvp in mapping)
+            {
+                foreach (string subPath in kvp.Value)
+                {
+                    string fullPath = Path.Combine(projectRoot, subPath);
+                    Assert.IsTrue(Directory.Exists(fullPath),
+                        $"GDD §4 folder '{kvp.Key}' must map to existing architecture folder at '{subPath}' (ADR D25)");
+                }
+            }
+        }
+
+        [Test]
+        public void FrozenInterfaces_AllTenDeclared()
+        {
+            Type[] frozenInterfaces = new[]
+            {
+                typeof(IRandomSource),
+                typeof(IScoreConfig),
+                typeof(ISaveService),
+                typeof(IDailyChallengeProvider),
+                typeof(ILeaderboardProvider),
+                typeof(IThemeProvider),
+                typeof(IAchievementService),
+                typeof(IAnalyticsService),
+                typeof(IAdService),
+                typeof(IPurchaseService)
+            };
+
+            foreach (Type iface in frozenInterfaces)
+            {
+                Assert.IsNotNull(iface, "Frozen interface type must not be null");
+                Assert.IsTrue(iface.IsInterface, $"Type {iface.Name} must be declared as an interface per GDD P0.1");
+            }
+
+            Assert.IsTrue(typeof(IIapService).IsAssignableFrom(typeof(IPurchaseService)),
+                "IPurchaseService must inherit or alias IIapService per ADR D26");
         }
 
         private static void AssertNoUnityRandomInDir(string dir)

@@ -24,6 +24,8 @@ namespace Line98.Gameplay
         private int m_Score;
         private int m_MoveCount;
         private int m_LinesCleared;
+        private int m_LongestLine;
+        private int m_BestScore;
         private int m_FreeUndosRemaining;
         private GridPos m_SelectedPos;
         private bool m_HasSelection;
@@ -40,7 +42,7 @@ namespace Line98.Gameplay
         public event Action<MoveResult> OnMoveCommitted;
         public event Action<int> OnScoreChanged;
         public event Action<GameSnapshot> OnStateRestored;
-        public event Action OnGameOver;
+        public event Action<SessionSummary> OnGameOver;
         public event Action<GamePhase> OnPhaseChanged;
 
         public BoardModel Board => m_Board;
@@ -49,6 +51,8 @@ namespace Line98.Gameplay
         public int Score => m_Score;
         public int MoveCount => m_MoveCount;
         public int LinesCleared => m_LinesCleared;
+        public int LongestLine => m_LongestLine;
+        public int BestScore => Math.Max(m_BestScore, m_Score);
         public int FreeUndosRemaining => m_FreeUndosRemaining;
         public bool HasSelection => m_HasSelection;
         public GridPos SelectedPos => m_SelectedPos;
@@ -80,6 +84,26 @@ namespace Line98.Gameplay
             m_Mode = mode ?? new ClassicMode();
         }
 
+        public void SetBestScore(int bestScore)
+        {
+            if (bestScore > m_BestScore)
+            {
+                m_BestScore = bestScore;
+            }
+        }
+
+        public SessionSummary GetSummary(int? bestScoreOverride = null, bool canContinue = true)
+        {
+            int best = bestScoreOverride ?? Math.Max(m_BestScore, m_Score);
+            return new SessionSummary(
+                m_Score,
+                best,
+                m_LongestLine,
+                m_LinesCleared,
+                m_MoveCount,
+                canContinue);
+        }
+
         public void StartNewGame(uint? customSeed = null)
         {
             uint seed = customSeed ?? m_Mode.GenerateSeed();
@@ -89,6 +113,7 @@ namespace Line98.Gameplay
             m_Score = 0;
             m_MoveCount = 0;
             m_LinesCleared = 0;
+            m_LongestLine = 0;
             m_FreeUndosRemaining = 3;
             m_HasSelection = false;
             m_UndoStack.Clear();
@@ -200,6 +225,7 @@ namespace Line98.Gameplay
                     m_Score,
                     m_MoveCount,
                     m_LinesCleared,
+                    m_LongestLine,
                     from.Index);
                 m_UndoStack.Push(snapshot);
             }
@@ -243,6 +269,11 @@ namespace Line98.Gameplay
                 }
                 m_LinesCleared += plan.Cleared.RunCount;
 
+                if (plan.Cleared.LongestRun > m_LongestLine)
+                {
+                    m_LongestLine = plan.Cleared.LongestRun;
+                }
+
                 if (m_Mode.ScoringEnabled)
                 {
                     m_Score += plan.ScoreDelta;
@@ -281,7 +312,8 @@ namespace Line98.Gameplay
             if (plan.IsGameOver)
             {
                 SetPhase(GamePhase.GameOver);
-                OnGameOver?.Invoke();
+                SessionSummary summary = GetSummary();
+                OnGameOver?.Invoke(summary);
             }
             else
             {
@@ -309,6 +341,7 @@ namespace Line98.Gameplay
                 out m_Score,
                 out m_MoveCount,
                 out m_LinesCleared,
+                out m_LongestLine,
                 out int selectedIndex);
 
             m_FreeUndosRemaining--;

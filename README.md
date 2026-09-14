@@ -5,6 +5,8 @@ How to produce the **Windows (Win32 desktop, x64)** and **Android** builds.
 The project is pinned to Unity **`6000.6.0f1`** (`ProjectSettings/ProjectVersion.txt`) — build with that
 exact version, never a different one mid-milestone.
 
+**Demo**: https://monosnap.ai/file/xXdSdlwXjqfqInOwiqdkbJ1itavWvx
+
 ## Targets at a glance
 
 |  | Windows | Android |

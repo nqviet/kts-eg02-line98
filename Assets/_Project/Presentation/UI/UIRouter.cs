@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Line98.Core;
 using Line98.Presentation.Animation;
 
 namespace Line98.Presentation
@@ -70,11 +71,16 @@ namespace Line98.Presentation
             if (m_PopupCanvas != null) m_PopupCanvas.sortingOrder = 20;
         }
 
-        public void OpenGameOver(int score, int bestScore, int lines, bool canContinue)
+        public void OpenGameOver(in SessionSummary summary)
         {
             if (m_GameOverPopup == null) return;
-            m_GameOverPopup.Populate(score, bestScore, lines, canContinue);
+            m_GameOverPopup.Populate(summary);
             PushPopup(m_GameOverPopup);
+        }
+
+        public void OpenGameOver(int score, int bestScore, int lines, bool canContinue)
+        {
+            OpenGameOver(new SessionSummary(score, bestScore, 0, lines, 0, canContinue));
         }
 
         public void OpenConfirm(string title, string body, Action onConfirm)

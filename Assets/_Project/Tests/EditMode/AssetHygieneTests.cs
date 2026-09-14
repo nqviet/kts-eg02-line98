@@ -143,5 +143,28 @@ namespace Line98.Tests.EditMode
             Assert.AreEqual(3000, mat.renderQueue, "Glow shell material must render in Transparent queue (3000).");
             Assert.AreEqual(0f, mat.GetFloat("_ZWrite"), "Glow shell material must have ZWrite turned off.");
         }
+
+        [Test]
+        public void ConfigAndProfileAssets_ArePresentAndScriptResolvable()
+        {
+            var assetPaths = new[]
+            {
+                "Assets/_Project/Content/Definitions/ScoreTable_Default.asset",
+                "Assets/_Project/Content/Definitions/SpawnColorPolicy_Default.asset",
+                "Assets/_Project/Content/Definitions/GameConfig_Default.asset",
+                "Assets/_Project/Content/Definitions/MotionProfile_Default.asset",
+                "Assets/_Project/Content/Definitions/FeedbackProfile_Tiers.asset",
+                "Assets/_Project/Content/Definitions/MotionPreset_Zen.asset",
+                "Assets/_Project/Content/Definitions/MotionPreset_ReducedMotion.asset"
+            };
+
+            foreach (var path in assetPaths)
+            {
+                var asset = AssetDatabase.LoadMainAssetAtPath(path);
+                Assert.IsNotNull(asset, $"Asset missing at {path}");
+                Assert.AreNotEqual(typeof(DefaultAsset), asset.GetType(), $"Asset at {path} resolved to DefaultAsset (missing or broken script reference).");
+                Assert.IsTrue(asset is ScriptableObject, $"Asset at {path} is not a ScriptableObject.");
+            }
+        }
     }
 }

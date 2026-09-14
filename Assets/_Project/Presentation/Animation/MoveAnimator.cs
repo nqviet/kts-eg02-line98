@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Line98.Core;
 using Line98.Data;
+using Line98.Presentation.Vfx;
 
 namespace Line98.Presentation.Animation
 {
@@ -21,6 +22,8 @@ namespace Line98.Presentation.Animation
         private readonly BallViewManager m_BallManager;
         private readonly TweenRunner m_TweenRunner;
         private readonly MotionProfileSO m_MotionProfile;
+        private readonly VfxService m_VfxService;
+        private readonly Line98.Presentation.Audio.AudioService m_AudioService;
 
         private readonly Vector3[] m_WaypointBuffer = new Vector3[MaxWaypoints];
         private int m_WaypointCount;
@@ -41,6 +44,12 @@ namespace Line98.Presentation.Animation
         private Vector3 m_LandingWorldPos;
 
         public bool IsActive => m_IsFlying || m_IsLanding;
+        public MotionProfileSO Profile => m_MotionProfile;
+        public float StepDuration => m_StepDuration;
+        public float TotalFlightDuration => m_TotalFlightDuration;
+        public float LandingDuration => m_LandingDuration;
+        public int WaypointCount => m_WaypointCount;
+
         public float SpeedMultiplier
         {
             get => m_SpeedMultiplier;
@@ -51,12 +60,17 @@ namespace Line98.Presentation.Animation
             BoardView boardView,
             BallViewManager ballManager,
             TweenRunner tweenRunner,
-            MotionProfileSO motionProfile = null)
+            MotionProfileSO motionProfile = null,
+            VfxService vfxService = null,
+            Line98.Presentation.Audio.AudioService audioService = null)
         {
             m_BoardView = boardView;
             m_BallManager = ballManager;
             m_TweenRunner = tweenRunner;
-            m_MotionProfile = motionProfile;
+            m_MotionProfile = motionProfile ?? MotionProfileSO.Default;
+            m_LandingDuration = m_MotionProfile.LandingMs * 0.001f * m_MotionProfile.AnimationScale;
+            m_VfxService = vfxService;
+            m_AudioService = audioService;
         }
 
         public void AnimateMove(
@@ -79,14 +93,27 @@ namespace Line98.Presentation.Animation
                 return;
             }
 
-            // Populate cached waypoint buffer
+            // Populate cached waypoint buffer with decimation if path > 12 cells (Animation §6.1 #8)
             m_WaypointCount = 0;
             if (path != null && path.Count > 0)
             {
-                int count = Mathf.Min(path.Count, MaxWaypoints);
-                for (int i = 0; i < count; i++)
+                int maxWaypoints = Mathf.Clamp(m_MotionProfile.MaxFlightWaypoints, 2, MaxWaypoints);
+                if (path.Count > 12)
                 {
-                    m_WaypointBuffer[m_WaypointCount++] = m_BoardView.GridToWorld(path[i]);
+                    int targetCount = Mathf.Min(maxWaypoints, path.Count);
+                    for (int i = 0; i < targetCount; i++)
+                    {
+                        int idx = Mathf.RoundToInt(i * (path.Count - 1f) / (targetCount - 1f));
+                        m_WaypointBuffer[m_WaypointCount++] = m_BoardView.GridToWorld(path[idx]);
+                    }
+                }
+                else
+                {
+                    int count = Mathf.Min(path.Count, MaxWaypoints);
+                    for (int i = 0; i < count; i++)
+                    {
+                        m_WaypointBuffer[m_WaypointCount++] = m_BoardView.GridToWorld(path[i]);
+                    }
                 }
             }
             else
@@ -95,17 +122,45 @@ namespace Line98.Presentation.Animation
                 m_WaypointBuffer[m_WaypointCount++] = m_BoardView.GridToWorld(to);
             }
 
-            // Calculate timing per specification: clamp(300 / steps, 42, 85) ms
+            // Calculate timing from motion profile: clamp(MoveBaseMs / steps, PerStepMinMs, PerStepMaxMs) * AnimationScale
             int stepCount = Mathf.Max(1, m_WaypointCount - 1);
-            float perStepMs = Mathf.Clamp(300f / stepCount, 42f, 85f);
+            float perStepMs = Mathf.Clamp(
+                m_MotionProfile.MoveBaseMs / stepCount,
+                m_MotionProfile.PerStepMinMs,
+                m_MotionProfile.PerStepMaxMs) * m_MotionProfile.AnimationScale;
             m_StepDuration = perStepMs * 0.001f;
             m_TotalFlightDuration = stepCount * m_StepDuration;
+            m_LandingDuration = m_MotionProfile.LandingMs * 0.001f * m_MotionProfile.AnimationScale;
             m_FlightElapsed = 0f;
             m_IsFlying = true;
             m_IsLanding = false;
 
             // Relocate spatial reference in manager immediately
             m_BallManager.RelocateBall(from, to);
+
+            // Attach ball trail for flight only (Animation §6.1 #8, T5.4)
+            if (m_VfxService != null && m_ActiveFlightBall != null)
+            {
+                Color tint = GetBallColor(m_ActiveFlightBall.Color);
+                m_VfxService.AttachTrail(m_ActiveFlightBall.transform, tint, this);
+            }
+
+            m_AudioService?.PlaySfx("sfx_ball_move_flight");
+        }
+
+        private static Color GetBallColor(BallColor color)
+        {
+            return color switch
+            {
+                BallColor.Red => new Color(0.95f, 0.2f, 0.2f),
+                BallColor.Orange => new Color(1.0f, 0.55f, 0.1f),
+                BallColor.Yellow => new Color(1.0f, 0.9f, 0.15f),
+                BallColor.Green => new Color(0.2f, 0.85f, 0.3f),
+                BallColor.Cyan => new Color(0.1f, 0.85f, 0.95f),
+                BallColor.Purple => new Color(0.65f, 0.2f, 0.95f),
+                BallColor.Blue => new Color(0.2f, 0.4f, 0.95f),
+                _ => Color.white
+            };
         }
 
         public void Tick(float dt)
@@ -135,14 +190,18 @@ namespace Line98.Presentation.Animation
                 float segT = currentSegmentFloat - segIndex;
 
                 // InOutQuad easing within segment
-                float easedSegT = Easing.InOutQuad(segT);
+                float easedSegT = m_MotionProfile.InOutQuad != null
+                    ? m_MotionProfile.InOutQuad.Evaluate(segT)
+                    : Easing.InOutQuad(segT);
 
                 Vector3 start = m_WaypointBuffer[segIndex];
                 Vector3 end = m_WaypointBuffer[segIndex + 1];
                 Vector3 currentGround = Vector3.Lerp(start, end, easedSegT);
 
                 // Arc hop: parabolic lift per step (height 0.12u)
-                float hopNormalized = Mathf.Sin(easedSegT * Mathf.PI);
+                float hopNormalized = m_MotionProfile.Hop != null
+                    ? m_MotionProfile.Hop.Evaluate(segT)
+                    : Mathf.Sin(easedSegT * Mathf.PI);
                 float hopLift = hopNormalized * 0.12f * m_BoardView.CellPitch;
 
                 m_ActiveFlightBall.transform.position = currentGround;
@@ -159,27 +218,30 @@ namespace Line98.Presentation.Animation
                 {
                     m_ActiveFlightBall.transform.position = m_LandingWorldPos;
                     m_ActiveFlightBall.SetHeightLift(0f);
+                    m_VfxService?.DetachTrail(m_ActiveFlightBall.transform);
                 }
 
+                m_VfxService?.PlayBurst("PlacementSettle", m_LandingWorldPos, this);
+                m_AudioService?.PlaySfx("sfx_ball_place_settle");
                 m_OnLandingCallback?.Invoke();
 
                 // Start landing bounce
                 m_IsLanding = true;
                 m_LandingElapsed = 0f;
-                m_LandingDuration = 0.16f;
+                m_LandingDuration = m_MotionProfile.LandingMs * 0.001f * m_MotionProfile.AnimationScale;
             }
         }
 
         private void TickLanding(float dt)
         {
             m_LandingElapsed += dt;
-            float t = m_LandingElapsed / m_LandingDuration;
+            float t = m_LandingDuration > 0f ? m_LandingElapsed / m_LandingDuration : 1f;
 
             if (t < 1.0f && m_ActiveFlightBall != null)
             {
-                // Soft Bounce: DampedSine with A=0.09u, lambda=9, omega=28
+                // Soft Bounce: DampedSine with A=0.09u, lambda=LandingDecay, omega=LandingFrequency
                 float amp = 0.09f * m_BoardView.CellPitch;
-                float bounce = Easing.DampedSine(m_LandingElapsed, amp, 9f, 28f);
+                float bounce = Easing.DampedSine(m_LandingElapsed, amp, m_MotionProfile.LandingDecay, m_MotionProfile.LandingFrequency);
 
                 // Positive bounce lifts visual; negative bounce compresses into squash
                 if (bounce >= 0f)
@@ -212,8 +274,10 @@ namespace Line98.Presentation.Animation
             m_IsLanding = false;
             if (m_ActiveFlightBall != null)
             {
+                m_VfxService?.DetachTrail(m_ActiveFlightBall.transform);
                 m_ActiveFlightBall.ResetVisuals();
             }
+            m_VfxService?.CancelByOwner(this);
         }
     }
 }

@@ -9,7 +9,11 @@ namespace Line98.Services
         void RestorePurchases(Action<bool> onComplete);
     }
 
-    public sealed class EditorStubIapService : IIapService
+    public interface IPurchaseService : IIapService
+    {
+    }
+
+    public sealed class EditorStubIapService : IPurchaseService, IIapService
     {
         private bool m_HasRemovedAds;
 

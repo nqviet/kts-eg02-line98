@@ -122,6 +122,75 @@
 - **Rationale:** Existing horizontal artwork is authored for this width. The fitter now derives both canvas axes from the scaler formula, so inset conversion remains correct if the setting changes later.
 - **Status:** Approved & Implemented.
 
+### D25: GDD §4 Folder Structure Alignment with 7-Assembly Architecture
+- **Decision:** Honour the GDD §4 folder tree (`Core`, `Gameplay`, `UI`, `Audio`, `VFX`, `Data`, `Services`, `Monetization`, `Analytics`, `Editor`, `Tests`) as canonical subfolders under the 7-asmdef layout (`Assets/_Project/`), without creating redundant root folders or churn:
+  - `Core` -> `_Project/Core`
+  - `Gameplay` -> `_Project/Gameplay`
+  - `UI` -> `_Project/Presentation/UI`
+  - `Audio` -> `_Project/Presentation/Audio`
+  - `VFX` -> `_Project/Presentation/Vfx`
+  - `Data` -> `_Project/Data`
+  - `Services` -> `_Project/Services`
+  - `Monetization` -> `_Project/Services/Ads` and `_Project/Services/Iap`
+  - `Analytics` -> `_Project/Services/Analytics`
+  - `Editor` -> `_Project/Editor`
+  - `Tests` -> `_Project/Tests`
+- **Rationale:** Aligns physical file structure with compile units enforced mechanically by asmdefs and `ArchitectureTests`.
+- **Status:** Approved & Implemented.
+
+### D26: Frozen Interfaces Declaration and Purchase Service Alias
+- **Decision:** Formally declare all 10 frozen interface contracts mandated by GDD P0.1 / Architecture §7: `IRandomSource`, `IScoreConfig`, `ISaveService`, `IDailyChallengeProvider`, `ILeaderboardProvider`, `IThemeProvider`, `IAchievementService`, `IAnalyticsService`, `IAdService`, `IPurchaseService`. Alias `IPurchaseService` to `IIapService` (`IPurchaseService : IIapService`).
+- **Rationale:** Freezes all vendor/backend interfaces early, preventing architecture refactoring when Phase 3 (Product) and Phase 4 (Monetization) systems are integrated.
+- **Status:** Approved & Implemented.
+
+### D27: Single Palette Authority in BallThemeSO
+- **Decision:** Maintain `BallThemeSO` as the single authoritative data asset for the 7 canonical ball colors and materials. Do not author a redundant `PaletteConfig` asset.
+- **Rationale:** Prevents configuration drift and duplicate source-of-truth between theme visuals and gameplay palette data.
+- **Status:** Approved & Implemented.
+
+### D28: PlayMode Execution Protocol & Full Line-Detection Matrix
+- **Decision:** PlayMode execution over CLI/HTTP requires asynchronous execution (`--async_tests true`) followed by polling `test_status` because entering Play Mode triggers domain/scene reload that drops synchronous HTTP connections. The full P1.3/P1.8 line-detection matrix (lengths 5, 6, 7, 8, 9 across H/V/Diagonals, intersecting multi-lines, separate simultaneous lines, and cross scoring) is fully implemented and tested in `LineDetectorTests`.
+- **Rationale:** Ensures automated CI and local tooling accurately run and verify scene-level smoke tests without false negatives while guaranteeing mathematical correctness across all line geometries.
+- **Status:** Approved & Implemented.
+
+### D29: Session-End Payload Contract (SessionSummary) and Undo Reversibility
+- **Decision:** Encapsulate the end-of-session data into an immutable `SessionSummary` struct in `Line98.Core` (`FinalScore`, `BestScore`, `LongestLine`, `LinesCleared`, `TotalMoves`, `CanContinue`). `GameSession.OnGameOver` emits `Action<SessionSummary>` and `GameSession.GetSummary()` provides pull access. `GameSnapshot` captures and restores `LongestLine` so that undo fully rolls back stats to their pre-move value. `GameOverPopup` presents all 5 stats rows and guarantees New Game is available ad-free.
+- **Rationale:** Satisfies GDD [P1.7] exit criteria ("end-of-session payload carries every listed stat; New Game is always reachable without an ad") and guarantees zero drift during undo cycles.
+- **Status:** Approved & Implemented.
+
+### D30: Feel-Data Plumbing, MotionProfile, FeedbackProfile, and Pooled Line Ribbons
+- **Decision:** Re-authored `MotionProfile_Default.asset`, `FeedbackProfile_Tiers.asset`, `MotionPreset_Zen.asset`, and `MotionPreset_ReducedMotion.asset` with verified MonoScript GUIDs. Refactored `MoveAnimator` to consume `MotionProfileSO` (deleting all hardcoded timing constants) and implement waypoint decimation (≤ 10 waypoints if path > 12 cells per Animation §6.1 #8). Refactored `BoardAnimator` to consume `FeedbackTierRule` (stagger outward from placed ball by `StaggerMs * 0.001f`, scale pulse by `AnimationScale`, hold by `HoldMs`, glow by `GlowIntensity`). Implemented 2 pooled `LineRenderer` ribbons (H/V sharing one, diagonals sharing the second) with scrolling UV, gold tint for tier 4, and `CancelByOwner` release semantics. Extended `AssetHygieneTests` to assert all 6 config/profile assets exist and are script-resolvable (guarding against D11). Authored `MotionProfileAssetTests` with asset inspection and behavioural divergence proof.
+- **Rationale:** Closes D11, D12, D13, D14; guarantees data-driven animation pacing per Animation §5 & §8 and prevents silent asset serialization breakage.
+- **Status:** Approved & Implemented.
+
+### D31: Shuriken VFX Layer, Catalog Architecture, and Pooled Particle Lifecycle
+- **Decision:** Implemented the VFX layer via `VfxCatalogSO` and `VfxService`. `VfxCatalogSO` refactored from fixed fields to a structured key→entry table `VfxEntry[] { key, prefab, poolSize, lifetime }` with backward-compatible legacy properties. `VfxService` (`Presentation/Vfx/`) implements ring-buffer particle pooling, burst concurrency cap ≤ 4, popup concurrency cap ≤ 8, `ITickable` simulation, `CancelByOwner` lifecycle release, and 0 GC allocations per play. Authored 10 custom Shuriken particle prefabs in `Assets/_Project/Content/Prefabs/Vfx/` covering selection, flight trail, placement settle, invalid shake, clear tiers 1-4, score popup, and game over frost. Integrated into `PresentationRoot`, `MoveAnimator` (trail attachment during flight, detachment and clear on landing, placement settle), and `BoardAnimator` (centroid tier-based clear burst). Fully validated through `VfxServiceTests` and `AnimAssetAuditTests`.
+- **Rationale:** Closes D7 and D15-vfx; feeds D9; guarantees visual juice compliant with Animation §6, §7, §8 and Design Assets §6 within strict mobile performance and memory constraints.
+- **Status:** Approved & Implemented.
+
+### D32: Audio Layer, Bus Routing, AudioService Architecture, and Procedural Music Assets
+- **Decision:**
+  - Created `MainMixer.mixer` at `Assets/_Project/Content/Audio/MainMixer.mixer` containing 5 buses (`Master`, `Music`, `SFX`, `UI`, `Ambience`) and a dedicated `Zen` snapshot.
+  - Implemented `AudioService.cs` (`Presentation/Audio/`) featuring 8 pooled SFX AudioSources (voice cap ≤ 8) with oldest-voice eviction, 2 cross-fading music sources + 1 ambience source, immediate same-frame mute/unmute toggles (`SetMusicEnabled`, `SetSfxEnabled`), deterministic pitch variance using `XorShift128` (0 allocations, 0 `UnityEngine.Random`), and bus routing to corresponding mixer groups.
+  - Extended `AudioCatalogSO.cs` to table-based `AudioEntry[] { Key, Clip, Bus, Volume, PitchVariance }` with stripped/prefixed alias resolution and migrated all 16 audio assets into `AudioCatalog_Default.asset`.
+  - Synthesized and encoded both required BGM files: `bgm_classic_main.ogg` (warm 65 BPM Rhodes/acoustic guitar lo-fi loop, 44.1kHz stereo, seamless loop, Streaming) and `bgm_zen_ambience.ogg` (serene stream/wind/singing bowl pads, 44.1kHz stereo, seamless loop, Streaming).
+  - Configured Unity `AudioImporter` settings (`loadType = AudioClipLoadType.Streaming`, `compressionFormat = AudioCompressionFormat.Vorbis`).
+  - Wired gameplay call sites in `PresentationRoot.cs` (selection, deselection, invalid move attempt), `MoveAnimator.cs` (`sfx_ball_move_flight`, `sfx_ball_place_settle`), `BoardAnimator.cs` (`sfx_spawn_pop`, clear tier rule `rule.AudioKey`), and `UiButtonFx.cs` (`sfx_ui_button_click` on UI bus).
+  - Authored comprehensive test suite `AudioServiceTests.cs` (asserting 8-voice concurrency cap, bus routing, immediate mute/unmute, and catalog resolution for all 16 keys and all feedback tier rules).
+- **Rationale:** Closes D8, D15-audio, D21, D24. Satisfies GDD [P2.6], Design Assets §8, and Animation §6, §7, §8 while maintaining strict 0-allocation runtime performance and architectural determinism.
+- **Status:** Approved & Implemented.
+
+### D33: Colorblind Pattern Overlay, SRP Batcher Invariance, and Draw-Call Budget Compliance
+- **Decision:**
+  - Upgraded `PolishedBall.shader` and `BallRimGlow.shader` with an accessibility pattern overlay sampling path consuming `T_Ball_Accessibility_Patterns.png` (512×512 sub-tiles). All material properties (`_BaseColor`, `_PatternRect`, `_PatternColor`, `_PatternStrength`) are fully encapsulated in `CBUFFER_START(UnityPerMaterial)` / `CBUFFER_END`, ensuring complete SRP Batcher compatibility and zero broken batches across all 81 balls.
+  - Authored distinct sub-tile rects on all 7 canonical ball materials matching GDD §2 / Concept Vocabularies §9: Red = Circle (`0.076, 0.742, 0.182, 0.182`), Orange = Cross (`0.416, 0.748, 0.170, 0.170`), Blue = Triangle (`0.750, 0.756, 0.170, 0.168`), Green = Diamond (`0.082, 0.406, 0.170, 0.186`), Yellow = Star (`0.414, 0.426, 0.172, 0.164`), Purple = Ring (`0.742, 0.406, 0.186, 0.186`), Cyan = Hexagon (`0.408, 0.086, 0.186, 0.160`).
+  - Added `m_PatternsOn` toggle to `BallThemeSO` (default `false` / OFF per spec).
+  - Implemented `AccessibilityAuthoring.SetPatternsEnabled(bool)` to toggle `_PatternStrength` (0.0f vs 1.0f) without altering material variants or invalidating batching.
+  - Verified theoretical worst-case clear frame draw call budget: Board (1) + Balls (≤ 7 batch) + Shadows (1) + Ribbon (≤ 2) + VFX (≤ 4) = 15 draw calls (with UI Canvas strictly batched), passing within the ≤ 15 mobile draw call budget constraint.
+  - Authored comprehensive test suite `AccessibilityAndDrawCallTests.cs` validating tier metrics monotonicity, all 7 unique shape rect assignments, toggle behavior, CBuffer layout, and draw call budget.
+- **Rationale:** Closes D9, D10. Satisfies GDD [P2.2], [P2.3], [P2.4], [P2.5] and GDD Gap Resolution #11.
+- **Status:** Approved & Implemented.
+
 ---
 
 ## GDD Gap Resolutions (Concept Vocabularies §14)

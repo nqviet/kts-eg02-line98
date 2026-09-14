@@ -3,7 +3,18 @@ using System.Collections.Generic;
 
 namespace Line98.Services
 {
-    public sealed class AchievementService
+    public interface IAchievementService
+    {
+        event Action<string> OnAchievementUnlocked;
+        bool IsUnlocked(string achievementId);
+        bool TryUnlock(string achievementId);
+        void CheckScore(int score);
+        void CheckLine(int length);
+        void CheckMoves(int moves);
+        void CheckStreak(int streak);
+    }
+
+    public sealed class AchievementService : IAchievementService
     {
         private readonly HashSet<string> m_UnlockedAchievements = new HashSet<string>();
 

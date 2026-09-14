@@ -1,4 +1,5 @@
 using System;
+using Line98.Core;
 using Line98.Gameplay;
 using Line98.Services;
 using UnityEngine;
@@ -15,7 +16,13 @@ namespace Line98.App
         private static AppRoot s_Instance;
         public static AppRoot Instance => s_Instance;
 
+        [Header("Configuration Assets")]
+        [SerializeField] private Line98.Data.ScoreTableSO m_ScoreTable;
+        [SerializeField] private Line98.Data.SpawnColorPolicySO m_SpawnColorPolicy;
+        [SerializeField] private Line98.Data.GameConfigSO m_GameConfig;
+
         private ServiceRegistry m_Registry;
+        private ConfigService m_ConfigService;
         private GameSession m_Session;
         private GameManager m_GameManager;
         private SaveService m_SaveService;
@@ -24,6 +31,8 @@ namespace Line98.App
         private IAnalyticsService m_AnalyticsService;
         private IAdService m_AdService;
         private IIapService m_IapService;
+
+        public ConfigService Config => m_ConfigService;
 
         private void Awake()
         {
@@ -63,6 +72,22 @@ namespace Line98.App
             m_Registry = ServiceRegistry.Instance;
             m_Registry.Clear();
 
+#if UNITY_EDITOR
+            if (m_ScoreTable == null)
+            {
+                m_ScoreTable = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.ScoreTableSO>("Assets/_Project/Content/Definitions/ScoreTable_Default.asset");
+            }
+            if (m_SpawnColorPolicy == null)
+            {
+                m_SpawnColorPolicy = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.SpawnColorPolicySO>("Assets/_Project/Content/Definitions/SpawnColorPolicy_Default.asset");
+            }
+            if (m_GameConfig == null)
+            {
+                m_GameConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.GameConfigSO>("Assets/_Project/Content/Definitions/GameConfig_Default.asset");
+            }
+#endif
+
+            m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
             m_SaveService = new SaveService(new FileSaveBackend());
             m_StatsService = new StatisticsService();
             m_AchievementService = new AchievementService();
@@ -70,6 +95,7 @@ namespace Line98.App
             m_AdService = new NoOpAdService();
             m_IapService = new EditorStubIapService();
 
+            m_Registry.Register<ConfigService>(m_ConfigService);
             m_Registry.Register<SaveService>(m_SaveService);
             m_Registry.Register<StatisticsService>(m_StatsService);
             m_Registry.Register<AchievementService>(m_AchievementService);
@@ -81,7 +107,7 @@ namespace Line98.App
         private void InitializeGameplay()
         {
             m_Session = new GameSession();
-            m_GameManager = new GameManager(m_Session);
+            m_GameManager = new GameManager(m_Session, m_ConfigService);
             m_Registry.Register<GameSession>(m_Session);
             m_Registry.Register<GameManager>(m_GameManager);
 
@@ -113,9 +139,9 @@ namespace Line98.App
             Autosave();
         }
 
-        private void OnGameOver()
+        private void OnGameOver(SessionSummary summary)
         {
-            m_StatsService?.RecordGameOver(m_Session.Score);
+            m_StatsService?.RecordGameOver(summary.FinalScore);
             Autosave();
         }
 

@@ -96,6 +96,16 @@ namespace Line98.Presentation
                 m_StatsButton.onClick.RemoveAllListeners();
                 m_StatsButton.onClick.AddListener(OnStatsClicked);
             }
+
+            if (m_UIRouter != null && m_UIRouter.GameOverPopup != null && m_UIRouter.GameOverPopup.NewGameButton != null)
+            {
+                m_UIRouter.GameOverPopup.NewGameButton.onClick.RemoveAllListeners();
+                m_UIRouter.GameOverPopup.NewGameButton.onClick.AddListener(() =>
+                {
+                    m_UIRouter.GameOverPopup.Hide();
+                    m_Session?.StartNewGame();
+                });
+            }
         }
 
         private void BindSession()
@@ -199,17 +209,24 @@ namespace Line98.Presentation
             UpdateActionButtonsState();
         }
 
-        private void HandleGameOver()
+        private void HandleGameOver(SessionSummary summary)
         {
             UpdateActionButtonsState();
 
-            if (m_UIRouter != null && m_Session != null)
+            if (m_UIRouter != null)
             {
-                m_UIRouter.OpenGameOver(
-                    m_Session.Score,
-                    m_BestScore,
-                    m_Session.LinesCleared,
-                    canContinue: true);
+                if (m_BestScore > summary.BestScore)
+                {
+                    summary = new SessionSummary(
+                        summary.FinalScore,
+                        m_BestScore,
+                        summary.LongestLine,
+                        summary.LinesCleared,
+                        summary.TotalMoves,
+                        summary.CanContinue);
+                }
+
+                m_UIRouter.OpenGameOver(summary);
             }
         }
 
