@@ -71,7 +71,7 @@ Assets/_Project/
   Presentation/    -- Board/ -- UI/ -- Audio/ -- Vfx/ -- Camera/
   Services/        -- Save/ -- Ads/ -- Iap/ -- Analytics/ -- Localization/
   Editor/          Tests/EditMode/  Tests/PlayMode/
-  Content/         -- Scenes/ Boot.unity Menu.unity Game.unity
+  Content/         -- Scenes/ Boot.unity MainMenu.unity Game.unity
                    -- Prefabs/ -- Materials/ -- Themes/ -- Audio/ -- Localization/
 ```
 
@@ -83,8 +83,8 @@ Unity version pin goes in `ProjectSettings/ProjectVersion.txt` (one `6000.0.x` L
 
 - **One Update entry point.** `AppRoot.Tick(dt)` → `PresentationRoot.Tick(dt)` → `ITickable` animators. No `MonoBehaviour.Update` scattered across views (§25 "no unnecessary Update loops"); everything else is event-driven or coroutine-free.
 - **Manual DI.** `ServiceRegistry` is a typed locator filled in `AppRoot.Awake()` in a fixed order. No container.
-- **Boot order (no network on this path):** load `SaveService` → migrate → load settings/locale → build `ServiceRegistry` with `NoOp*` fallbacks → load `Menu`. Booting never awaits an SDK; ad/IAP SDKs initialise *after* first frame, off the play path.
-- **Scene flow:** `Boot` is never unloaded (holds `AppRoot`, `ServiceRegistry`, `AudioService`, `CameraRig`). `Menu` and `Game` swap as single additive loads through `GameManager`. `UIRouter` activates/deactivates screen prefabs referenced by the loaded scene — no Addressables for UI (Addressables is themes + audio only, local groups).
+- **Boot order (no network on this path):** load `SaveService` → migrate → load settings/locale → build `ServiceRegistry` with `NoOp*` fallbacks → load `MainMenu`. Booting never awaits an SDK; ad/IAP SDKs initialise *after* first frame, off the play path.
+- **Scene flow:** `Boot` creates the persistent `AppRoot` and redirects to `MainMenu`; `MainMenu` and `Game` swap as single scene loads through `UiSceneNavigator`. `UiShell` activates/deactivates screen prefabs referenced by the loaded scene — no Addressables for UI (Addressables is themes + audio only, local groups).
 - **`GamePhase`:** `Boot → Menu → Playing → Resolving → Paused → GameOver`. Only `Resolving` locks input at the model level.
 
 ---

@@ -11,22 +11,23 @@ namespace Line98.Tests.EditMode
     {
         private static readonly string[] s_ExpectedPrefabPaths =
         {
-            "Assets/_Project/Content/Prefabs/UI/UI_Root.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Button_Icon_Base.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Button_Action_Base.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Card_Value.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Card_Preview.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Tray_Preview.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Badge_Count.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Components/Row_Stat.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Hud/Panel_BrandBar.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Hud/Panel_CardRow.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Hud/Panel_ActionBar.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Hud/Hud_DynamicLayer.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Shell/UI_Root.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Buttons/Button_Icon_Base.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Buttons/Button_Action_Base.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Cards/Card_Value.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Cards/Card_Preview.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Cards/Tray_Preview.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Buttons/Badge_Count.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Widgets/Rows/Row_Stat.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Screens/Game/Panel_BrandBar.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Screens/Game/Panel_CardRow.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Screens/Game/Panel_ActionBar.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Screens/Game/Hud_DynamicLayer.prefab",
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_GameOver.prefab",
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Confirm.prefab",
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Settings.prefab",
-            "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Statistics.prefab"
+            "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Statistics.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Screens/MainMenu/Screen_MainMenu.prefab"
         };
 
         [Test]
@@ -57,8 +58,11 @@ namespace Line98.Tests.EditMode
             GameObject uiRoot = AssetDatabase.LoadAssetAtPath<GameObject>(s_ExpectedPrefabPaths[0]);
 
             Assert.IsNotNull(uiRoot.GetComponent<SafeAreaFitter>());
-            Assert.IsNotNull(uiRoot.GetComponent<UIRouter>());
+            Assert.IsNotNull(uiRoot.GetComponent<UiShell>());
             Assert.IsNotNull(uiRoot.GetComponent<HudPresenter>());
+            Assert.IsNotNull(uiRoot.GetComponent<UiCanvasStack>());
+            Assert.IsNotNull(uiRoot.GetComponent<UiPopupRegistry>());
+            Assert.IsNotNull(uiRoot.GetComponent<UiScreenRegistry>());
             Assert.IsNotEmpty(uiRoot.GetComponentsInChildren<UiActionButton>(true));
             Assert.IsNotEmpty(uiRoot.GetComponentsInChildren<UiResponsiveModal>(true));
         }

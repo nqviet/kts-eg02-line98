@@ -45,7 +45,7 @@ namespace Line98.Presentation
         [SerializeField] private CameraRig m_CameraRig;
         [SerializeField] private BoardView m_BoardView;
         [SerializeField] private InputRouter m_InputRouter;
-        [SerializeField] private UIRouter m_UIRouter;
+        [SerializeField] private UiShell m_UIRouter;
         [SerializeField] private HudPresenter m_HudPresenter;
         [SerializeField] private UiThemeSO m_UiTheme;
 
@@ -70,7 +70,7 @@ namespace Line98.Presentation
         public AudioCatalogSO AudioCatalog => m_AudioCatalog;
         public AudioMixer MainMixer => m_MainMixer;
         public InputRouter InputRouter => m_InputRouter;
-        public UIRouter UIRouter => m_UIRouter;
+        public UiShell UIRouter => m_UIRouter;
         public HudPresenter HudPresenter => m_HudPresenter;
         public GameSession Session => m_Session;
 
@@ -201,7 +201,7 @@ namespace Line98.Presentation
             // 8. Initialize UI Router and HUD Presenter
             if (m_UIRouter != null)
             {
-                m_UIRouter.Initialize(m_TweenRunner);
+                m_UIRouter.Initialize(m_TweenRunner, m_AudioService, m_UiTheme, m_Session);
             }
 
             if (m_HudPresenter != null && m_Session != null)
@@ -209,31 +209,7 @@ namespace Line98.Presentation
                 m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme);
             }
 
-            InitializeUiBehaviours();
-
             m_IsInitialized = true;
-        }
-
-        private void InitializeUiBehaviours()
-        {
-            UiServices services = new UiServices(m_TweenRunner, m_AudioService, m_UiTheme, m_UIRouter, m_Session);
-            UiButtonFx[] buttonEffects = FindObjectsByType<UiButtonFx>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < buttonEffects.Length; i++)
-            {
-                buttonEffects[i].Initialize(m_TweenRunner, m_AudioService);
-            }
-
-            UiActionButton[] actionButtons = FindObjectsByType<UiActionButton>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < actionButtons.Length; i++)
-            {
-                actionButtons[i].Initialize(services);
-            }
-
-            UiThemeApplier[] themeAppliers = FindObjectsByType<UiThemeApplier>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < themeAppliers.Length; i++)
-            {
-                themeAppliers[i].Apply(services.Theme);
-            }
         }
 
         private void Start()

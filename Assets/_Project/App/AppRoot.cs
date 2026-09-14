@@ -3,6 +3,7 @@ using Line98.Core;
 using Line98.Gameplay;
 using Line98.Services;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Line98.App
 {
@@ -63,8 +64,12 @@ namespace Line98.App
 
         private void Start()
         {
-            // Start default classic game on boot
             m_GameManager.StartClassicGame();
+
+            if (SceneManager.GetActiveScene().name == "Boot" && Application.CanStreamedLevelBeLoaded("MainMenu"))
+            {
+                SceneManager.LoadSceneAsync("MainMenu", LoadSceneMode.Single);
+            }
         }
 
         private void InitializeServices()

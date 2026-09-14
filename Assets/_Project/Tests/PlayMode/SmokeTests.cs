@@ -78,12 +78,12 @@ namespace Line98.Tests.PlayMode
 
             yield return null;
 
-            // 1. Verify UI_Root and UIRouter
+            // 1. Verify UI_Root and UiShell
             var uiRoot = GameObject.Find("UI_Root");
             Assert.IsNotNull(uiRoot, "UI_Root GameObject must exist in Game scene");
 
-            var router = uiRoot.GetComponent<UIRouter>();
-            Assert.IsNotNull(router, "UIRouter component must exist on UI_Root");
+            var router = uiRoot.GetComponent<UiShell>();
+            Assert.IsNotNull(router, "UiShell component must exist on UI_Root");
 
             // 2. Verify Canvases and Sorting Orders (0 / 10 / 20)
             Assert.IsNotNull(router.StaticCanvas, "StaticCanvas must exist");
@@ -93,6 +93,26 @@ namespace Line98.Tests.PlayMode
             Assert.AreEqual(0, router.StaticCanvas.sortingOrder, "Canvas_StaticHUD sortingOrder must be 0");
             Assert.AreEqual(10, router.DynamicCanvas.sortingOrder, "Canvas_DynamicHUD sortingOrder must be 10");
             Assert.AreEqual(20, router.PopupCanvas.sortingOrder, "Canvas_Popups sortingOrder must be 20");
+            Assert.IsNotNull(router.PopupRegistry, "UiPopupRegistry must exist on UI_Root");
+            Assert.GreaterOrEqual(router.PopupRegistry.RegisteredCount, 4, "All four placed popups must be registered by id");
+
+            UiPopupId[] popupIds = { UiPopupId.GameOver, UiPopupId.Confirm, UiPopupId.Settings, UiPopupId.Statistics };
+            for (int i = 0; i < popupIds.Length; i++)
+            {
+                IUiPopupPayload payload = popupIds[i] switch
+                {
+                    UiPopupId.GameOver => new GameOverPopupPayload(new SessionSummary(10, 20, 3, 2, 4, true)),
+                    UiPopupId.Confirm => new ConfirmPopupPayload("Confirm", "Continue?", null),
+                    UiPopupId.Statistics => new StatisticsPopupPayload(1, 20, 2, 5),
+                    _ => null
+                };
+
+                Assert.IsTrue(router.PopupRegistry.Open(popupIds[i], payload), $"Popup id {popupIds[i]} must resolve");
+                Assert.IsTrue(router.PopupRegistry.TryGet(popupIds[i], out PopupView popup));
+                Assert.IsTrue(popup.IsOpen, $"Popup id {popupIds[i]} must open");
+                router.CloseAllPopups();
+                yield return null;
+            }
 
             // 3. Verify EventSystem uses InputSystemUIInputModule
             var eventSystem = Object.FindAnyObjectByType<EventSystem>();

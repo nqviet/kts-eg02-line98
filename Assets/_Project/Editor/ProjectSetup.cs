@@ -149,7 +149,7 @@ namespace Line98.Editor
             }
 
             string bootScenePath = $"{scenesDir}/Boot.unity";
-            string menuScenePath = $"{scenesDir}/Menu.unity";
+            string menuScenePath = $"{scenesDir}/MainMenu.unity";
             string gameScenePath = $"{scenesDir}/Game.unity";
 
             EnsureSceneExists(bootScenePath);
@@ -166,7 +166,7 @@ namespace Line98.Editor
                 new EditorBuildSettingsScene(gameScenePath, true),
             };
             EditorBuildSettings.scenes = scenes;
-            Debug.Log("[ProjectSetup] Configured EditorBuildSettings scenes: Boot, Menu, Game.");
+            Debug.Log("[ProjectSetup] Configured EditorBuildSettings scenes: Boot, MainMenu, Game.");
         }
 
         private static void SetupBootScene(string bootScenePath)

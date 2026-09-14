@@ -162,7 +162,7 @@ namespace Line98.Editor
             var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
             if (scene.name != "Game")
             {
-                UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Scenes/Game.unity");
+                UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Content/Scenes/Game.unity");
             }
 
             var root = UnityEngine.Object.FindAnyObjectByType<Line98.Presentation.PresentationRoot>();
