@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e8998f8a5d6b894fb5bd39d484dcbf8, type: 3}
+  m_Name: ClearEffect_Crystal
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.ClearEffectSO
+  m_ThemeId: crystal
+  m_DisplayName: Crystal
+  m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_UnlockedByDefault: 1
+  m_RibbonTint: {r: 0.9, g: 0.95, b: 1, a: 0.9}
+  m_RibbonTintBanner: {r: 1, g: 0.84, b: 0.4, a: 0.95}
+  m_BurstTint: {r: 0.34509805, g: 0.84705883, b: 0.9098039, a: 1}
+  m_ClearBurstVfxKey: sfx_crystal_clear_chime

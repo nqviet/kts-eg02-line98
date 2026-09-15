@@ -77,6 +77,29 @@ namespace Line98.Tests.EditMode
             Assert.Greater(result.BoardRect.height, 0f);
         }
 
+        [Test]
+        public void SettingsPopup_ResponsiveLayout_UsesFullLayoutHeight()
+        {
+            GameObject popupObject = new GameObject("Popup_Settings_Test", typeof(RectTransform));
+            try
+            {
+                RectTransform popupRect = popupObject.GetComponent<RectTransform>();
+                popupRect.sizeDelta = new Vector2(980f, 1680f);
+
+                SettingsPopup popup = popupObject.AddComponent<SettingsPopup>();
+                UiResponsiveModal responsiveModal = popupObject.AddComponent<UiResponsiveModal>();
+                responsiveModal.ApplyResponsiveLayout(1080f, 700f, 1920f);
+
+                Assert.IsTrue(popup.UsesFullLayoutHeight);
+                Assert.AreEqual(980f, popupRect.sizeDelta.x, 0.01f);
+                Assert.AreEqual(1680f, popupRect.sizeDelta.y, 0.01f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(popupObject);
+            }
+        }
+
         [TestCase(1080f, 1920f)]
         [TestCase(1080f, 2340f)]
         [TestCase(1080f, 2640f)]

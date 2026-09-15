@@ -258,7 +258,10 @@ namespace Line98.Presentation
             }
 
             m_ResponsivePopups.Add(responsiveModal);
-            responsiveModal.ApplyResponsiveLayout(m_CurrentLayout.LayoutRect.width, m_CurrentLayout.MiddleRect.height);
+            responsiveModal.ApplyResponsiveLayout(
+                m_CurrentLayout.LayoutRect.width,
+                m_CurrentLayout.MiddleRect.height,
+                m_CurrentLayout.LayoutRect.height);
         }
 
         private static void CacheResponsiveChildren(RectTransform root, List<ResponsiveRect> elements)
@@ -373,7 +376,10 @@ namespace Line98.Presentation
                     continue;
                 }
 
-                responsivePopup.ApplyResponsiveLayout(layout.LayoutRect.width, layout.MiddleRect.height);
+                responsivePopup.ApplyResponsiveLayout(
+                    layout.LayoutRect.width,
+                    layout.MiddleRect.height,
+                    layout.LayoutRect.height);
             }
         }
 

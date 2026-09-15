@@ -46,6 +46,7 @@ namespace Line98.Presentation
         public Button PrimaryButton => m_PrimaryButton;
         public Button SecondaryButton => m_SecondaryButton;
         public Button CloseButton => m_CloseButton;
+        public virtual bool UsesFullLayoutHeight => false;
         public event Action<PopupView> OnCloseRequested;
 
         protected virtual void Awake()
@@ -93,10 +94,19 @@ namespace Line98.Presentation
 
             float width = Mathf.Max(0f, Mathf.Min(m_ModalSize.x, layoutWidth - 96f));
             float height = Mathf.Max(0f, Mathf.Min(m_ModalSize.y, middleHeight - 96f));
+
+            // Collapsing the modal to a zero extent inverts its masked children and removes the
+            // popup from the screen entirely. Keep the authored size when the host has no room.
+            if (width <= 0f || height <= 0f)
+            {
+                width = m_ModalSize.x;
+                height = m_ModalSize.y;
+            }
+
             float scale = Mathf.Min(
                 1f,
-                m_ModalSize.x > 0f ? width / m_ModalSize.x : 1f,
-                m_ModalSize.y > 0f ? height / m_ModalSize.y : 1f);
+                width / m_ModalSize.x,
+                height / m_ModalSize.y);
 
             m_ModalContainer.anchorMin = new Vector2(0.5f, 0.5f);
             m_ModalContainer.anchorMax = new Vector2(0.5f, 0.5f);
@@ -136,13 +146,33 @@ namespace Line98.Presentation
                 return;
             }
 
-            m_ModalSize = m_ModalContainer.sizeDelta;
+            m_ModalSize = ResolveModalSize(m_ModalContainer);
+            if (m_ModalSize.x <= 0f || m_ModalSize.y <= 0f)
+            {
+                return;
+            }
+
             CacheTextRect(m_TitleText, out m_TitlePosition, out m_TitleSize, out m_TitleFontSize);
             CacheTextRect(m_BodyText, out m_BodyPosition, out m_BodySize, out m_BodyFontSize);
             CacheButtonRect(m_PrimaryButton, out m_PrimaryPosition, out m_PrimarySize);
             CacheButtonRect(m_SecondaryButton, out m_SecondaryPosition, out m_SecondarySize);
             CacheButtonRect(m_CloseButton, out m_ClosePosition, out m_CloseSize);
             m_HasResponsiveBaseline = true;
+        }
+
+        /// <summary>
+        /// Returns the authored modal footprint. A container stretched by its parent reports a
+        /// zero or negative sizeDelta, so the laid-out rect is used instead of collapsing the modal.
+        /// </summary>
+        private static Vector2 ResolveModalSize(RectTransform container)
+        {
+            Vector2 size = container.sizeDelta;
+            if (size.x <= 0f || size.y <= 0f)
+            {
+                size = container.rect.size;
+            }
+
+            return size;
         }
 
         private static void CacheTextRect(TMP_Text text, out Vector2 position, out Vector2 size, out float fontSize)

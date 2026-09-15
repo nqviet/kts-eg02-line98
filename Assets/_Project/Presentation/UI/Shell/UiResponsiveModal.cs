@@ -17,5 +17,17 @@ namespace Line98.Presentation
         {
             m_Popup?.ApplyResponsiveLayout(layoutWidth, middleHeight);
         }
+
+        public void ApplyResponsiveLayout(float layoutWidth, float middleHeight, float layoutHeight)
+        {
+            if (m_Popup == null) m_Popup = GetComponent<PopupView>();
+            if (m_Popup == null)
+            {
+                return;
+            }
+
+            float availableHeight = m_Popup.UsesFullLayoutHeight ? layoutHeight : middleHeight;
+            m_Popup.ApplyResponsiveLayout(layoutWidth, availableHeight);
+        }
     }
 }

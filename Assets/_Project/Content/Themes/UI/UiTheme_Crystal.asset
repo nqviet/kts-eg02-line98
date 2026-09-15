@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 206211bc9eefb3f4e8032b8642710531, type: 3}
+  m_Name: UiTheme_Crystal
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.UiThemeSO
+  m_ThemeId: crystal
+  m_DisplayName: Crystal
+  m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_UnlockedByDefault: 1
+  m_PreviewSpriteSet: {fileID: 0}
+  m_PanelCard: {r: 0.96862745, g: 0.9607843, b: 0.93333334, a: 1}
+  m_PanelButton: {r: 0.96862745, g: 0.9607843, b: 0.93333334, a: 1}
+  m_PanelTray: {r: 0.91764706, g: 0.9019608, b: 0.8627451, a: 1}
+  m_PanelCell: {r: 0.91764706, g: 0.9019608, b: 0.8627451, a: 1}
+  m_PanelFrame: {r: 0.96862745, g: 0.9607843, b: 0.93333334, a: 1}
+  m_PanelShadow: {r: 0.039, g: 0.106, b: 0.247, a: 0.16}
+  m_Scrim: {r: 0.039, g: 0.106, b: 0.247, a: 0.5}
+  m_InkValue: {r: 0.039215688, g: 0.105882354, b: 0.24705882, a: 1}
+  m_InkLabel: {r: 0.42352942, g: 0.49411765, b: 0.58431375, a: 1}
+  m_InkIcon: {r: 0.039215688, g: 0.105882354, b: 0.24705882, a: 1}
+  m_BadgeFill: {r: 0.878, g: 0.157, b: 0.157, a: 1}
+  m_BadgeNumeral: {r: 1, g: 1, b: 1, a: 1}
+  m_Crown: {r: 0.973, g: 0.722, b: 0.063, a: 1}
+  m_BrandNavy: {r: 0.039215688, g: 0.105882354, b: 0.24705882, a: 1}
+  m_BrandBlue: {r: 0.08627451, g: 0.15686275, b: 0.3137255, a: 1}
+  m_BallRed: {r: 0.992, g: 0.133, b: 0.169, a: 1}
+  m_BallOrange: {r: 0.988, g: 0.412, b: 0.11, a: 1}
+  m_BallYellow: {r: 0.996, g: 0.855, b: 0.11, a: 1}
+  m_BallGreen: {r: 0.012, g: 0.659, b: 0.259, a: 1}
+  m_BallCyan: {r: 0.133, g: 0.761, b: 0.98, a: 1}
+  m_BallPurple: {r: 0.749, g: 0.075, b: 0.933, a: 1}
+  m_BallBlue: {r: 0, g: 0.306, b: 0.992, a: 1}
+  m_LabelFontSize: 22
+  m_ScoreFontSize: 68
+  m_BestFontSize: 57
+  m_ButtonFontSize: 24
+  m_BadgeFontSize: 26
+  m_TitleFontSize: 40
+  m_BodyFontSize: 26
+  m_SurfaceCardGold: {r: 1, g: 0.972549, b: 0.90588236, a: 1}
+  m_SurfaceCardBorder: {r: 0.9098039, g: 0.8862745, b: 0.8235294, a: 1}
+  m_SurfaceGoldBorder: {r: 0.91764706, g: 0.7647059, b: 0.32156864, a: 1}
+  m_ToggleTrackActive: {r: 0.15294118, g: 0.72156864, b: 0.37254903, a: 1}
+  m_ToggleTrackInactive: {r: 0.8156863, g: 0.80784315, b: 0.78039217, a: 1}
+  m_ToggleThumb: {r: 1, g: 1, b: 1, a: 1}
+  m_InkRowTitle: {r: 0.05490196, g: 0.12156863, b: 0.26666668, a: 1}
+  m_InkSublabel: {r: 0.42352942, g: 0.49411765, b: 0.58431375, a: 1}
+  m_DividerHairline: {r: 0.871, g: 0.851, b: 0.796, a: 0.6}
+  m_ButtonGold: {r: 0.9607843, g: 0.78039217, b: 0.30588236, a: 1}
+  m_CardBackgroundSprite: {fileID: 1204134082, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_CardGoldSprite: {fileID: -992865993, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_ButtonCapsuleSprite: {fileID: -1169337557, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_ButtonCircleSprite: {fileID: 946041380, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_ToggleTrackOnSprite: {fileID: -1479208011, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_ToggleTrackOffSprite: {fileID: 659033306, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_ToggleThumbSprite: {fileID: -1130315896, guid: 5ed0044372495484180e295794e96e6b, type: 3}

@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Line98.Data::Line98.Data.ThemeDefinitionSO
   m_ThemeId: crystal
   m_DisplayName: Crystal
-  m_Thumbnail: {fileID: 21300000, guid: b04e333050d79f64aa3012f881597f13, type: 3}
+  m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
   m_UnlockedByDefault: 1
   m_InheritsFrom: {fileID: 11400000, guid: fc60eb4eb54cd4c47b2d2347f1dbd89d, type: 2}
   m_BallTheme: {fileID: 11400000, guid: aa4735cf058775748b4a43e99f9fbfe4, type: 2}
-  m_BoardTheme: {fileID: 0}
-  m_UiTheme: {fileID: 0}
-  m_ClearEffect: {fileID: 0}
+  m_BoardTheme: {fileID: 11400000, guid: 3f9a35197852a41478a4ed39c0247989, type: 2}
+  m_UiTheme: {fileID: 11400000, guid: a7507a5c9cb94244aa5de8f0f3a78b31, type: 2}
+  m_ClearEffect: {fileID: 11400000, guid: 737e39aadb360844cb1b4f8dd110d81f, type: 2}

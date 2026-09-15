@@ -37,7 +37,9 @@ namespace Line98.App
         private CosmeticThemeSelector m_ThemeSelector;
         private Presentation.PresentationRoot m_BoundPresentationRoot;
         private Presentation.UiShell m_BoundShell;
+        private SettingsPresenter m_SettingsPresenter;
         private bool m_IsThemeChangeBound;
+        private bool m_IsLoadingMainMenuFromBoot;
 
         public ConfigService Config => m_ConfigService;
         public GameSession Session => m_Session;
@@ -75,10 +77,7 @@ namespace Line98.App
         {
             m_GameManager.StartClassicGame();
 
-            if (SceneManager.GetActiveScene().name == "Boot" && Application.CanStreamedLevelBeLoaded("MainMenu"))
-            {
-                SceneManager.LoadSceneAsync("MainMenu", LoadSceneMode.Single);
-            }
+            LoadMainMenuFromBoot(SceneManager.GetActiveScene());
         }
 
         private void InitializeServices()
@@ -142,13 +141,33 @@ namespace Line98.App
             }
 
             m_IsThemeChangeBound = false;
+            m_SettingsPresenter?.Dispose();
+            m_SettingsPresenter = null;
             m_BoundPresentationRoot = null;
             m_BoundShell = null;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            if (scene.name == "Boot")
+            {
+                LoadMainMenuFromBoot(scene);
+                return;
+            }
+
+            m_IsLoadingMainMenuFromBoot = false;
             BindPresentationRoot();
+        }
+
+        private void LoadMainMenuFromBoot(Scene scene)
+        {
+            if (scene.name != "Boot" || m_IsLoadingMainMenuFromBoot || !Application.CanStreamedLevelBeLoaded("MainMenu"))
+            {
+                return;
+            }
+
+            m_IsLoadingMainMenuFromBoot = true;
+            SceneManager.LoadSceneAsync("MainMenu", LoadSceneMode.Single);
         }
 
         private void BindPresentationRoot()
@@ -239,7 +258,30 @@ namespace Line98.App
 
         public void Tick(float dt)
         {
-            // Single Update dispatch point for active animators and systems
+            TryBindSettingsPresenter();
+        }
+
+        private void TryBindSettingsPresenter()
+        {
+            if (m_BoundShell == null || m_BoundShell.SettingsPopup == null || m_BoundPresentationRoot == null || !m_BoundPresentationRoot.IsInitialized)
+            {
+                return;
+            }
+
+            if (m_SettingsPresenter != null &&
+                m_SettingsPresenter.View == m_BoundShell.SettingsPopup &&
+                m_SettingsPresenter.AudioService == m_BoundPresentationRoot.AudioService &&
+                m_SettingsPresenter.IapService == m_IapService)
+            {
+                return;
+            }
+
+            m_SettingsPresenter?.Dispose();
+            m_SettingsPresenter = new SettingsPresenter(
+                m_BoundShell.SettingsPopup,
+                m_BoundPresentationRoot.AudioService,
+                m_IapService,
+                m_BoundShell);
         }
 
         private void OnMoveCommitted(Core.MoveResult result)

@@ -137,6 +137,14 @@ namespace Line98.Presentation
                 {
                     themeAppliers[i].Apply(m_UiTheme);
                 }
+
+                UiToggle[] toggles = FindObjectsByType<UiToggle>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                for (int i = 0; i < toggles.Length; i++)
+                {
+                    toggles[i].ApplyTheme(m_UiTheme);
+                }
+
+                m_SettingsPopup?.ApplyTheme(m_UiTheme);
             }
 
             if (m_CosmeticsPopup != null && m_CosmeticsPopup.IsOpen)

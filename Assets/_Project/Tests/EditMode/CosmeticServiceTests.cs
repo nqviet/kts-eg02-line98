@@ -91,18 +91,18 @@ namespace Line98.Tests.EditMode
             Assert.IsNotNull(theme);
             Assert.AreEqual("crystal", theme.ThemeId);
 
-            // Crystal specifies its own ball theme, but inherits board, UI, and clear effect from classic
+            // Crystal is a complete visual theme with a dedicated asset for each presentation surface.
             Assert.IsNotNull(theme.BallTheme, "BallTheme must be resolved");
             Assert.AreEqual("crystal", theme.BallTheme.ThemeId);
 
-            Assert.IsNotNull(theme.BoardTheme, "BoardTheme must be inherited and non-null");
-            Assert.AreEqual("classic", theme.BoardTheme.ThemeId);
+            Assert.IsNotNull(theme.BoardTheme, "BoardTheme must be resolved");
+            Assert.AreEqual("crystal", theme.BoardTheme.ThemeId);
 
-            Assert.IsNotNull(theme.UiTheme, "UiTheme must be inherited and non-null");
-            Assert.AreEqual("default", theme.UiTheme.ThemeId);
+            Assert.IsNotNull(theme.UiTheme, "UiTheme must be resolved");
+            Assert.AreEqual("crystal", theme.UiTheme.ThemeId);
 
-            Assert.IsNotNull(theme.ClearEffect, "ClearEffect must be inherited and non-null");
-            Assert.AreEqual("classic", theme.ClearEffect.ThemeId);
+            Assert.IsNotNull(theme.ClearEffect, "ClearEffect must be resolved");
+            Assert.AreEqual("crystal", theme.ClearEffect.ThemeId);
         }
 
         [Test]

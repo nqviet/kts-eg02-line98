@@ -53,6 +53,27 @@ namespace Line98.Data
         [SerializeField] private float m_TitleFontSize = 36f;
         [SerializeField] private float m_BodyFontSize = 26f;
 
+        [Header("Crystal Surface Tokens")]
+        [SerializeField] private Color m_SurfaceCardGold = new Color(1f, 0.973f, 0.906f, 1f);          // #FFF8E7
+        [SerializeField] private Color m_SurfaceCardBorder = new Color(0.910f, 0.886f, 0.824f, 1f);      // #E8E2D2
+        [SerializeField] private Color m_SurfaceGoldBorder = new Color(0.918f, 0.765f, 0.322f, 1f);      // #EAC352
+        [SerializeField] private Color m_ToggleTrackActive = new Color(0.153f, 0.722f, 0.373f, 1f);      // #27B85F
+        [SerializeField] private Color m_ToggleTrackInactive = new Color(0.816f, 0.808f, 0.780f, 1f);    // #D0CEC7
+        [SerializeField] private Color m_ToggleThumb = Color.white;
+        [SerializeField] private Color m_InkRowTitle = new Color(0.055f, 0.122f, 0.267f, 1f);            // #0E1F44
+        [SerializeField] private Color m_InkSublabel = new Color(0.424f, 0.494f, 0.584f, 1f);            // #6C7E95
+        [SerializeField] private Color m_DividerHairline = new Color(0.871f, 0.851f, 0.796f, 0.6f);      // #DED9CB
+        [SerializeField] private Color m_ButtonGold = new Color(0.961f, 0.780f, 0.306f, 1f);              // #F5C74E
+
+        [Header("Crystal UI Sprite Tokens")]
+        [SerializeField] private Sprite m_CardBackgroundSprite;
+        [SerializeField] private Sprite m_CardGoldSprite;
+        [SerializeField] private Sprite m_ButtonCapsuleSprite;
+        [SerializeField] private Sprite m_ButtonCircleSprite;
+        [SerializeField] private Sprite m_ToggleTrackOnSprite;
+        [SerializeField] private Sprite m_ToggleTrackOffSprite;
+        [SerializeField] private Sprite m_ToggleThumbSprite;
+
         public string ThemeId => m_ThemeId;
         public string DisplayName => m_DisplayName;
         public Sprite Thumbnail => m_Thumbnail;
@@ -91,5 +112,24 @@ namespace Line98.Data
         public float BadgeFontSize => m_BadgeFontSize;
         public float TitleFontSize => m_TitleFontSize;
         public float BodyFontSize => m_BodyFontSize;
+
+        public Color SurfaceCardGold => m_SurfaceCardGold;
+        public Color SurfaceCardBorder => m_SurfaceCardBorder;
+        public Color SurfaceGoldBorder => m_SurfaceGoldBorder;
+        public Color ToggleTrackActive => m_ToggleTrackActive;
+        public Color ToggleTrackInactive => m_ToggleTrackInactive;
+        public Color ToggleThumb => m_ToggleThumb;
+        public Color InkRowTitle => m_InkRowTitle;
+        public Color InkSublabel => m_InkSublabel;
+        public Color DividerHairline => m_DividerHairline;
+        public Color ButtonGold => m_ButtonGold;
+
+        public Sprite CardBackgroundSprite => m_CardBackgroundSprite;
+        public Sprite CardGoldSprite => m_CardGoldSprite;
+        public Sprite ButtonCapsuleSprite => m_ButtonCapsuleSprite;
+        public Sprite ButtonCircleSprite => m_ButtonCircleSprite;
+        public Sprite ToggleTrackOnSprite => m_ToggleTrackOnSprite;
+        public Sprite ToggleTrackOffSprite => m_ToggleTrackOffSprite;
+        public Sprite ToggleThumbSprite => m_ToggleThumbSprite;
     }
 }
