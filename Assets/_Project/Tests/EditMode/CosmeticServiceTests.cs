@@ -13,11 +13,11 @@ namespace Line98.Tests.EditMode
         private const string CatalogPath = "Assets/_Project/Content/Definitions/ThemeCatalog_Default.asset";
 
         [Test]
-        public void CosmeticSettings_DefaultsToClassic()
+        public void CosmeticSettings_DefaultsToCrystal()
         {
             var settings = new CosmeticSettings();
             Assert.AreEqual(1, settings.Version);
-            Assert.AreEqual("classic", settings.ThemeId);
+            Assert.AreEqual("crystal", settings.ThemeId);
             Assert.IsNull(settings.BallOverrideId);
             Assert.IsNull(settings.BoardOverrideId);
             Assert.IsNull(settings.UiOverrideId);
@@ -25,7 +25,7 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
-        public void CosmeticService_InitializesWithDefaultOrClassicTheme()
+        public void CosmeticService_InitializesWithDefaultCrystalTheme()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
             Assert.IsNotNull(catalog, $"Missing default theme catalog at {CatalogPath}");
@@ -33,9 +33,9 @@ namespace Line98.Tests.EditMode
             var backend = new InMemorySaveBackend();
             var service = new CosmeticService(catalog, backend);
 
-            Assert.AreEqual("classic", service.ActiveThemeId);
+            Assert.AreEqual("crystal", service.ActiveThemeId);
             Assert.IsNotNull(service.ActiveTheme);
-            Assert.AreEqual("classic", service.ActiveTheme.ThemeId);
+            Assert.AreEqual("crystal", service.ActiveTheme.ThemeId);
         }
 
         [Test]
@@ -48,35 +48,35 @@ namespace Line98.Tests.EditMode
             int eventCount = 0;
             service.OnThemeChanged += _ => eventCount++;
 
-            service.SetTheme("classic");
+            service.SetTheme("crystal");
             Assert.AreEqual(0, eventCount, "Idempotent SetTheme must not fire OnThemeChanged");
 
-            service.SetTheme("crystal");
+            service.SetTheme("classic");
             Assert.AreEqual(1, eventCount, "Setting a different theme must fire OnThemeChanged once");
-            Assert.AreEqual("crystal", service.ActiveThemeId);
+            Assert.AreEqual("classic", service.ActiveThemeId);
 
-            service.SetTheme("crystal");
+            service.SetTheme("classic");
             Assert.AreEqual(1, eventCount, "Setting the same theme again must not fire OnThemeChanged");
         }
 
         [Test]
-        public void CosmeticService_UnknownOrEmptyId_FallsBackToClassic()
+        public void CosmeticService_UnknownOrEmptyId_FallsBackToDefaultCrystal()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
             var backend = new InMemorySaveBackend();
             var service = new CosmeticService(catalog, backend);
 
-            service.SetTheme("crystal");
-            Assert.AreEqual("crystal", service.ActiveThemeId);
+            service.SetTheme("classic");
+            Assert.AreEqual("classic", service.ActiveThemeId);
 
             service.SetTheme("non_existent_theme_id_xyz");
-            Assert.AreEqual("classic", service.ActiveThemeId, "Unknown id must fall back to classic");
+            Assert.AreEqual("crystal", service.ActiveThemeId, "Unknown id must fall back to the catalog default");
 
             service.SetTheme(null);
-            Assert.AreEqual("classic", service.ActiveThemeId, "Null id must fall back to classic");
+            Assert.AreEqual("crystal", service.ActiveThemeId, "Null id must fall back to the catalog default");
 
             service.SetTheme(string.Empty);
-            Assert.AreEqual("classic", service.ActiveThemeId, "Empty id must fall back to classic");
+            Assert.AreEqual("crystal", service.ActiveThemeId, "Empty id must fall back to the catalog default");
         }
 
         [Test]
@@ -112,13 +112,13 @@ namespace Line98.Tests.EditMode
             var backend = new InMemorySaveBackend();
 
             var service1 = new CosmeticService(catalog, backend);
-            service1.SetTheme("crystal");
-            Assert.AreEqual("crystal", service1.ActiveThemeId);
+            service1.SetTheme("classic");
+            Assert.AreEqual("classic", service1.ActiveThemeId);
 
             // Create new service instance sharing the same save backend
             var service2 = new CosmeticService(catalog, backend);
-            Assert.AreEqual("crystal", service2.ActiveThemeId, "Persisted theme selection must be restored");
-            Assert.AreEqual("crystal", service2.ActiveTheme.ThemeId);
+            Assert.AreEqual("classic", service2.ActiveThemeId, "Persisted theme selection must be restored");
+            Assert.AreEqual("classic", service2.ActiveTheme.ThemeId);
         }
 
         [Test]

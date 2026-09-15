@@ -35,8 +35,8 @@ Material:
     - _Padding: 0
     - _Radius: 34
     m_Colors:
-    - _Fill: {r: 0.87, g: 0.93, b: 0.98, a: 0.84}
-    - _Rim: {r: 1, g: 1, b: 1, a: 0.98}
+    - _Fill: {r: 0.94, g: 0.94, b: 0.88, a: 0.82}
+    - _Rim: {r: 1, g: 1, b: 0.96, a: 0.95}
     - _Size: {r: 940, g: 940, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

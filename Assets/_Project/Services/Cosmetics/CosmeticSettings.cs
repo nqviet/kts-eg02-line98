@@ -9,7 +9,7 @@ namespace Line98.Services
     public sealed class CosmeticSettings
     {
         public int Version = 1;
-        public string ThemeId = "classic";
+        public string ThemeId = "crystal";
         public string BallOverrideId;
         public string BoardOverrideId;
         public string UiOverrideId;

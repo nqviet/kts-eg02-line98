@@ -7,7 +7,7 @@ namespace Line98.Services
 {
     /// <summary>
     /// Static resolution rules for theme identifiers, inheritance, and catalog fallbacks.
-    /// Fallback chain: requested -> classic -> catalog[0] -> null + warn-once.
+    /// Fallback chain: requested -> catalog default -> classic -> catalog[0] -> null + warn-once.
     /// </summary>
     public static class ThemeResolver
     {
@@ -31,14 +31,14 @@ namespace Line98.Services
                 WarnOnce($"ThemeResolver: Requested theme '{requestedId}' not found in catalog. Falling back to default.");
             }
 
-            if (catalog.TryGetTheme("classic", out var classicTheme) && classicTheme != null)
-            {
-                return classicTheme;
-            }
-
             if (catalog.DefaultTheme != null)
             {
                 return catalog.DefaultTheme;
+            }
+
+            if (catalog.TryGetTheme("classic", out var classicTheme) && classicTheme != null)
+            {
+                return classicTheme;
             }
 
             var first = catalog.ThemeAt(0);
@@ -63,7 +63,7 @@ namespace Line98.Services
                 return contextTheme.BallTheme;
             }
 
-            var resolvedTheme = Resolve(catalog, "classic");
+            var resolvedTheme = Resolve(catalog, null);
             return resolvedTheme?.BallTheme;
         }
 
@@ -79,7 +79,7 @@ namespace Line98.Services
                 return contextTheme.BoardTheme;
             }
 
-            var resolvedTheme = Resolve(catalog, "classic");
+            var resolvedTheme = Resolve(catalog, null);
             return resolvedTheme?.BoardTheme;
         }
 

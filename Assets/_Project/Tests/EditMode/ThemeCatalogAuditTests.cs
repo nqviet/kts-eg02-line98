@@ -29,11 +29,11 @@ namespace Line98.Tests.EditMode
         public void CatalogAsset_ExistsAndHasValidDefaultTheme()
         {
             Assert.GreaterOrEqual(m_Catalog.Count, 2, "V1 requires at least 2 shipping themes (classic and crystal).");
-            Assert.AreEqual("classic", m_Catalog.DefaultThemeId, "Default theme id must be 'classic'.");
+            Assert.AreEqual("crystal", m_Catalog.DefaultThemeId, "Default theme id must be 'crystal'.");
 
             var defaultTheme = m_Catalog.DefaultTheme;
             Assert.IsNotNull(defaultTheme, "DefaultTheme must resolve to a valid ThemeDefinitionSO.");
-            Assert.AreEqual("classic", defaultTheme.ThemeId, "Default theme's ThemeId must be 'classic'.");
+            Assert.AreEqual("crystal", defaultTheme.ThemeId, "Default theme's ThemeId must be 'crystal'.");
 
             var firstTheme = m_Catalog.ThemeAt(0);
             Assert.IsNotNull(firstTheme, "ThemeAt(0) must exist.");

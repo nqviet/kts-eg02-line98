@@ -115,7 +115,7 @@ namespace Line98.Presentation
             m_ThemeCatalog = catalog;
         }
 
-        private string m_ActiveBundleThemeId = "classic";
+        private string m_ActiveBundleThemeId = "crystal";
 
         public void ApplyTheme(UiThemeSO theme, string bundleThemeId = null)
         {
@@ -183,7 +183,7 @@ namespace Line98.Presentation
 
         public void OpenCosmetics()
         {
-            string activeId = !string.IsNullOrEmpty(m_ActiveBundleThemeId) ? m_ActiveBundleThemeId : "classic";
+            string activeId = !string.IsNullOrEmpty(m_ActiveBundleThemeId) ? m_ActiveBundleThemeId : "crystal";
             if (m_ThemeCatalog == null)
             {
                 Debug.LogWarning("[UiShell] Cannot populate themes because no ThemeCatalogSO is configured.");
