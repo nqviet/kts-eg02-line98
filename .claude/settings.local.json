@@ -3,5 +3,10 @@
   "enabledMcpjsonServers": [
     "unity"
   ],
-  "spinnerTipsEnabled": false
+  "spinnerTipsEnabled": false,
+  "permissions": {
+    "allow": [
+      "mcp__unity__Unity_GetProjectData"
+    ]
+  }
 }

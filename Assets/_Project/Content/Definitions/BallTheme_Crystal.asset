@@ -21,8 +21,8 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 67d2cec4afbdba8488e70f0e6d5dd197, type: 2}
   - {fileID: 2100000, guid: 52b1f89c04cae744185b3b28c12c28d0, type: 2}
   m_AccessibilityPatterns: {fileID: 2800000, guid: 83226b06518de914592ac578379c62c8, type: 3}
-  m_InnerRefractionMask: {fileID: 0}
-  m_BlobShadowMaterial: {fileID: 0}
+  m_InnerRefractionMask: {fileID: 2800000, guid: 0e84e67a9ec45094396258c4f41b0ece, type: 3}
+  m_BlobShadowMaterial: {fileID: 2100000, guid: 2b428a80e9ef7b24d9af250a53cdff19, type: 2}
   m_PatternsOn: 0
   m_ThemeId: crystal
   m_DisplayName: Crystal

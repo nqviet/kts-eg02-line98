@@ -10,7 +10,7 @@ namespace Line98.App
     public sealed class SettingsPresenter : IDisposable
     {
         private const string VibrationKey = "line98_pref_vibration";
-        private const string ReduceEffectsKey = "line98_pref_reduce_fx";
+        public const string ReduceEffectsKey = "line98_pref_reduce_fx";
         private const string PrivacyUrl = "https://line98game.com/privacy";
         private const string SupportEmail = "mailto:support@line98game.com";
 
@@ -18,6 +18,11 @@ namespace Line98.App
         private readonly AudioService m_AudioService;
         private readonly IIapService m_IapService;
         private readonly UiShell m_UiShell;
+
+        /// <summary>Raised after the Reduce Effects preference is persisted.</summary>
+        public event Action<bool> OnReduceEffectsChanged;
+
+        public static bool IsReduceEffectsEnabled => PlayerPrefs.GetInt(ReduceEffectsKey, 0) == 1;
 
         public SettingsPopup View => m_View;
         public AudioService AudioService => m_AudioService;
@@ -42,7 +47,7 @@ namespace Line98.App
             bool music = m_AudioService?.IsMusicEnabled ?? true;
             bool sfx = m_AudioService?.IsSfxEnabled ?? true;
             bool vibration = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
-            bool reduceEffects = PlayerPrefs.GetInt(ReduceEffectsKey, 0) == 1;
+            bool reduceEffects = IsReduceEffectsEnabled;
             m_View.SetInitialStates(music, sfx, vibration, reduceEffects, "ENGLISH", Application.version);
             m_View.SetRemoveAdsAvailable(!(m_IapService?.HasRemovedAds ?? false));
         }
@@ -73,10 +78,11 @@ namespace Line98.App
             PlayerPrefs.Save();
         }
 
-        private static void HandleReduceEffectsToggled(bool enabled)
+        private void HandleReduceEffectsToggled(bool enabled)
         {
             PlayerPrefs.SetInt(ReduceEffectsKey, enabled ? 1 : 0);
             PlayerPrefs.Save();
+            OnReduceEffectsChanged?.Invoke(enabled);
         }
 
         private void HandleLanguageClicked()
@@ -102,6 +108,7 @@ namespace Line98.App
 
         public void Dispose()
         {
+            OnReduceEffectsChanged = null;
             if (m_View == null) return;
 
             m_View.OnBackClicked -= HandleBack;

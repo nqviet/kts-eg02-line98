@@ -46,3 +46,36 @@ MonoBehaviour:
   m_BadgeFontSize: 26
   m_TitleFontSize: 36
   m_BodyFontSize: 26
+  m_SurfaceCardGold: {r: 1, g: 0.973, b: 0.906, a: 1}
+  m_SurfaceCardBorder: {r: 0.91, g: 0.886, b: 0.824, a: 1}
+  m_SurfaceGoldBorder: {r: 0.918, g: 0.765, b: 0.322, a: 1}
+  m_ToggleTrackActive: {r: 0.153, g: 0.722, b: 0.373, a: 1}
+  m_ToggleTrackInactive: {r: 0.816, g: 0.808, b: 0.78, a: 1}
+  m_ToggleThumb: {r: 1, g: 1, b: 1, a: 1}
+  m_InkRowTitle: {r: 0.055, g: 0.122, b: 0.267, a: 1}
+  m_InkSublabel: {r: 0.424, g: 0.494, b: 0.584, a: 1}
+  m_DividerHairline: {r: 0.871, g: 0.851, b: 0.796, a: 0.6}
+  m_ButtonGold: {r: 0.961, g: 0.78, b: 0.306, a: 1}
+  m_SurfacePrimary: {r: 0.18, g: 0.52, b: 0.87, a: 1}
+  m_SurfaceSecondary: {r: 0.91, g: 0.93, b: 0.95, a: 1}
+  m_SurfaceTertiaryZen: {r: 0.76, g: 0.82, b: 0.89, a: 1}
+  m_InkButtonPrimary: {r: 1, g: 1, b: 1, a: 1}
+  m_StreakDotOn: {r: 0.18, g: 0.83, b: 0.45, a: 1}
+  m_StreakDotOff: {r: 0.45, g: 0.49, b: 0.55, a: 1}
+  m_CardBackgroundSprite: {fileID: 0}
+  m_CardGoldSprite: {fileID: 0}
+  m_ButtonCapsuleSprite: {fileID: 0}
+  m_ButtonCapsulePrimary: {fileID: 0}
+  m_ButtonCircleSprite: {fileID: 0}
+  m_ToggleTrackOnSprite: {fileID: 0}
+  m_ToggleTrackOffSprite: {fileID: 0}
+  m_ToggleThumbSprite: {fileID: 0}
+  m_IconPlay: {fileID: 0}
+  m_IconCalendar: {fileID: 0}
+  m_IconLotus: {fileID: 0}
+  m_IconChart: {fileID: 0}
+  m_IconGear: {fileID: 0}
+  m_IconFlame: {fileID: 0}
+  m_IconCrown: {fileID: 0}
+  m_SurfaceMaterialCard: {fileID: 2100000, guid: d14798e679205b84bb68ddaa201962f4, type: 2}
+  m_SurfaceMaterialButton: {fileID: 2100000, guid: b0f93e7131cb14c4680a338f2bdb3a2f, type: 2}

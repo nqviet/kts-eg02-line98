@@ -150,6 +150,16 @@ namespace Line98.Presentation
             if (theme == null) return;
             m_Theme = theme;
 
+            if (theme.BoardFrameMesh != null)
+            {
+                m_FrameMesh = theme.BoardFrameMesh;
+                if (m_FrameRoot != null)
+                {
+                    var mf = m_FrameRoot.GetComponent<MeshFilter>();
+                    if (mf != null) mf.sharedMesh = m_FrameMesh;
+                }
+            }
+
             if (theme.BoardFrameMaterial != null)
             {
                 m_FrameMaterial = theme.BoardFrameMaterial;
@@ -157,6 +167,19 @@ namespace Line98.Presentation
                 {
                     var mr = m_FrameRoot.GetComponent<MeshRenderer>();
                     if (mr != null) mr.sharedMaterial = m_FrameMaterial;
+                }
+            }
+
+            if (theme.BoardCellMesh != null)
+            {
+                m_CellMesh = theme.BoardCellMesh;
+                for (int i = 0; i < m_CellTransforms.Length; i++)
+                {
+                    if (m_CellTransforms[i] != null)
+                    {
+                        var mf = m_CellTransforms[i].GetComponent<MeshFilter>();
+                        if (mf != null) mf.sharedMesh = m_CellMesh;
+                    }
                 }
             }
 

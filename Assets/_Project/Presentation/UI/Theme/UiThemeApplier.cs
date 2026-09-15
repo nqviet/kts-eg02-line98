@@ -32,7 +32,13 @@ namespace Line98.Presentation
             InkRowTitle,
             InkSublabel,
             DividerHairline,
-            ButtonGold
+            ButtonGold,
+            SurfacePrimary,
+            SurfaceSecondary,
+            SurfaceTertiaryZen,
+            InkButtonPrimary,
+            StreakDotOn,
+            StreakDotOff
         }
 
         public enum SpriteToken
@@ -41,10 +47,25 @@ namespace Line98.Presentation
             CardBackground,
             CardGold,
             ButtonCapsule,
+            ButtonCapsulePrimary,
             ButtonCircle,
             ToggleTrackOn,
             ToggleTrackOff,
-            ToggleThumb
+            ToggleThumb,
+            IconPlay,
+            IconCalendar,
+            IconLotus,
+            IconChart,
+            IconGear,
+            IconFlame,
+            IconCrown
+        }
+
+        public enum MaterialToken
+        {
+            None,
+            SurfaceMaterialCard,
+            SurfaceMaterialButton
         }
 
         public enum FontSizeToken
@@ -65,6 +86,8 @@ namespace Line98.Presentation
         [SerializeField] private TMP_Text[] m_FontTargets;
         [SerializeField] private SpriteToken m_SpriteToken = SpriteToken.None;
         [SerializeField] private UnityEngine.UI.Image[] m_SpriteTargets;
+        [SerializeField] private MaterialToken m_MaterialToken = MaterialToken.None;
+        [SerializeField] private Graphic[] m_MaterialTargets;
 
         public void Configure(ColorToken colorToken, Graphic[] colorTargets, FontSizeToken fontSizeToken, TMP_Text[] fontTargets)
         {
@@ -80,6 +103,12 @@ namespace Line98.Presentation
             m_SpriteTargets = spriteTargets ?? System.Array.Empty<UnityEngine.UI.Image>();
         }
 
+        public void ConfigureMaterial(MaterialToken materialToken, Graphic[] materialTargets)
+        {
+            m_MaterialToken = materialToken;
+            m_MaterialTargets = materialTargets ?? System.Array.Empty<Graphic>();
+        }
+
         public void Apply(UiThemeSO theme)
         {
             if (theme == null)
@@ -91,6 +120,7 @@ namespace Line98.Presentation
             if (m_ColorTargets == null) m_ColorTargets = System.Array.Empty<Graphic>();
             if (m_FontTargets == null) m_FontTargets = System.Array.Empty<TMP_Text>();
             if (m_SpriteTargets == null) m_SpriteTargets = System.Array.Empty<UnityEngine.UI.Image>();
+            if (m_MaterialTargets == null) m_MaterialTargets = System.Array.Empty<Graphic>();
 
             for (int i = 0; i < m_ColorTargets.Length; i++)
             {
@@ -107,14 +137,43 @@ namespace Line98.Presentation
             }
 
             Sprite sprite = ResolveSprite(theme, m_SpriteToken);
-            if (sprite == null)
+            Material material = ResolveMaterial(theme, m_MaterialToken);
+
+            if (m_SpriteToken != SpriteToken.None)
             {
-                return;
+                for (int i = 0; i < m_SpriteTargets.Length; i++)
+                {
+                    if (m_SpriteTargets[i] != null)
+                    {
+                        if (sprite != null)
+                        {
+                            m_SpriteTargets[i].sprite = sprite;
+                            m_SpriteTargets[i].material = null; // D18: Sprite xor Material
+                        }
+                    }
+                }
             }
 
-            for (int i = 0; i < m_SpriteTargets.Length; i++)
+            if (m_MaterialToken != MaterialToken.None)
             {
-                if (m_SpriteTargets[i] != null) m_SpriteTargets[i].sprite = sprite;
+                for (int i = 0; i < m_MaterialTargets.Length; i++)
+                {
+                    if (m_MaterialTargets[i] != null)
+                    {
+                        if (material != null)
+                        {
+                            m_MaterialTargets[i].material = material;
+                            if (m_MaterialTargets[i] is UnityEngine.UI.Image img)
+                            {
+                                img.sprite = null; // D18: Material xor Sprite
+                            }
+                        }
+                        else if (sprite != null)
+                        {
+                            m_MaterialTargets[i].material = null;
+                        }
+                    }
+                }
             }
         }
 
@@ -143,6 +202,12 @@ namespace Line98.Presentation
                 ColorToken.InkSublabel => theme.InkSublabel,
                 ColorToken.DividerHairline => theme.DividerHairline,
                 ColorToken.ButtonGold => theme.ButtonGold,
+                ColorToken.SurfacePrimary => theme.SurfacePrimary,
+                ColorToken.SurfaceSecondary => theme.SurfaceSecondary,
+                ColorToken.SurfaceTertiaryZen => theme.SurfaceTertiaryZen,
+                ColorToken.InkButtonPrimary => theme.InkButtonPrimary,
+                ColorToken.StreakDotOn => theme.StreakDotOn,
+                ColorToken.StreakDotOff => theme.StreakDotOff,
                 _ => theme.PanelCard
             };
         }
@@ -154,10 +219,28 @@ namespace Line98.Presentation
                 SpriteToken.CardBackground => theme.CardBackgroundSprite,
                 SpriteToken.CardGold => theme.CardGoldSprite,
                 SpriteToken.ButtonCapsule => theme.ButtonCapsuleSprite,
+                SpriteToken.ButtonCapsulePrimary => theme.ButtonCapsulePrimary,
                 SpriteToken.ButtonCircle => theme.ButtonCircleSprite,
                 SpriteToken.ToggleTrackOn => theme.ToggleTrackOnSprite,
                 SpriteToken.ToggleTrackOff => theme.ToggleTrackOffSprite,
                 SpriteToken.ToggleThumb => theme.ToggleThumbSprite,
+                SpriteToken.IconPlay => theme.IconPlay,
+                SpriteToken.IconCalendar => theme.IconCalendar,
+                SpriteToken.IconLotus => theme.IconLotus,
+                SpriteToken.IconChart => theme.IconChart,
+                SpriteToken.IconGear => theme.IconGear,
+                SpriteToken.IconFlame => theme.IconFlame,
+                SpriteToken.IconCrown => theme.IconCrown,
+                _ => null
+            };
+        }
+
+        private static Material ResolveMaterial(UiThemeSO theme, MaterialToken token)
+        {
+            return token switch
+            {
+                MaterialToken.SurfaceMaterialCard => theme.SurfaceMaterialCard,
+                MaterialToken.SurfaceMaterialButton => theme.SurfaceMaterialButton,
                 _ => null
             };
         }

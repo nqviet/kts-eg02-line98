@@ -16,7 +16,7 @@ MonoBehaviour:
   m_DisplayName: Crystal
   m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
   m_UnlockedByDefault: 1
-  m_PreviewSpriteSet: {fileID: 0}
+  m_PreviewSpriteSet: {fileID: 11400000, guid: 82c79ad658fdb074ea5068b2cfa6e272, type: 2}
   m_PanelCard: {r: 0.96862745, g: 0.9607843, b: 0.93333334, a: 1}
   m_PanelButton: {r: 0.96862745, g: 0.9607843, b: 0.93333334, a: 1}
   m_PanelTray: {r: 0.91764706, g: 0.9019608, b: 0.8627451, a: 1}
@@ -56,10 +56,26 @@ MonoBehaviour:
   m_InkSublabel: {r: 0.42352942, g: 0.49411765, b: 0.58431375, a: 1}
   m_DividerHairline: {r: 0.871, g: 0.851, b: 0.796, a: 0.6}
   m_ButtonGold: {r: 0.9607843, g: 0.78039217, b: 0.30588236, a: 1}
-  m_CardBackgroundSprite: {fileID: 1204134082, guid: 5ed0044372495484180e295794e96e6b, type: 3}
-  m_CardGoldSprite: {fileID: -992865993, guid: 5ed0044372495484180e295794e96e6b, type: 3}
-  m_ButtonCapsuleSprite: {fileID: -1169337557, guid: 5ed0044372495484180e295794e96e6b, type: 3}
-  m_ButtonCircleSprite: {fileID: 946041380, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_SurfacePrimary: {r: 0.145, g: 0.655, b: 0.329, a: 1}
+  m_SurfaceSecondary: {r: 0.969, g: 0.961, b: 0.933, a: 1}
+  m_SurfaceTertiaryZen: {r: 0.839, g: 0.91, b: 0.969, a: 1}
+  m_InkButtonPrimary: {r: 1, g: 1, b: 1, a: 1}
+  m_StreakDotOn: {r: 0.145, g: 0.722, b: 0.365, a: 1}
+  m_StreakDotOff: {r: 0.812, g: 0.839, b: 0.863, a: 1}
+  m_CardBackgroundSprite: {fileID: 7325034561425969003, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_CardGoldSprite: {fileID: -3034189918421958063, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_ButtonCapsuleSprite: {fileID: 966437194272367757, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_ButtonCapsulePrimary: {fileID: 6096522310036700806, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_ButtonCircleSprite: {fileID: -3043556614377027939, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
   m_ToggleTrackOnSprite: {fileID: -1479208011, guid: 5ed0044372495484180e295794e96e6b, type: 3}
   m_ToggleTrackOffSprite: {fileID: 659033306, guid: 5ed0044372495484180e295794e96e6b, type: 3}
   m_ToggleThumbSprite: {fileID: -1130315896, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_IconPlay: {fileID: -513062607051050801, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_IconCalendar: {fileID: 1850732818919876701, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_IconLotus: {fileID: 2627754331416183279, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_IconChart: {fileID: -3818669721474099864, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_IconGear: {fileID: 2014195682787275723, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_IconFlame: {fileID: -6753497500808353371, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_IconCrown: {fileID: 925174925378022947, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
+  m_SurfaceMaterialCard: {fileID: 0}
+  m_SurfaceMaterialButton: {fileID: 0}

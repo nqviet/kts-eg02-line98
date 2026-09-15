@@ -60,5 +60,14 @@ namespace Line98.Services
                 m_Stats.HighestCombo = comboCount;
             }
         }
+
+        public void RecordDailyCompletion()
+        {
+            m_Stats.CurrentDailyStreak++;
+            if (m_Stats.CurrentDailyStreak > m_Stats.LongestDailyStreak)
+            {
+                m_Stats.LongestDailyStreak = m_Stats.CurrentDailyStreak;
+            }
+        }
     }
 }

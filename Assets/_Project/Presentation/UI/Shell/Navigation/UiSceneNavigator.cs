@@ -61,6 +61,16 @@ namespace Line98.Presentation
             m_BoundButtons.Clear();
         }
 
+        public enum GameModeRequest
+        {
+            None,
+            Classic,
+            Daily,
+            Zen
+        }
+
+        public static GameModeRequest PendingModeRequest { get; set; } = GameModeRequest.None;
+
         public void Navigate(UiNavigationButton.UiDestination destination)
         {
             if (destination == UiNavigationButton.UiDestination.Settings)
@@ -73,6 +83,21 @@ namespace Line98.Presentation
             {
                 m_Shell?.OpenStatistics(0, 0, 0, 0);
                 return;
+            }
+
+            if (destination == UiNavigationButton.UiDestination.Daily)
+            {
+                PendingModeRequest = GameModeRequest.Daily;
+                destination = UiNavigationButton.UiDestination.Game;
+            }
+            else if (destination == UiNavigationButton.UiDestination.Zen)
+            {
+                PendingModeRequest = GameModeRequest.Zen;
+                destination = UiNavigationButton.UiDestination.Game;
+            }
+            else if (destination == UiNavigationButton.UiDestination.Game)
+            {
+                PendingModeRequest = GameModeRequest.Classic;
             }
 
             string sceneName = destination == UiNavigationButton.UiDestination.Menu

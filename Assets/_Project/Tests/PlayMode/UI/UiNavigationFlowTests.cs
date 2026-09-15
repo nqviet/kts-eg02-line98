@@ -15,7 +15,9 @@ namespace Line98.Tests.PlayMode.UI
             yield return SceneManager.LoadSceneAsync("Boot");
             yield return WaitForScene("MainMenu");
 
-            GameObject playButtonObject = GameObject.Find("UI_Root/Screen_MainMenu/Content/Button_Play");
+            GameObject playButtonObject = GameObject.Find("UI_Root/Canvas_DynamicHUD/Screen_MainMenu/LayoutColumn/Button_Play")
+                ?? GameObject.Find("UI_Root/Screen_MainMenu/Content/Button_Play")
+                ?? GameObject.Find("Button_Play");
             Assert.IsNotNull(playButtonObject, "MainMenu must expose a Play navigation button.");
             playButtonObject.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return WaitForScene("Game");

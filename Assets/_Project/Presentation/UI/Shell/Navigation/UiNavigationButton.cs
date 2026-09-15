@@ -14,7 +14,9 @@ namespace Line98.Presentation
             Menu,
             Game,
             Settings,
-            Statistics
+            Statistics,
+            Daily,
+            Zen
         }
 
         [SerializeField] private UiDestination m_Destination;

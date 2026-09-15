@@ -19,4 +19,4 @@ MonoBehaviour:
   m_RibbonTint: {r: 0.9, g: 0.95, b: 1, a: 0.9}
   m_RibbonTintBanner: {r: 1, g: 0.84, b: 0.4, a: 0.95}
   m_BurstTint: {r: 0.34509805, g: 0.84705883, b: 0.9098039, a: 1}
-  m_ClearBurstVfxKey: sfx_crystal_clear_chime
+  m_ClearBurstVfxKey: Vfx_ClearBurst

@@ -59,6 +59,171 @@ TextureImporter:
   - first:
       213: 6379423808567877657
     second: sprites_2__crystal_18
+  - first:
+      213: 418007380325273208
+    second: sp_gem_red
+  - first:
+      213: 203402059492490083
+    second: sp_gem_orange
+  - first:
+      213: -4700602635574180536
+    second: sp_gem_yellow
+  - first:
+      213: -4553873810694447925
+    second: sp_gem_green
+  - first:
+      213: -4095754298707592765
+    second: sp_gem_cyan
+  - first:
+      213: -6502630145970086008
+    second: sp_gem_purple
+  - first:
+      213: -1368544199743531944
+    second: sp_gem_blue
+  - first:
+      213: 8749708342485793899
+    second: sp_gem_magenta
+  - first:
+      213: 501691304132639058
+    second: sp_gem_shadow
+  - first:
+      213: -3322825369109767359
+    second: sp_icon_back
+  - first:
+      213: -8773821768882413157
+    second: sp_icon_back_arrow
+  - first:
+      213: 497214379007808746
+    second: sp_icon_close
+  - first:
+      213: -513062607051050801
+    second: sp_icon_play
+  - first:
+      213: 1850732818919876701
+    second: sp_icon_calendar
+  - first:
+      213: 2627754331416183279
+    second: sp_icon_lotus
+  - first:
+      213: -3818669721474099864
+    second: sp_icon_chart
+  - first:
+      213: 1232450353673942013
+    second: sp_icon_trophy
+  - first:
+      213: 2014195682787275723
+    second: sp_icon_gear
+  - first:
+      213: 6370944713925913543
+    second: sp_icon_undo
+  - first:
+      213: -2074200103957879945
+    second: sp_icon_hint
+  - first:
+      213: -228783351350682597
+    second: sp_icon_music
+  - first:
+      213: 728749818305269600
+    second: sp_icon_sfx
+  - first:
+      213: 1901653912921739082
+    second: sp_icon_sound
+  - first:
+      213: 4185024335832937461
+    second: sp_icon_share
+  - first:
+      213: -6753497500808353371
+    second: sp_icon_flame
+  - first:
+      213: 925174925378022947
+    second: sp_icon_crown
+  - first:
+      213: 222662157928120809
+    second: sp_icon_leaf
+  - first:
+      213: 4250341511985596185
+    second: sp_icon_globe
+  - first:
+      213: -5957555285841557086
+    second: sp_icon_no_ads
+  - first:
+      213: 4774658801451837958
+    second: sp_icon_restore
+  - first:
+      213: 7874455280381670899
+    second: sp_icon_shield
+  - first:
+      213: 3544334418010949344
+    second: sp_icon_mail
+  - first:
+      213: -6848682285573163339
+    second: sp_icon_vibrate
+  - first:
+      213: 1887208651562982174
+    second: sp_icon_sparkle_fx
+  - first:
+      213: 8192206564873308426
+    second: sp_icon_external_link
+  - first:
+      213: 6096522310036700806
+    second: sp_btn_capsule_green
+  - first:
+      213: 6204654586857854705
+    second: sp_btn_capsule_darkgreen
+  - first:
+      213: -1984628038852919796
+    second: sp_btn_capsule_zen
+  - first:
+      213: 966437194272367757
+    second: sp_btn_capsule_cream
+  - first:
+      213: 4929402645451333632
+    second: sp_btn_capsule_beige
+  - first:
+      213: -3043556614377027939
+    second: sp_btn_circle_cream
+  - first:
+      213: -3405555888129172630
+    second: sp_btn_circle_grey
+  - first:
+      213: 4989540779082606511
+    second: sp_btn_view_gold
+  - first:
+      213: 7325034561425969003
+    second: sp_ui_card_cream
+  - first:
+      213: -3034189918421958063
+    second: sp_ui_card_gold
+  - first:
+      213: -5049823913124238040
+    second: sp_ui_card_small_cream
+  - first:
+      213: -1028459593619343771
+    second: sp_ui_card_green
+  - first:
+      213: -6608055777000398421
+    second: sp_ui_card_grey
+  - first:
+      213: -8204206344539156434
+    second: sp_pill_long_cream
+  - first:
+      213: 772220444639739174
+    second: sp_pill_small_green
+  - first:
+      213: -3167504371931311898
+    second: sp_pill_small_cream
+  - first:
+      213: -8576584680962586494
+    second: sp_toggle_track_on
+  - first:
+      213: -1544174487608304191
+    second: sp_toggle_track_off
+  - first:
+      213: 1431617214408192132
+    second: sp_toggle_knob
+  - first:
+      213: -1888350959222930414
+    second: sp_divider_hairline
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -182,419 +347,1211 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: sprites_2__crystal_0
+      name: sp_gem_red
       rect:
         serializedVersion: 2
-        x: 0
-        y: 405
-        width: 1254
-        height: 849
+        x: 38
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: aa27378b9f818b650800000000000000
-      internalID: 6248771943797060266
+      spriteID: 87e87c96f7f0dc500800000000000000
+      internalID: 418007380325273208
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_1
+      name: sp_gem_orange
       rect:
         serializedVersion: 2
-        x: 301
-        y: 318
-        width: 90
-        height: 88
+        x: 188
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7a1d4de1345b88ee0800000000000000
-      internalID: -1258556795965353561
+      spriteID: 36bf1ae6811a2d200800000000000000
+      internalID: 203402059492490083
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_2
+      name: sp_gem_yellow
       rect:
         serializedVersion: 2
-        x: 512
-        y: 318
-        width: 98
-        height: 92
+        x: 338
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 922631a83b3bc30a0800000000000000
-      internalID: -6900442945341398487
+      spriteID: 845065cceca14ceb0800000000000000
+      internalID: -4700602635574180536
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_3
+      name: sp_gem_green
       rect:
         serializedVersion: 2
-        x: 547
-        y: 411
-        width: 7
-        height: 11
+        x: 488
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 58be28fc3e0cd22a0800000000000000
-      internalID: -6760535380941673595
+      spriteID: bcc5a9985e36dc0c0800000000000000
+      internalID: -4553873810694447925
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_4
+      name: sp_gem_cyan
       rect:
         serializedVersion: 2
-        x: 623
-        y: 241
-        width: 73
-        height: 164
+        x: 636
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9be05b57e79097360800000000000000
-      internalID: 7167770720682184377
+      spriteID: 3c931426a25f827c0800000000000000
+      internalID: -4095754298707592765
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_5
+      name: sp_gem_purple
       rect:
         serializedVersion: 2
-        x: 826
-        y: 320
-        width: 84
-        height: 86
+        x: 784
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: afb09d811ffda7a20800000000000000
-      internalID: 3061005123348663290
+      spriteID: 88fd4bba55402c5a0800000000000000
+      internalID: -6502630145970086008
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_6
+      name: sp_gem_blue
       rect:
         serializedVersion: 2
-        x: 914
-        y: 310
-        width: 103
-        height: 96
+        x: 936
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 39c4126f69a504c10800000000000000
-      internalID: 2035726635992435859
+      spriteID: 8549dda1d44f10de0800000000000000
+      internalID: -1368544199743531944
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_7
+      name: sp_gem_magenta
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 662
-        height: 328
+        x: 936
+        y: 1098
+        width: 128
+        height: 128
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5111103a0848c3700800000000000000
-      internalID: 521437344893571349
+      spriteID: b6c332a21653d6970800000000000000
+      internalID: 8749708342485793899
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_8
+      name: sp_gem_shadow
       rect:
         serializedVersion: 2
-        x: 26
+        x: 1095
+        y: 1101
+        width: 124
+        height: 44
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2597ab1459d56f600800000000000000
+      internalID: 501691304132639058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_back
+      rect:
+        serializedVersion: 2
+        x: 30
+        y: 332
+        width: 44
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14b5e8f8ee3f2e1d0800000000000000
+      internalID: -3322825369109767359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_back_arrow
+      rect:
+        serializedVersion: 2
+        x: 30
+        y: 332
+        width: 44
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b91ac2f369f1d3680800000000000000
+      internalID: -8773821768882413157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_close
+      rect:
+        serializedVersion: 2
+        x: 114
+        y: 333
+        width: 62
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae41af5e7d576e600800000000000000
+      internalID: 497214379007808746
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_play
+      rect:
+        serializedVersion: 2
+        x: 214
         y: 331
-        width: 56
-        height: 71
+        width: 60
+        height: 68
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1d28a5b767bb63340800000000000000
-      internalID: 4843264566833611473
+      spriteID: fc0bf27f64c31e8f0800000000000000
+      internalID: -513062607051050801
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_9
+      name: sp_icon_calendar
       rect:
         serializedVersion: 2
-        x: 108
+        x: 308
         y: 328
+        width: 70
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5860e571bf1fa910800000000000000
+      internalID: 1850732818919876701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_lotus
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 332
+        width: 88
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe14e0954a8a77420800000000000000
+      internalID: 2627754331416183279
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_chart
+      rect:
+        serializedVersion: 2
+        x: 518
+        y: 330
+        width: 78
+        height: 70
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8651ff8de1c510bc0800000000000000
+      internalID: -3818669721474099864
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_trophy
+      rect:
+        serializedVersion: 2
+        x: 624
+        y: 330
+        width: 72
+        height: 72
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df33a0e111b8a1110800000000000000
+      internalID: 1232450353673942013
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_gear
+      rect:
+        serializedVersion: 2
+        x: 728
+        y: 326
+        width: 78
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc339a44d4cd3fb10800000000000000
+      internalID: 2014195682787275723
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_undo
+      rect:
+        serializedVersion: 2
+        x: 836
+        y: 328
+        width: 70
+        height: 70
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7cbe43d66742a6850800000000000000
+      internalID: 6370944713925913543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_hint
+      rect:
+        serializedVersion: 2
+        x: 950
+        y: 326
+        width: 48
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 773238abef5f633e0800000000000000
+      internalID: -2074200103957879945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_music
+      rect:
+        serializedVersion: 2
+        x: 1044
+        y: 328
+        width: 68
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1c183c01c233dcf0800000000000000
+      internalID: -228783351350682597
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_sfx
+      rect:
+        serializedVersion: 2
+        x: 1146
+        y: 330
+        width: 76
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 06f4732491a0d1a00800000000000000
+      internalID: 728749818305269600
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_sound
+      rect:
+        serializedVersion: 2
+        x: 1146
+        y: 330
+        width: 76
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4f8e6d8828046a10800000000000000
+      internalID: 1901653912921739082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_share
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 243
+        width: 50
+        height: 62
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f3ffa1d571341a30800000000000000
+      internalID: 4185024335832937461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_flame
+      rect:
+        serializedVersion: 2
+        x: 1158
+        y: 238
+        width: 64
+        height: 80
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a964d8fdc1c642a0800000000000000
+      internalID: -6753497500808353371
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_crown
+      rect:
+        serializedVersion: 2
+        x: 1110
+        y: 118
+        width: 120
+        height: 112
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 32e614e51b1e6dc00800000000000000
+      internalID: 925174925378022947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_leaf
+      rect:
+        serializedVersion: 2
+        x: 407
+        y: 328
+        width: 78
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e14a3c8d0e071300800000000000000
+      internalID: 222662157928120809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_globe
+      rect:
+        serializedVersion: 2
+        x: 176
+        y: 234
+        width: 74
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9178ffbf51f3cfa30800000000000000
+      internalID: 4250341511985596185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_no_ads
+      rect:
+        serializedVersion: 2
+        x: 253
+        y: 234
+        width: 82
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a9c9a13803825da0800000000000000
+      internalID: -5957555285841557086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_restore
+      rect:
+        serializedVersion: 2
+        x: 337
+        y: 234
+        width: 76
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60aaa38f1eef24240800000000000000
+      internalID: 4774658801451837958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_shield
+      rect:
+        serializedVersion: 2
+        x: 416
+        y: 234
+        width: 76
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f539da5b5fa74d60800000000000000
+      internalID: 7874455280381670899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_mail
+      rect:
+        serializedVersion: 2
+        x: 495
+        y: 234
+        width: 78
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e6cbbedf51003130800000000000000
+      internalID: 3544334418010949344
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_vibrate
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 234
+        width: 64
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b6b6e44fb794f0a0800000000000000
+      internalID: -6848682285573163339
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_icon_sparkle_fx
+      rect:
+        serializedVersion: 2
+        x: 99
+        y: 234
         width: 72
         height: 76
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0f5aef252e8d251e0800000000000000
-      internalID: -2210466000518863376
+      spriteID: e1b947d0546b03a10800000000000000
+      internalID: 1887208651562982174
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_10
+      name: sp_icon_external_link
       rect:
         serializedVersion: 2
-        x: 206
-        y: 328
-        width: 71
-        height: 74
+        x: 963
+        y: 234
+        width: 82
+        height: 76
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 082a70f32412cbec0800000000000000
-      internalID: -3549925837865770368
+      spriteID: a0985e1777090b170800000000000000
+      internalID: 8192206564873308426
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_11
+      name: sp_btn_capsule_green
       rect:
         serializedVersion: 2
-        x: 390
-        y: 328
-        width: 109
-        height: 74
+        x: 20
+        y: 674
+        width: 230
+        height: 94
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 44, y: 44, z: 44, w: 44}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c1f2ffa997d168a50800000000000000
-      internalID: 6522933518421405468
+      spriteID: 68e3bfe7db23b9450800000000000000
+      internalID: 6096522310036700806
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_12
+      name: sp_btn_capsule_darkgreen
       rect:
         serializedVersion: 2
-        x: 705
-        y: 0
-        width: 549
-        height: 400
+        x: 252
+        y: 675
+        width: 214
+        height: 92
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 44, y: 44, z: 44, w: 44}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 530bb19232217d8e0800000000000000
-      internalID: -1668845194694643659
+      spriteID: 1f619ab197c5b1650800000000000000
+      internalID: 6204654586857854705
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_13
+      name: sp_btn_capsule_zen
       rect:
         serializedVersion: 2
-        x: 721
-        y: 318
-        width: 85
-        height: 86
+        x: 465
+        y: 677
+        width: 210
+        height: 89
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 42, y: 42, z: 42, w: 42}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e8adb89011b6bcac0800000000000000
-      internalID: -3833852936857068914
+      spriteID: c0e34ec405f2574e0800000000000000
+      internalID: -1984628038852919796
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_14
+      name: sp_btn_capsule_cream
       rect:
         serializedVersion: 2
-        x: 1043
-        y: 322
-        width: 69
-        height: 82
+        x: 677
+        y: 679
+        width: 170
+        height: 84
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 40, y: 40, z: 40, w: 40}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 94d6386f55721c2d0800000000000000
-      internalID: -3260281405078016695
+      spriteID: d84645ef189796d00800000000000000
+      internalID: 966437194272367757
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_15
+      name: sp_btn_capsule_beige
       rect:
         serializedVersion: 2
-        x: 707
-        y: 236
-        width: 68
-        height: 74
+        x: 848
+        y: 678
+        width: 172
+        height: 85
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 40, y: 40, z: 40, w: 40}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b9f21271b1a2a2e70800000000000000
-      internalID: 9091125093641301915
+      spriteID: 0006ff4c691c86440800000000000000
+      internalID: 4929402645451333632
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_16
+      name: sp_btn_circle_cream
       rect:
         serializedVersion: 2
-        x: 673
-        y: 134
-        width: 70
-        height: 77
+        x: 1026
+        y: 670
+        width: 102
+        height: 102
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e8abd7339aec1a950800000000000000
-      internalID: 6458670566734674574
+      spriteID: d96444a726d13c5d0800000000000000
+      internalID: -3043556614377027939
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_17
+      name: sp_btn_circle_grey
       rect:
         serializedVersion: 2
-        x: 755
-        y: 128
-        width: 8
-        height: 17
+        x: 1135
+        y: 669
+        width: 102
+        height: 103
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c84b576bce3ccfde0800000000000000
-      internalID: -1297947171148680052
+      spriteID: a6b125196f80db0d0800000000000000
+      internalID: -3405555888129172630
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: sprites_2__crystal_18
+      name: sp_btn_view_gold
       rect:
         serializedVersion: 2
-        x: 640
-        y: 28
-        width: 236
-        height: 95
+        x: 677
+        y: 679
+        width: 170
+        height: 84
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 30, y: 30, z: 30, w: 30}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa76b8127e86e3540800000000000000
+      internalID: 4989540779082606511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_ui_card_cream
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 516
+        width: 242
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 32, y: 32, z: 32, w: 32}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6f0149bf10c7a560800000000000000
+      internalID: 7325034561425969003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_ui_card_gold
+      rect:
+        serializedVersion: 2
+        x: 425
+        y: 530
+        width: 165
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 32, y: 32, z: 32, w: 32}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1524363585464e5d0800000000000000
+      internalID: -3034189918421958063
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_ui_card_small_cream
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 530
+        width: 156
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 32, y: 32, z: 32, w: 32}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82de4f7f7eb6be9b0800000000000000
+      internalID: -5049823913124238040
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_ui_card_green
+      rect:
+        serializedVersion: 2
+        x: 591
+        y: 530
+        width: 168
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 32, y: 32, z: 32, w: 32}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 566f978d27d2ab1f0800000000000000
+      internalID: -1028459593619343771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_ui_card_grey
+      rect:
+        serializedVersion: 2
+        x: 759
+        y: 530
+        width: 167
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 32, y: 32, z: 32, w: 32}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba16ce328487b44a0800000000000000
+      internalID: -6608055777000398421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_pill_long_cream
+      rect:
+        serializedVersion: 2
+        x: 934
+        y: 587
+        width: 302
+        height: 68
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 32, y: 32, z: 32, w: 32}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e20dcb12ccdc42e80800000000000000
+      internalID: -8204206344539156434
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_pill_small_green
+      rect:
+        serializedVersion: 2
+        x: 933
+        y: 517
+        width: 149
+        height: 65
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 30, y: 30, z: 30, w: 30}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 62dbb0b276a77ba00800000000000000
+      internalID: 772220444639739174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_pill_small_cream
+      rect:
+        serializedVersion: 2
+        x: 1087
+        y: 517
+        width: 148
+        height: 65
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 30, y: 30, z: 30, w: 30}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e0998e4e83ca04d0800000000000000
+      internalID: -3167504371931311898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_toggle_track_on
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 432
+        width: 126
+        height: 60
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 28, y: 28, z: 28, w: 28}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2880b216ca9d9f880800000000000000
+      internalID: -8576584680962586494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_toggle_track_off
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 432
+        width: 126
+        height: 60
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 28, y: 28, z: 28, w: 28}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1cdd2e22c7df19ae0800000000000000
+      internalID: -1544174487608304191
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_toggle_knob
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 674
+        width: 92
+        height: 92
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 910ab5d7724488850800000000000000
-      internalID: 6379423808567877657
+      spriteID: 480722f75402ed310800000000000000
+      internalID: 1431617214408192132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_divider_hairline
+      rect:
+        serializedVersion: 2
+        x: 904
+        y: 457
+        width: 122
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 214cf38beca3bc5e0800000000000000
+      internalID: -1888350959222930414
       vertices: []
       indices: 
       edges: []
@@ -613,6 +1570,61 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
+      sp_btn_capsule_beige: 4929402645451333632
+      sp_btn_capsule_cream: 966437194272367757
+      sp_btn_capsule_darkgreen: 6204654586857854705
+      sp_btn_capsule_green: 6096522310036700806
+      sp_btn_capsule_zen: -1984628038852919796
+      sp_btn_circle_cream: -3043556614377027939
+      sp_btn_circle_grey: -3405555888129172630
+      sp_btn_view_gold: 4989540779082606511
+      sp_divider_hairline: -1888350959222930414
+      sp_gem_blue: -1368544199743531944
+      sp_gem_cyan: -4095754298707592765
+      sp_gem_green: -4553873810694447925
+      sp_gem_magenta: 8749708342485793899
+      sp_gem_orange: 203402059492490083
+      sp_gem_purple: -6502630145970086008
+      sp_gem_red: 418007380325273208
+      sp_gem_shadow: 501691304132639058
+      sp_gem_yellow: -4700602635574180536
+      sp_icon_back: -3322825369109767359
+      sp_icon_back_arrow: -8773821768882413157
+      sp_icon_calendar: 1850732818919876701
+      sp_icon_chart: -3818669721474099864
+      sp_icon_close: 497214379007808746
+      sp_icon_crown: 925174925378022947
+      sp_icon_external_link: 8192206564873308426
+      sp_icon_flame: -6753497500808353371
+      sp_icon_gear: 2014195682787275723
+      sp_icon_globe: 4250341511985596185
+      sp_icon_hint: -2074200103957879945
+      sp_icon_leaf: 222662157928120809
+      sp_icon_lotus: 2627754331416183279
+      sp_icon_mail: 3544334418010949344
+      sp_icon_music: -228783351350682597
+      sp_icon_no_ads: -5957555285841557086
+      sp_icon_play: -513062607051050801
+      sp_icon_restore: 4774658801451837958
+      sp_icon_sfx: 728749818305269600
+      sp_icon_share: 4185024335832937461
+      sp_icon_shield: 7874455280381670899
+      sp_icon_sound: 1901653912921739082
+      sp_icon_sparkle_fx: 1887208651562982174
+      sp_icon_trophy: 1232450353673942013
+      sp_icon_undo: 6370944713925913543
+      sp_icon_vibrate: -6848682285573163339
+      sp_pill_long_cream: -8204206344539156434
+      sp_pill_small_cream: -3167504371931311898
+      sp_pill_small_green: 772220444639739174
+      sp_toggle_knob: 1431617214408192132
+      sp_toggle_track_off: -1544174487608304191
+      sp_toggle_track_on: -8576584680962586494
+      sp_ui_card_cream: 7325034561425969003
+      sp_ui_card_gold: -3034189918421958063
+      sp_ui_card_green: -1028459593619343771
+      sp_ui_card_grey: -6608055777000398421
+      sp_ui_card_small_cream: -5049823913124238040
       sprites_2__crystal_0: 6248771943797060266
       sprites_2__crystal_1: -1258556795965353561
       sprites_2__crystal_10: -3549925837865770368

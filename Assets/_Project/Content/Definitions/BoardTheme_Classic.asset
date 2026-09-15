@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Line98.Data::Line98.Data.BoardThemeSO
   m_BoardFramePrefab: {fileID: 0}
   m_BoardCellPrefab: {fileID: 0}
+  m_BoardCellMesh: {fileID: 4300000, guid: 6ef447653a80af042a726ac86d5a30d9, type: 2}
+  m_BoardFrameMesh: {fileID: 4300000, guid: ae503edce19db5b45b1b479a94837960, type: 2}
   m_BoardCellMaterial: {fileID: 2100000, guid: 6b2a55f9754697f4b90e3858c971aff4, type: 2}
   m_BoardFrameMaterial: {fileID: 2100000, guid: 4fa236f8aab8be5458804ad4d926885d, type: 2}
   m_RowPitchScale: 1.1791784

@@ -36,6 +36,9 @@ namespace Line98.App
         private ICosmeticService m_CosmeticService;
         private CosmeticThemeSelector m_ThemeSelector;
         private Presentation.PresentationRoot m_BoundPresentationRoot;
+        private Presentation.MenuShowcaseRig m_BoundShowcaseRig;
+        private Presentation.MainMenuPresenter m_BoundMenuPresenter;
+        private Presentation.MainMenuEntryMotion m_BoundEntryMotion;
         private Presentation.UiShell m_BoundShell;
         private SettingsPresenter m_SettingsPresenter;
         private bool m_IsThemeChangeBound;
@@ -45,6 +48,7 @@ namespace Line98.App
         public GameSession Session => m_Session;
         public Presentation.IThemeSelector ThemeSelector => m_ThemeSelector;
         public Presentation.PresentationRoot PresentationRoot => m_BoundPresentationRoot;
+        public Presentation.MenuShowcaseRig ShowcaseRig => m_BoundShowcaseRig;
 
         private void Awake()
         {
@@ -106,7 +110,17 @@ namespace Line98.App
 
             m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
             m_SaveService = new SaveService(new FileSaveBackend());
-            m_StatsService = new StatisticsService();
+            SaveData loadedSave = m_SaveService.LoadGame();
+            PlayerStats initialStats = new PlayerStats
+            {
+                BestScore = loadedSave != null ? loadedSave.BestScore : 0,
+                CurrentDailyStreak = loadedSave != null ? loadedSave.DailyStreak : 0,
+                TotalLinesCleared = loadedSave != null ? loadedSave.LinesCleared : 0,
+                TotalMoves = loadedSave != null ? loadedSave.MoveCount : 0,
+                GamesPlayed = loadedSave != null ? loadedSave.TotalGamesPlayed : 0,
+                LongestLine = loadedSave != null ? loadedSave.LongestLine : 0
+            };
+            m_StatsService = new StatisticsService(initialStats);
             m_AchievementService = new AchievementService();
             m_AnalyticsService = new DebugAnalyticsService();
             m_AdService = new NoOpAdService();
@@ -144,6 +158,9 @@ namespace Line98.App
             m_SettingsPresenter?.Dispose();
             m_SettingsPresenter = null;
             m_BoundPresentationRoot = null;
+            m_BoundShowcaseRig = null;
+            m_BoundMenuPresenter = null;
+            m_BoundEntryMotion = null;
             m_BoundShell = null;
         }
 
@@ -153,6 +170,24 @@ namespace Line98.App
             {
                 LoadMainMenuFromBoot(scene);
                 return;
+            }
+
+            if (scene.name == "Game")
+            {
+                switch (Presentation.UiSceneNavigator.PendingModeRequest)
+                {
+                    case Presentation.UiSceneNavigator.GameModeRequest.Daily:
+                        m_GameManager?.StartDailyChallenge();
+                        break;
+                    case Presentation.UiSceneNavigator.GameModeRequest.Zen:
+                        m_GameManager?.StartZenMode();
+                        break;
+                    case Presentation.UiSceneNavigator.GameModeRequest.Classic:
+                    default:
+                        m_GameManager?.StartClassicGame();
+                        break;
+                }
+                Presentation.UiSceneNavigator.PendingModeRequest = Presentation.UiSceneNavigator.GameModeRequest.None;
             }
 
             m_IsLoadingMainMenuFromBoot = false;
@@ -182,11 +217,54 @@ namespace Line98.App
                 {
                     m_BoundPresentationRoot.ThemeSelector = m_ThemeSelector;
 
+                    if (!m_BoundPresentationRoot.IsInitialized && m_Session != null)
+                    {
+                        m_BoundPresentationRoot.Initialize(
+                            m_Session,
+                            themeSelector: m_ThemeSelector,
+                            ballTheme: m_CosmeticService?.ActiveTheme?.BallTheme,
+                            boardTheme: m_CosmeticService?.ActiveTheme?.BoardTheme,
+                            uiTheme: m_CosmeticService?.ActiveTheme?.UiTheme);
+                    }
+
                     if (m_CosmeticService?.ActiveTheme != null)
                     {
                         m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
                     }
                 }
+            }
+
+            var showcaseRig = FindAnyObjectByType<Presentation.MenuShowcaseRig>();
+            if (showcaseRig != m_BoundShowcaseRig)
+            {
+                m_BoundShowcaseRig = showcaseRig;
+                if (m_BoundShowcaseRig != null)
+                {
+                    m_BoundShowcaseRig.SetReducedMotion(SettingsPresenter.IsReduceEffectsEnabled);
+                    if (m_CosmeticService?.ActiveTheme != null)
+                    {
+                        m_BoundShowcaseRig.ApplyTheme(m_CosmeticService.ActiveTheme);
+                    }
+                }
+            }
+
+            var entryMotion = FindAnyObjectByType<Presentation.MainMenuEntryMotion>();
+            if (entryMotion != m_BoundEntryMotion)
+            {
+                m_BoundEntryMotion = entryMotion;
+                if (m_BoundEntryMotion != null)
+                {
+                    m_BoundEntryMotion.Play(SettingsPresenter.IsReduceEffectsEnabled);
+                }
+            }
+
+            var menuPresenter = FindAnyObjectByType<Presentation.MainMenuPresenter>();
+            if (menuPresenter != null)
+            {
+                m_BoundMenuPresenter = menuPresenter;
+                int best = m_StatsService?.Stats?.BestScore ?? 0;
+                int streak = m_StatsService?.Stats?.CurrentDailyStreak ?? 0;
+                m_BoundMenuPresenter.SetStats(best, streak, m_CosmeticService?.ActiveTheme?.UiTheme);
             }
 
             BindShell();
@@ -231,7 +309,15 @@ namespace Line98.App
             {
                 m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
             }
-            else if (m_BoundShell != null && m_CosmeticService?.ActiveTheme != null)
+            if (m_BoundShowcaseRig != null && m_CosmeticService?.ActiveTheme != null)
+            {
+                m_BoundShowcaseRig.ApplyTheme(m_CosmeticService.ActiveTheme);
+            }
+            if (m_BoundMenuPresenter != null && m_CosmeticService?.ActiveTheme != null)
+            {
+                m_BoundMenuPresenter.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme);
+            }
+            if (m_BoundShell != null && m_CosmeticService?.ActiveTheme != null)
             {
                 m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
             }
@@ -259,18 +345,31 @@ namespace Line98.App
         public void Tick(float dt)
         {
             TryBindSettingsPresenter();
+            if (m_BoundShowcaseRig != null)
+            {
+                m_BoundShowcaseRig.Tick(dt);
+            }
+            if (m_BoundEntryMotion != null)
+            {
+                m_BoundEntryMotion.Tick(dt);
+            }
         }
 
         private void TryBindSettingsPresenter()
         {
-            if (m_BoundShell == null || m_BoundShell.SettingsPopup == null || m_BoundPresentationRoot == null || !m_BoundPresentationRoot.IsInitialized)
+            if (m_BoundShell == null || m_BoundShell.SettingsPopup == null)
             {
                 return;
             }
 
+            // MainMenu has no PresentationRoot: bind without audio so preferences (e.g. Reduce Effects) still apply.
+            var audioService = m_BoundPresentationRoot != null && m_BoundPresentationRoot.IsInitialized
+                ? m_BoundPresentationRoot.AudioService
+                : null;
+
             if (m_SettingsPresenter != null &&
                 m_SettingsPresenter.View == m_BoundShell.SettingsPopup &&
-                m_SettingsPresenter.AudioService == m_BoundPresentationRoot.AudioService &&
+                m_SettingsPresenter.AudioService == audioService &&
                 m_SettingsPresenter.IapService == m_IapService)
             {
                 return;
@@ -279,9 +378,22 @@ namespace Line98.App
             m_SettingsPresenter?.Dispose();
             m_SettingsPresenter = new SettingsPresenter(
                 m_BoundShell.SettingsPopup,
-                m_BoundPresentationRoot.AudioService,
+                audioService,
                 m_IapService,
                 m_BoundShell);
+            m_SettingsPresenter.OnReduceEffectsChanged += HandleReduceEffectsChanged;
+        }
+
+        private void HandleReduceEffectsChanged(bool enabled)
+        {
+            if (m_BoundShowcaseRig != null)
+            {
+                m_BoundShowcaseRig.SetReducedMotion(enabled);
+            }
+            if (enabled && m_BoundEntryMotion != null)
+            {
+                m_BoundEntryMotion.Snap();
+            }
         }
 
         private void OnMoveCommitted(Core.MoveResult result)
@@ -299,6 +411,10 @@ namespace Line98.App
 
         private void OnGameOver(SessionSummary summary)
         {
+            if (m_Session?.Mode is DailyChallengeMode)
+            {
+                m_StatsService?.RecordDailyCompletion();
+            }
             m_StatsService?.RecordGameOver(summary.FinalScore);
             Autosave();
         }
@@ -334,7 +450,8 @@ namespace Line98.App
                 FreeUndos = m_Session.FreeUndosRemaining,
                 BestScore = m_StatsService.Stats.BestScore,
                 TotalGamesPlayed = m_StatsService.Stats.GamesPlayed,
-                LongestLine = m_StatsService.Stats.LongestLine
+                LongestLine = m_StatsService.Stats.LongestLine,
+                DailyStreak = m_StatsService.Stats.CurrentDailyStreak
             };
 
             m_SaveService.SaveGame(data);

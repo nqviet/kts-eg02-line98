@@ -65,14 +65,34 @@ namespace Line98.Data
         [SerializeField] private Color m_DividerHairline = new Color(0.871f, 0.851f, 0.796f, 0.6f);      // #DED9CB
         [SerializeField] private Color m_ButtonGold = new Color(0.961f, 0.780f, 0.306f, 1f);              // #F5C74E
 
+        [Header("Menu & Surface Colors")]
+        [SerializeField] private Color m_SurfacePrimary = new Color(0.145f, 0.655f, 0.329f, 1f);     // #25A754
+        [SerializeField] private Color m_SurfaceSecondary = new Color(0.969f, 0.961f, 0.933f, 1f);   // #F7F5EE
+        [SerializeField] private Color m_SurfaceTertiaryZen = new Color(0.839f, 0.910f, 0.969f, 1f); // #D6E8F7
+        [SerializeField] private Color m_InkButtonPrimary = Color.white;
+        [SerializeField] private Color m_StreakDotOn = new Color(0.145f, 0.722f, 0.365f, 1f);        // #25B85D
+        [SerializeField] private Color m_StreakDotOff = new Color(0.812f, 0.839f, 0.863f, 1f);       // #CFD6DC
+
         [Header("Crystal UI Sprite Tokens")]
         [SerializeField] private Sprite m_CardBackgroundSprite;
         [SerializeField] private Sprite m_CardGoldSprite;
         [SerializeField] private Sprite m_ButtonCapsuleSprite;
+        [SerializeField] private Sprite m_ButtonCapsulePrimary;
         [SerializeField] private Sprite m_ButtonCircleSprite;
         [SerializeField] private Sprite m_ToggleTrackOnSprite;
         [SerializeField] private Sprite m_ToggleTrackOffSprite;
         [SerializeField] private Sprite m_ToggleThumbSprite;
+        [SerializeField] private Sprite m_IconPlay;
+        [SerializeField] private Sprite m_IconCalendar;
+        [SerializeField] private Sprite m_IconLotus;
+        [SerializeField] private Sprite m_IconChart;
+        [SerializeField] private Sprite m_IconGear;
+        [SerializeField] private Sprite m_IconFlame;
+        [SerializeField] private Sprite m_IconCrown;
+
+        [Header("Classic UI Material Tokens (D18)")]
+        [SerializeField] private Material m_SurfaceMaterialCard;
+        [SerializeField] private Material m_SurfaceMaterialButton;
 
         public string ThemeId => m_ThemeId;
         public string DisplayName => m_DisplayName;
@@ -124,12 +144,30 @@ namespace Line98.Data
         public Color DividerHairline => m_DividerHairline;
         public Color ButtonGold => m_ButtonGold;
 
+        public Color SurfacePrimary => m_SurfacePrimary;
+        public Color SurfaceSecondary => m_SurfaceSecondary;
+        public Color SurfaceTertiaryZen => m_SurfaceTertiaryZen;
+        public Color InkButtonPrimary => m_InkButtonPrimary;
+        public Color StreakDotOn => m_StreakDotOn;
+        public Color StreakDotOff => m_StreakDotOff;
+
         public Sprite CardBackgroundSprite => m_CardBackgroundSprite;
         public Sprite CardGoldSprite => m_CardGoldSprite;
         public Sprite ButtonCapsuleSprite => m_ButtonCapsuleSprite;
+        public Sprite ButtonCapsulePrimary => m_ButtonCapsulePrimary;
         public Sprite ButtonCircleSprite => m_ButtonCircleSprite;
         public Sprite ToggleTrackOnSprite => m_ToggleTrackOnSprite;
         public Sprite ToggleTrackOffSprite => m_ToggleTrackOffSprite;
         public Sprite ToggleThumbSprite => m_ToggleThumbSprite;
+        public Sprite IconPlay => m_IconPlay;
+        public Sprite IconCalendar => m_IconCalendar;
+        public Sprite IconLotus => m_IconLotus;
+        public Sprite IconChart => m_IconChart;
+        public Sprite IconGear => m_IconGear;
+        public Sprite IconFlame => m_IconFlame;
+        public Sprite IconCrown => m_IconCrown;
+
+        public Material SurfaceMaterialCard => m_SurfaceMaterialCard;
+        public Material SurfaceMaterialButton => m_SurfaceMaterialButton;
     }
 }
