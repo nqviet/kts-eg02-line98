@@ -49,11 +49,18 @@ namespace Line98.Presentation.Animation
 
         private readonly Line98.Presentation.Audio.AudioService m_AudioService;
         private float m_SpeedMultiplier = 1.0f;
+        private ClearEffectSO m_ClearEffect;
 
         public bool IsActive => m_IsAnimatingSpawns || m_IsAnimatingClears;
         public FeedbackTierRule ActiveTierRule => m_ActiveTierRule;
         public float ClearTotalDuration => m_ClearTotalDuration;
         public LineRenderer[] RibbonRenderers => m_RibbonRenderers;
+        public ClearEffectSO ClearEffect => m_ClearEffect;
+
+        public void ApplyClearEffect(ClearEffectSO clearEffect)
+        {
+            m_ClearEffect = clearEffect;
+        }
 
         public float SpeedMultiplier
         {
@@ -278,8 +285,8 @@ namespace Line98.Presentation.Animation
             }
 
             Color ribbonColor = m_ActiveTierRule.ShowBanner
-                ? new Color(1.0f, 0.84f, 0.0f, 0.95f) // Gold tint for tier 4
-                : new Color(1.0f, 1.0f, 1.0f, 0.85f);
+                ? (m_ClearEffect != null ? m_ClearEffect.RibbonTintBanner : new Color(1.0f, 0.84f, 0.0f, 0.95f))
+                : (m_ClearEffect != null ? m_ClearEffect.RibbonTint : new Color(1.0f, 1.0f, 1.0f, 0.85f));
 
             if (m_RunH_V.Count >= 2 && m_RibbonRenderers[0] != null)
             {

@@ -191,6 +191,19 @@
 - **Rationale:** Closes D9, D10. Satisfies GDD [P2.2], [P2.3], [P2.4], [P2.5] and GDD Gap Resolution #11.
 - **Status:** Approved & Implemented.
 
+### D34: Theme Bundle Architecture, `IThemeProvider` Extension, and Projection-Invariant Board Themes
+- **Decision:**
+  - `ThemeDefinitionSO` models a theme as a named bundle (ball + board + UI + clear effect) with optional single-level `m_InheritsFrom`, listed by `ThemeCatalogSO`.
+  - `IThemeProvider` remains **byte-identical** (per D26); UI and clear-effect selection are added by `ICosmeticService : IThemeProvider`.
+  - `Presentation` never references `Line98.Services`: resolved `*SO` assets flow down, selection requests flow up through the presentation-owned `IThemeSelector`.
+  - Cosmetic selection persists under the isolated key `line98_cosmetics` (`Version = 1`) via `ISaveBackend`, never inside `SaveData`.
+  - `m_RowPitchScale = 1.1791784` is a **projection invariant** shared by every board theme, not a per-theme art value.
+  - Ball palettes are hue-preserving across themes; `_PatternRect` assignments are identical per color index in every theme (per D33).
+  - Today's shipped look is re-identified as the **`classic`** theme (parts: `BallTheme_Classic`, `BoardTheme_Classic`, `UiTheme_Default`, `ClearEffect_Classic`); **`crystal`** ships as the V1 alternative with placeholder colors.
+  - Theme ids are **namespaced**: bundle ids and per-category part ids are independent namespaces with independent uniqueness, resolved through separate catalog lookups.
+- **Rationale:** Satisfies GDD §16 / [P3.9] ("theme swap through `IThemeProvider` without touching gameplay code; only 2 themes in V1") while scaling to N themes at the cost of one `ThemeDefinitionSO` + one `BallThemeSO` + 7 materials. Preserves the 2.5D baked projection contract, the single-palette authority of D27, the colorblind guarantees of D33, and the frozen-interface commitment of D26.
+- **Status:** Approved & Implemented.
+
 ---
 
 ## GDD Gap Resolutions (Concept Vocabularies §14)

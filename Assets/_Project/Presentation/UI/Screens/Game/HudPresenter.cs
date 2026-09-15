@@ -76,6 +76,25 @@ namespace Line98.Presentation
             RefreshAllViews();
         }
 
+        public void ApplyTheme(UiThemeSO theme, BallThemeSO ballTheme = null)
+        {
+            if (theme != null)
+            {
+                m_Theme = theme;
+                if (m_PreviewView != null && theme.PreviewSpriteSet != null)
+                {
+                    m_PreviewView.SetSpriteSet(theme.PreviewSpriteSet);
+                }
+            }
+
+            if (ballTheme != null && m_PreviewView != null)
+            {
+                m_PreviewView.SetSpriteTints(ballTheme.PreviewTints);
+            }
+
+            RefreshAllViews();
+        }
+
         private void BindButtons()
         {
             Subscribe(m_UndoActionButton, m_UndoButtonView != null ? m_UndoButtonView.Button : null, OnUndoClicked);

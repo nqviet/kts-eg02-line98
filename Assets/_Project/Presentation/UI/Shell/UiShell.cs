@@ -30,7 +30,9 @@ namespace Line98.Presentation
         [SerializeField] private ConfirmPopup m_ConfirmPopup;
         [SerializeField] private SettingsPopup m_SettingsPopup;
         [SerializeField] private StatisticsPopup m_StatisticsPopup;
+        [SerializeField] private CosmeticsPopup m_CosmeticsPopup;
         [SerializeField] private UiThemeSO m_UiTheme;
+        [SerializeField] private ThemeCatalogSO m_ThemeCatalog;
 
         [Header("Registries")]
         [SerializeField] private UiCanvasStack m_CanvasStack;
@@ -41,6 +43,7 @@ namespace Line98.Presentation
         private readonly Stack<PopupView> m_PopupStack = new Stack<PopupView>();
         private UnityEngine.Events.UnityAction m_ConfirmAction;
         private UiServices m_Services;
+        private IThemeSelector m_ThemeSelector;
         private bool m_IsInitialized;
 
         public Canvas StaticCanvas => m_StaticCanvas;
@@ -50,6 +53,9 @@ namespace Line98.Presentation
         public ConfirmPopup ConfirmPopup => m_ConfirmPopup;
         public SettingsPopup SettingsPopup => m_SettingsPopup;
         public StatisticsPopup StatisticsPopup => m_StatisticsPopup;
+        public CosmeticsPopup CosmeticsPopup => m_CosmeticsPopup;
+        public ThemeCatalogSO ThemeCatalog { get => m_ThemeCatalog; set => m_ThemeCatalog = value; }
+        public IThemeSelector ThemeSelector { get => m_ThemeSelector; set => m_ThemeSelector = value; }
         public UiPopupRegistry PopupRegistry => m_PopupRegistry;
         public UiScreenRegistry ScreenRegistry => m_ScreenRegistry;
         public Transform ScreenParent => m_DynamicCanvas != null ? m_DynamicCanvas.transform : transform;
@@ -91,7 +97,52 @@ namespace Line98.Presentation
             m_ScreenRegistry.Initialize(this, m_Services);
             m_ScreenRegistry.ActivateForScene(SceneManager.GetActiveScene().name);
             InitializeUiBehaviours();
+            if (m_SettingsPopup != null)
+            {
+                m_SettingsPopup.OnCosmeticsClicked -= OpenCosmetics;
+                m_SettingsPopup.OnCosmeticsClicked += OpenCosmetics;
+            }
             m_IsInitialized = true;
+        }
+
+        public void SetThemeSelector(IThemeSelector selector)
+        {
+            m_ThemeSelector = selector;
+        }
+
+        public void SetThemeCatalog(ThemeCatalogSO catalog)
+        {
+            m_ThemeCatalog = catalog;
+        }
+
+        private string m_ActiveBundleThemeId = "classic";
+
+        public void ApplyTheme(UiThemeSO theme, string bundleThemeId = null)
+        {
+            if (!string.IsNullOrEmpty(bundleThemeId))
+            {
+                m_ActiveBundleThemeId = bundleThemeId;
+            }
+
+            if (theme != null)
+            {
+                m_UiTheme = theme;
+                if (m_Services != null)
+                {
+                    m_Services = new UiServices(m_TweenRunner, m_Services.AudioService, m_UiTheme, this, m_Services.Session);
+                }
+
+                UiThemeApplier[] themeAppliers = FindObjectsByType<UiThemeApplier>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                for (int i = 0; i < themeAppliers.Length; i++)
+                {
+                    themeAppliers[i].Apply(m_UiTheme);
+                }
+            }
+
+            if (m_CosmeticsPopup != null && m_CosmeticsPopup.IsOpen)
+            {
+                m_CosmeticsPopup.SetActiveTheme(m_ActiveBundleThemeId);
+            }
         }
 
         public void EnsureCanvasSortingOrders()
@@ -116,7 +167,28 @@ namespace Line98.Presentation
 
         public void OpenSettings()
         {
-            m_PopupRegistry?.Open(UiPopupId.Settings);
+            if (m_PopupRegistry == null || !m_PopupRegistry.Open(UiPopupId.Settings))
+            {
+                Debug.LogWarning("[UiShell] Cannot open Settings because its popup is not configured.");
+            }
+        }
+
+        public void OpenCosmetics()
+        {
+            string activeId = !string.IsNullOrEmpty(m_ActiveBundleThemeId) ? m_ActiveBundleThemeId : "classic";
+            if (m_ThemeCatalog == null)
+            {
+                Debug.LogWarning("[UiShell] Cannot populate themes because no ThemeCatalogSO is configured.");
+            }
+            if (m_ThemeSelector == null)
+            {
+                Debug.LogWarning("[UiShell] Cannot change themes because no IThemeSelector is configured.");
+            }
+
+            if (m_PopupRegistry == null || !m_PopupRegistry.Open(UiPopupId.Cosmetics, new CosmeticsPopupPayload(m_ThemeCatalog, activeId, m_ThemeSelector)))
+            {
+                Debug.LogWarning("[UiShell] Cannot open Themes because its popup is not configured.");
+            }
         }
 
         public void OpenStatistics(int gamesPlayed, int bestScore, int totalLines, int avgScore)
@@ -140,7 +212,7 @@ namespace Line98.Presentation
 
             m_ConfirmAction = () =>
             {
-                popup.Hide();
+                ClosePopup(popup);
                 onConfirm?.Invoke();
             };
             popup.ConfirmButton.onClick.AddListener(m_ConfirmAction);
@@ -148,13 +220,27 @@ namespace Line98.Presentation
 
         internal void PushPopup(PopupView popup)
         {
-            if (popup == null || m_PopupStack.Contains(popup))
+            if (popup == null)
             {
                 return;
             }
 
+            if (m_PopupStack.Contains(popup))
+            {
+                popup.transform.SetAsLastSibling();
+                m_CanvasStack?.SetModalVisible(true);
+                if (!popup.IsOpen)
+                {
+                    popup.Show();
+                }
+                return;
+            }
+
             popup.Initialize(m_TweenRunner);
+            popup.OnCloseRequested -= HandlePopupCloseRequested;
+            popup.OnCloseRequested += HandlePopupCloseRequested;
             m_PopupStack.Push(popup);
+            popup.transform.SetAsLastSibling();
             m_CanvasStack?.SetModalVisible(true);
             popup.Show();
         }
@@ -174,6 +260,27 @@ namespace Line98.Presentation
                     m_CanvasStack?.SetModalVisible(false);
                 }
             });
+        }
+
+        private void HandlePopupCloseRequested(PopupView popup)
+        {
+            ClosePopup(popup);
+        }
+
+        private void ClosePopup(PopupView popup)
+        {
+            if (popup == null || m_PopupStack.Count == 0)
+            {
+                return;
+            }
+
+            if (ReferenceEquals(m_PopupStack.Peek(), popup))
+            {
+                PopPopup();
+                return;
+            }
+
+            Debug.LogWarning("[UiShell] Ignored a close request from a popup that is not on top of the modal stack.");
         }
 
         public void CloseAllPopups()
@@ -208,6 +315,7 @@ namespace Line98.Presentation
             m_ConfirmPopup ??= GetComponentInChildren<ConfirmPopup>(true);
             m_SettingsPopup ??= GetComponentInChildren<SettingsPopup>(true);
             m_StatisticsPopup ??= GetComponentInChildren<StatisticsPopup>(true);
+            m_CosmeticsPopup ??= GetComponentInChildren<CosmeticsPopup>(true);
         }
 
         private void EnsureRuntimeComponents()

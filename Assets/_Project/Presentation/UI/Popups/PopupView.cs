@@ -46,6 +46,7 @@ namespace Line98.Presentation
         public Button PrimaryButton => m_PrimaryButton;
         public Button SecondaryButton => m_SecondaryButton;
         public Button CloseButton => m_CloseButton;
+        public event Action<PopupView> OnCloseRequested;
 
         protected virtual void Awake()
         {
@@ -55,7 +56,15 @@ namespace Line98.Presentation
 
             if (m_CloseButton != null)
             {
-                m_CloseButton.onClick.AddListener(() => Hide());
+                m_CloseButton.onClick.AddListener(HandleCloseRequested);
+            }
+        }
+
+        protected virtual void OnDestroy()
+        {
+            if (m_CloseButton != null)
+            {
+                m_CloseButton.onClick.RemoveListener(HandleCloseRequested);
             }
         }
 
@@ -277,6 +286,11 @@ namespace Line98.Presentation
                 gameObject.SetActive(false);
                 onComplete?.Invoke();
             }
+        }
+
+        private void HandleCloseRequested()
+        {
+            OnCloseRequested?.Invoke(this);
         }
     }
 }

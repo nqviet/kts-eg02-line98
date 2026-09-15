@@ -148,6 +148,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac545c7f68ff76948b76cda4cd920c56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Line98.App::Line98.App.AppRoot
+  m_ScoreTable: {fileID: 0}
+  m_SpawnColorPolicy: {fileID: 0}
+  m_GameConfig: {fileID: 0}
+  m_ThemeCatalog: {fileID: 11400000, guid: ea797b60fa200374497d9313bb5d1ffc, type: 2}
 --- !u!4 &1561168647
 Transform:
   m_ObjectHideFlags: 0

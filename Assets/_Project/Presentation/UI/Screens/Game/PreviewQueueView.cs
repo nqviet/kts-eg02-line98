@@ -32,10 +32,16 @@ namespace Line98.Presentation
         public const float ShortfallAlpha = 0.35f;
 
         public Image[] SlotImages => m_SlotImages;
+        private Color[] m_SpriteTints;
 
         public void SetSpriteSet(UiPreviewSpriteSetSO spriteSet)
         {
             m_SpriteSet = spriteSet;
+        }
+
+        public void SetSpriteTints(Color[] tints)
+        {
+            m_SpriteTints = tints;
         }
 
         private void Awake()
@@ -101,6 +107,17 @@ namespace Line98.Presentation
                     m_SlotImages[i].sprite = sprite;
                     m_SlotImages[i].enabled = true;
                     m_SlotImages[i].preserveAspect = true;
+
+                    int colorIdx = (int)color - 1;
+                    if (m_SpriteTints != null && colorIdx >= 0 && colorIdx < m_SpriteTints.Length)
+                    {
+                        Color tint = m_SpriteTints[colorIdx];
+                        m_SlotImages[i].color = tint.a > 0.001f ? tint : Color.white;
+                    }
+                    else
+                    {
+                        m_SlotImages[i].color = Color.white;
+                    }
 
                     // Shortfall state: if fewer cells remain than slot index
                     float targetAlpha = (i < emptyCellCount) ? 1.0f : ShortfallAlpha;

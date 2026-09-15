@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f7e5177512157240af2fddcad968a17, type: 3}
+  m_Name: ThemeCatalog_Default
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.ThemeCatalogSO
+  m_Themes:
+  - {fileID: 11400000, guid: fc60eb4eb54cd4c47b2d2347f1dbd89d, type: 2}
+  - {fileID: 11400000, guid: 3a2a36885bc55954da502dcd08caa9dd, type: 2}
+  m_DefaultThemeId: classic

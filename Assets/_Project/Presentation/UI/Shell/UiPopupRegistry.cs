@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Line98.Core;
+using Line98.Data;
 
 namespace Line98.Presentation
 {
@@ -10,11 +11,26 @@ namespace Line98.Presentation
         GameOver,
         Confirm,
         Settings,
-        Statistics
+        Statistics,
+        Cosmetics
     }
 
     public interface IUiPopupPayload
     {
+    }
+
+    public readonly struct CosmeticsPopupPayload : IUiPopupPayload
+    {
+        public readonly ThemeCatalogSO Catalog;
+        public readonly string ActiveThemeId;
+        public readonly IThemeSelector Selector;
+
+        public CosmeticsPopupPayload(ThemeCatalogSO catalog, string activeThemeId, IThemeSelector selector)
+        {
+            Catalog = catalog;
+            ActiveThemeId = activeThemeId;
+            Selector = selector;
+        }
     }
 
     public readonly struct GameOverPopupPayload : IUiPopupPayload
@@ -104,9 +120,16 @@ namespace Line98.Presentation
 
         public bool Open(UiPopupId id, IUiPopupPayload payload = null)
         {
-            PopupView popup = Resolve(id);
-            if (popup == null || m_Shell == null)
+            if (m_Shell == null)
             {
+                Debug.LogWarning($"[UiPopupRegistry] Cannot open {id}: no UiShell is initialized.");
+                return false;
+            }
+
+            PopupView popup = Resolve(id);
+            if (popup == null)
+            {
+                Debug.LogWarning($"[UiPopupRegistry] Cannot open {id}: no placed popup or catalog prefab is configured.");
                 return false;
             }
 
@@ -172,6 +195,10 @@ namespace Line98.Presentation
                     statisticsPayload.TotalLines,
                     statisticsPayload.AverageScore);
             }
+            else if (payload is CosmeticsPopupPayload cosmeticsPayload && popup is CosmeticsPopup cosmeticsPopup)
+            {
+                cosmeticsPopup.Populate(cosmeticsPayload.Catalog, cosmeticsPayload.ActiveThemeId, cosmeticsPayload.Selector);
+            }
         }
 
         private static bool TryGetId(PopupView popup, out UiPopupId id)
@@ -197,6 +224,12 @@ namespace Line98.Presentation
             if (popup is StatisticsPopup)
             {
                 id = UiPopupId.Statistics;
+                return true;
+            }
+
+            if (popup is CosmeticsPopup)
+            {
+                id = UiPopupId.Cosmetics;
                 return true;
             }
 

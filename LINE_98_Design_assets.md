@@ -289,8 +289,13 @@ The bridge between raw art assets and architectural runtime systems is strictly 
 
 ```
  Assets/_Project/Content/Definitions/
-  ├── BallTheme_Crystal.asset         --> References 7 canonical materials (M_Ball_*.mat) + MESH_Ball_Gem_Centered.asset
+  ├── ThemeCatalog_Default.asset      --> Central theme bundle catalog (m_DefaultThemeId="classic", lists Classic & Crystal)
+  ├── Theme_Classic.asset             --> Classic theme bundle (BallTheme_Classic, BoardTheme_Classic, UiTheme_Default, ClearEffect_Classic)
+  ├── Theme_Crystal.asset             --> Crystal theme bundle (BallTheme_Crystal, inherits Classic board, UI, and clear effect)
+  ├── BallTheme_Classic.asset         --> References 7 canonical materials (M_Ball_*.mat) + MESH_Ball_Gem_Centered.asset
+  ├── BallTheme_Crystal.asset         --> References 7 gemstone materials (M_Ball_Crystal_*.mat with D33 pattern parity)
   ├── BoardTheme_Classic.asset        --> References MESH_BoardCell, MESH_BoardFrame, M_BoardCell, M_BoardFrame, m_RowPitchScale=1.1791784
+  ├── ClearEffect_Classic.asset       --> Ribbon and banner clear particle tints (white/gold)
   ├── CameraProfile_Default.asset     --> IsOrtho: true, OrthoSize: 7.5, Tilt: 58, Dist: 18.5, Parallax: 0.05
   ├── FeedbackProfile_Tiers.asset     --> Maps 5, 6-7, 8, 9+ to VFX, SFX, and Camera Shake
   ├── VfxCatalog_Default.asset        --> Pre-warmed pool capacities (Burst: 4, Popups: 8)

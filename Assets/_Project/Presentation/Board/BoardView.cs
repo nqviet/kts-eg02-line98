@@ -144,5 +144,34 @@ namespace Line98.Presentation
             }
             return null;
         }
+
+        public void ApplyTheme(BoardThemeSO theme)
+        {
+            if (theme == null) return;
+            m_Theme = theme;
+
+            if (theme.BoardFrameMaterial != null)
+            {
+                m_FrameMaterial = theme.BoardFrameMaterial;
+                if (m_FrameRoot != null)
+                {
+                    var mr = m_FrameRoot.GetComponent<MeshRenderer>();
+                    if (mr != null) mr.sharedMaterial = m_FrameMaterial;
+                }
+            }
+
+            if (theme.BoardCellMaterial != null)
+            {
+                m_CellMaterial = theme.BoardCellMaterial;
+                for (int i = 0; i < m_CellTransforms.Length; i++)
+                {
+                    if (m_CellTransforms[i] != null)
+                    {
+                        var mr = m_CellTransforms[i].GetComponent<MeshRenderer>();
+                        if (mr != null) mr.sharedMaterial = m_CellMaterial;
+                    }
+                }
+            }
+        }
     }
 }

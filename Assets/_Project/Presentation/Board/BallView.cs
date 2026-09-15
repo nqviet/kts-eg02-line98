@@ -166,6 +166,46 @@ namespace Line98.Presentation
             ResetVisuals();
         }
 
+        public void ApplyMaterials(Material ball, Material glow)
+        {
+            if (m_VisualRenderer == null && m_Visual != null)
+            {
+                m_VisualRenderer = m_Visual.GetComponent<MeshRenderer>();
+            }
+            if (m_VisualRenderer != null && ball != null)
+            {
+                m_VisualRenderer.sharedMaterial = ball;
+            }
+
+            if (m_GlowRenderer == null && m_GlowShell != null)
+            {
+                m_GlowRenderer = m_GlowShell.GetComponent<MeshRenderer>();
+            }
+            if (m_GlowRenderer != null && glow != null)
+            {
+                m_GlowRenderer.sharedMaterial = glow;
+            }
+        }
+
+        public void ApplyMesh(Mesh mesh)
+        {
+            if (mesh == null) return;
+
+            if (m_Visual != null)
+            {
+                var mf = m_Visual.GetComponent<MeshFilter>();
+                if (mf != null) mf.sharedMesh = mesh;
+            }
+
+            if (m_GlowShell != null)
+            {
+                var mf = m_GlowShell.GetComponent<MeshFilter>();
+                if (mf != null) mf.sharedMesh = mesh;
+            }
+
+            UpdatePitch(m_Pitch);
+        }
+
         public void SetSelected(bool selected)
         {
             m_IsSelected = selected;

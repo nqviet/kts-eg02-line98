@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c33b15ca0321f7243b51df0f7117e25c, type: 3}
+  m_Name: Theme_Crystal
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.ThemeDefinitionSO
+  m_ThemeId: crystal
+  m_DisplayName: Crystal
+  m_Thumbnail: {fileID: 21300000, guid: b04e333050d79f64aa3012f881597f13, type: 3}
+  m_UnlockedByDefault: 1
+  m_InheritsFrom: {fileID: 11400000, guid: fc60eb4eb54cd4c47b2d2347f1dbd89d, type: 2}
+  m_BallTheme: {fileID: 11400000, guid: aa4735cf058775748b4a43e99f9fbfe4, type: 2}
+  m_BoardTheme: {fileID: 0}
+  m_UiTheme: {fileID: 0}
+  m_ClearEffect: {fileID: 0}

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abb5026434e348d479b2eb906e357a04, type: 3}
+  m_Name: BallTheme_Classic
+  m_EditorClassIdentifier: Line98.Data::Line98.Data.BallThemeSO
+  m_BallMaterials:
+  - {fileID: 2100000, guid: b4c602f3d54c2f24d99907b973060e36, type: 2}
+  - {fileID: 2100000, guid: 0750e335a54693044aa03248d7dbca23, type: 2}
+  - {fileID: 2100000, guid: 0d790e91eede0f347a50439a8537bfc5, type: 2}
+  - {fileID: 2100000, guid: 18614be6255940f42876003709a8a314, type: 2}
+  - {fileID: 2100000, guid: 429a54bf7e792d8489d49b1ca7a4102d, type: 2}
+  - {fileID: 2100000, guid: 695435f50cdd8374eadb0142049d2fad, type: 2}
+  - {fileID: 2100000, guid: 986400a3885076f41a621988b096133d, type: 2}
+  m_AccessibilityPatterns: {fileID: 2800000, guid: 83226b06518de914592ac578379c62c8, type: 3}
+  m_InnerRefractionMask: {fileID: 0}
+  m_BlobShadowMaterial: {fileID: 2100000, guid: 2b428a80e9ef7b24d9af250a53cdff19, type: 2}
+  m_PatternsOn: 0
+  m_ThemeId: classic
+  m_DisplayName: Classic
+  m_Thumbnail: {fileID: 21300000, guid: 697e474dcb1fb504c9f293d141799832, type: 3}
+  m_UnlockedByDefault: 1
+  m_BallMesh: {fileID: 4300000, guid: d9f5f403c3848c04490948195a4c7883, type: 2}
+  m_PreviewTints:
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}

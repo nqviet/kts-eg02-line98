@@ -17,3 +17,7 @@ MonoBehaviour:
   m_BoardCellMaterial: {fileID: 2100000, guid: 6b2a55f9754697f4b90e3858c971aff4, type: 2}
   m_BoardFrameMaterial: {fileID: 2100000, guid: 4fa236f8aab8be5458804ad4d926885d, type: 2}
   m_RowPitchScale: 1.1791784
+  m_ThemeId: classic
+  m_DisplayName: Classic
+  m_Thumbnail: {fileID: 21300000, guid: 697e474dcb1fb504c9f293d141799832, type: 3}
+  m_UnlockedByDefault: 1

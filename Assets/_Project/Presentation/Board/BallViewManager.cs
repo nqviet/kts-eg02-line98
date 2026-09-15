@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Line98.Core;
+using Line98.Data;
 using Line98.Presentation.Animation;
 
 namespace Line98.Presentation
@@ -207,6 +208,95 @@ namespace Line98.Presentation
                     m_ActiveGrid[i].Release();
                     m_Pool.Add(m_ActiveGrid[i]);
                     m_ActiveGrid[i] = null;
+                }
+            }
+        }
+
+        public void ApplyTheme(BallThemeSO theme)
+        {
+            if (theme == null) return;
+
+            if (theme.BallMesh != null)
+            {
+                m_BallMesh = theme.BallMesh;
+            }
+
+            // 1. Rebuild m_ColorMaterials
+            if (theme.BallMaterials != null)
+            {
+                for (int i = 0; i < theme.BallMaterials.Length && i < m_ColorMaterials.Length; i++)
+                {
+                    m_ColorMaterials[i] = theme.BallMaterials[i];
+                }
+            }
+
+            // 2. Re-assert pattern strength on materials per D33
+            float patternStrength = theme.PatternsOn ? 1.0f : 0.0f;
+            for (int i = 0; i < m_ColorMaterials.Length; i++)
+            {
+                if (m_ColorMaterials[i] != null && m_ColorMaterials[i].HasProperty("_PatternStrength"))
+                {
+                    m_ColorMaterials[i].SetFloat("_PatternStrength", patternStrength);
+                }
+            }
+
+            // 3. Destroy old derived glow materials before creating new ones to prevent leak
+            for (int i = 0; i < m_GlowMaterials.Length; i++)
+            {
+                if (m_GlowMaterials[i] != null)
+                {
+                    if (Application.isPlaying)
+                    {
+                        UnityEngine.Object.Destroy(m_GlowMaterials[i]);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.DestroyImmediate(m_GlowMaterials[i]);
+                    }
+                    m_GlowMaterials[i] = null;
+                }
+            }
+
+            // 4. Create 7 new glow materials derived from new color materials
+            if (m_GlowMaterial != null)
+            {
+                for (int i = 0; i < m_ColorMaterials.Length; i++)
+                {
+                    var glowMat = new Material(m_GlowMaterial);
+                    glowMat.name = $"{m_GlowMaterial.name}_Color_{i}";
+                    if (m_ColorMaterials[i] != null && m_ColorMaterials[i].HasProperty(s_BaseColorId))
+                    {
+                        Color baseColor = m_ColorMaterials[i].GetColor(s_BaseColorId);
+                        Color rimColor = Color.Lerp(baseColor, Color.white, 0.55f);
+                        glowMat.SetColor(s_RimColorId, rimColor);
+                    }
+                    m_GlowMaterials[i] = glowMat;
+                }
+            }
+
+            // 5. Push new materials and mesh to all active balls
+            for (int i = 0; i < m_ActiveGrid.Length; i++)
+            {
+                var ball = m_ActiveGrid[i];
+                if (ball != null)
+                {
+                    if (theme.BallMesh != null)
+                    {
+                        ball.ApplyMesh(theme.BallMesh);
+                    }
+                    ball.ApplyMaterials(GetMaterial(ball.Color), GetGlowMaterial(ball.Color));
+                }
+            }
+
+            // Also update pooled balls mesh
+            if (theme.BallMesh != null)
+            {
+                for (int i = 0; i < m_Pool.Count; i++)
+                {
+                    if (m_Pool[i] != null)
+                    {
+                        m_Pool[i].ApplyMesh(theme.BallMesh);
+                    }
                 }
             }
         }

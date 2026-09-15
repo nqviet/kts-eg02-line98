@@ -12,12 +12,15 @@ namespace Line98.Presentation
     {
         [SerializeField] private Toggle m_MusicToggle;
         [SerializeField] private Toggle m_SfxToggle;
+        [SerializeField] private Button m_CosmeticsButton;
 
         public event Action<bool> OnMusicToggled;
         public event Action<bool> OnSfxToggled;
+        public event Action OnCosmeticsClicked;
 
         public Toggle MusicToggle => m_MusicToggle;
         public Toggle SfxToggle => m_SfxToggle;
+        public Button CosmeticsButton => m_CosmeticsButton;
 
         protected override void Awake()
         {
@@ -31,6 +34,11 @@ namespace Line98.Presentation
             if (m_SfxToggle != null)
             {
                 m_SfxToggle.onValueChanged.AddListener(val => OnSfxToggled?.Invoke(val));
+            }
+
+            if (m_CosmeticsButton != null)
+            {
+                m_CosmeticsButton.onClick.AddListener(() => OnCosmeticsClicked?.Invoke());
             }
         }
     }

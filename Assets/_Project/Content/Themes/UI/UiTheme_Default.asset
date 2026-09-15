@@ -12,6 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 206211bc9eefb3f4e8032b8642710531, type: 3}
   m_Name: UiTheme_Default
   m_EditorClassIdentifier: Line98.Data::Line98.Data.UiThemeSO
+  m_ThemeId: default
+  m_DisplayName: Default
+  m_Thumbnail: {fileID: 21300000, guid: 697e474dcb1fb504c9f293d141799832, type: 3}
+  m_UnlockedByDefault: 1
+  m_PreviewSpriteSet: {fileID: 11400000, guid: 24317400972058345b008f263ff5e680, type: 2}
   m_PanelCard: {r: 0.918, g: 0.949, b: 1, a: 0.4}
   m_PanelButton: {r: 0.918, g: 0.949, b: 1, a: 0.65}
   m_PanelTray: {r: 0.804, g: 0.855, b: 0.91, a: 0.78}

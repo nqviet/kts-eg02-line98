@@ -37,21 +37,21 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
-        public void BallThemeCrystal_HasSevenPolishedBallMaterialsWithDistinctHues()
+        public void BallThemeClassic_HasSevenPolishedBallMaterialsWithDistinctHues()
         {
-            var theme = AssetDatabase.LoadAssetAtPath<BallThemeSO>("Assets/_Project/Content/Definitions/BallTheme_Crystal.asset");
-            Assert.IsNotNull(theme, "Missing BallTheme_Crystal asset.");
+            var theme = AssetDatabase.LoadAssetAtPath<BallThemeSO>("Assets/_Project/Content/Definitions/BallTheme_Classic.asset");
+            Assert.IsNotNull(theme, "Missing BallTheme_Classic asset.");
 
             var so = new SerializedObject(theme);
             var ballMatsProp = so.FindProperty("m_BallMaterials");
-            Assert.AreEqual(7, ballMatsProp.arraySize, "BallTheme_Crystal must configure exactly 7 materials.");
+            Assert.AreEqual(7, ballMatsProp.arraySize, "BallTheme_Classic must configure exactly 7 materials.");
 
             var distinctColors = new HashSet<Color>();
 
             for (int i = 0; i < ballMatsProp.arraySize; i++)
             {
                 var mat = ballMatsProp.GetArrayElementAtIndex(i).objectReferenceValue as Material;
-                Assert.IsNotNull(mat, $"Material slot {i} is null in BallTheme_Crystal.");
+                Assert.IsNotNull(mat, $"Material slot {i} is null in BallTheme_Classic.");
 
                 string assetPath = AssetDatabase.GetAssetPath(mat);
                 Assert.IsTrue(assetPath.StartsWith("Assets/Art/Materials/"), $"Material {mat.name} must live under Assets/Art/Materials/, found: {assetPath}");

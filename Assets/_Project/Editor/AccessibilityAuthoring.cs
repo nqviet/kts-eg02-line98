@@ -7,7 +7,7 @@ namespace Line98.Editor
     public static class AccessibilityAuthoring
     {
         private const string TexturePath = "Assets/Art/Textures/T_Ball_Accessibility_Patterns.png";
-        private const string ThemePath = "Assets/_Project/Content/Definitions/BallTheme_Crystal.asset";
+        private const string ThemePath = "Assets/_Project/Content/Definitions/BallTheme_Classic.asset";
 
         // UV Rects derived from 512x512 sprite sheet
         // GDD §2 / Concept Vocabularies §9 shape assignments:
@@ -108,11 +108,27 @@ namespace Line98.Editor
                 }
             }
 
-            var theme = AssetDatabase.LoadAssetAtPath<BallThemeSO>(ThemePath);
-            if (theme != null)
+            string[] themeGuids = AssetDatabase.FindAssets("t:BallThemeSO");
+            foreach (var guid in themeGuids)
             {
-                theme.PatternsOn = enabled;
-                EditorUtility.SetDirty(theme);
+                string p = AssetDatabase.GUIDToAssetPath(guid);
+                var theme = AssetDatabase.LoadAssetAtPath<BallThemeSO>(p);
+                if (theme != null)
+                {
+                    theme.PatternsOn = enabled;
+                    if (theme.BallMaterials != null)
+                    {
+                        foreach (var m in theme.BallMaterials)
+                        {
+                            if (m != null)
+                            {
+                                m.SetFloat("_PatternStrength", strength);
+                                EditorUtility.SetDirty(m);
+                            }
+                        }
+                    }
+                    EditorUtility.SetDirty(theme);
+                }
             }
 
             AssetDatabase.SaveAssets();

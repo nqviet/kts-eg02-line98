@@ -8,6 +8,7 @@ All art assets in the project reside strictly under `Assets/Art/`, partitioned b
 Assets/
   Art/
     Materials/                M_Ball_*.mat (7 hues), M_BoardCell, M_BoardFrame, M_Backdrop
+      Themes/Crystal/         M_Ball_Crystal_*.mat (7 gemstone hues with D33 pattern parity)
       UI/                     M_Ui_Card, M_Ui_Action, M_Ui_Square, M_Ui_Tray, M_Ui_Hint, M_Ui_HintGlow
                               M_Ui_Shadow_*.mat (7 procedural drop shadows)
     Meshes/                   MESH_BoardCell, MESH_BoardFrame, MESH_Ball_Gem_Centered, MESH_Backdrop_Quad
@@ -19,7 +20,7 @@ Assets/
     Textures/                 T_* (spec textures, e.g. T_Background_AlpineLake.png)
   _Project/
     Content/
-      Definitions/            ScriptableObject data definitions (BallThemeSO, BoardThemeSO, etc.)
+      Definitions/            ScriptableObject definitions (ThemeDefinitionSO, ThemeCatalogSO, BallThemeSO, BoardThemeSO, ClearEffectSO, etc.)
       Scenes/                 Authored scenes (Game.unity)
       Shaders/                ShaderLab, HLSL, and Shader Graph shaders
 Docs/

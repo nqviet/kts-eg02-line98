@@ -57,6 +57,8 @@ namespace Line98.Presentation
         private MovePacer m_MovePacer;
         private VfxService m_VfxService;
         private AudioService m_AudioService;
+        private ThemeSwapController m_ThemeSwapController;
+        private IThemeSelector m_ThemeSelector;
         private bool m_IsInitialized;
 
         public bool IsInitialized => m_IsInitialized;
@@ -73,6 +75,21 @@ namespace Line98.Presentation
         public UiShell UIRouter => m_UIRouter;
         public HudPresenter HudPresenter => m_HudPresenter;
         public GameSession Session => m_Session;
+        private ThemeDefinitionSO m_ActiveTheme;
+        public ThemeDefinitionSO ActiveTheme => m_ActiveTheme;
+        public ThemeSwapController ThemeSwapController => m_ThemeSwapController;
+        public IThemeSelector ThemeSelector
+        {
+            get => m_ThemeSelector;
+            set
+            {
+                m_ThemeSelector = value;
+                if (m_UIRouter != null)
+                {
+                    m_UIRouter.ThemeSelector = value;
+                }
+            }
+        }
 
         public void Initialize(
             GameSession session,
@@ -83,7 +100,9 @@ namespace Line98.Presentation
             BoardThemeSO boardTheme = null,
             VfxCatalogSO vfxCatalog = null,
             AudioCatalogSO audioCatalog = null,
-            AudioMixer mainMixer = null)
+            AudioMixer mainMixer = null,
+            IThemeSelector themeSelector = null,
+            UiThemeSO uiTheme = null)
         {
             m_Session = session;
             if (motionProfile != null) m_MotionProfile = motionProfile;
@@ -94,6 +113,15 @@ namespace Line98.Presentation
             if (vfxCatalog != null) m_VfxCatalog = vfxCatalog;
             if (audioCatalog != null) m_AudioCatalog = audioCatalog;
             if (mainMixer != null) m_MainMixer = mainMixer;
+            if (uiTheme != null) m_UiTheme = uiTheme;
+            if (themeSelector != null)
+            {
+                ThemeSelector = themeSelector;
+            }
+            else if (m_ThemeSelector == null && m_UIRouter != null && m_UIRouter.ThemeCatalog != null)
+            {
+                ThemeSelector = new CatalogThemeSelector(m_UIRouter.ThemeCatalog, ApplyTheme);
+            }
 
             // 1. Initialize procedural TweenRunner
             m_TweenRunner = new TweenRunner();
@@ -209,7 +237,40 @@ namespace Line98.Presentation
                 m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme);
             }
 
+            // 9. Initialize ThemeSwapController
+            m_ThemeSwapController = new ThemeSwapController(m_BoardView, m_BallManager, m_UIRouter, m_HudPresenter, m_BoardAnimator);
+
             m_IsInitialized = true;
+        }
+
+        public void ApplyTheme(ThemeDefinitionSO theme)
+        {
+            if (theme == null) return;
+            m_ActiveTheme = theme;
+            m_BallTheme = theme.BallTheme;
+            m_BoardTheme = theme.BoardTheme;
+            m_UiTheme = theme.UiTheme;
+            m_ThemeSwapController?.ApplyTheme(theme);
+        }
+
+        private sealed class CatalogThemeSelector : IThemeSelector
+        {
+            private readonly ThemeCatalogSO m_Catalog;
+            private readonly Action<ThemeDefinitionSO> m_ApplyTheme;
+
+            public CatalogThemeSelector(ThemeCatalogSO catalog, Action<ThemeDefinitionSO> applyTheme)
+            {
+                m_Catalog = catalog;
+                m_ApplyTheme = applyTheme;
+            }
+
+            public void RequestTheme(string themeId)
+            {
+                if (m_Catalog != null && m_Catalog.TryGetTheme(themeId, out ThemeDefinitionSO theme))
+                {
+                    m_ApplyTheme?.Invoke(theme);
+                }
+            }
         }
 
         private void Start()

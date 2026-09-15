@@ -21,6 +21,7 @@ namespace Line98.App
         [SerializeField] private Line98.Data.ScoreTableSO m_ScoreTable;
         [SerializeField] private Line98.Data.SpawnColorPolicySO m_SpawnColorPolicy;
         [SerializeField] private Line98.Data.GameConfigSO m_GameConfig;
+        [SerializeField] private Line98.Data.ThemeCatalogSO m_ThemeCatalog;
 
         private ServiceRegistry m_Registry;
         private ConfigService m_ConfigService;
@@ -32,8 +33,16 @@ namespace Line98.App
         private IAnalyticsService m_AnalyticsService;
         private IAdService m_AdService;
         private IIapService m_IapService;
+        private ICosmeticService m_CosmeticService;
+        private CosmeticThemeSelector m_ThemeSelector;
+        private Presentation.PresentationRoot m_BoundPresentationRoot;
+        private Presentation.UiShell m_BoundShell;
+        private bool m_IsThemeChangeBound;
 
         public ConfigService Config => m_ConfigService;
+        public GameSession Session => m_Session;
+        public Presentation.IThemeSelector ThemeSelector => m_ThemeSelector;
+        public Presentation.PresentationRoot PresentationRoot => m_BoundPresentationRoot;
 
         private void Awake()
         {
@@ -90,6 +99,10 @@ namespace Line98.App
             {
                 m_GameConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.GameConfigSO>("Assets/_Project/Content/Definitions/GameConfig_Default.asset");
             }
+            if (m_ThemeCatalog == null)
+            {
+                m_ThemeCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.ThemeCatalogSO>("Assets/_Project/Content/Definitions/ThemeCatalog_Default.asset");
+            }
 #endif
 
             m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
@@ -99,6 +112,8 @@ namespace Line98.App
             m_AnalyticsService = new DebugAnalyticsService();
             m_AdService = new NoOpAdService();
             m_IapService = new EditorStubIapService();
+            m_CosmeticService = new CosmeticService(m_ThemeCatalog, new FileSaveBackend());
+            m_ThemeSelector = new CosmeticThemeSelector(m_CosmeticService);
 
             m_Registry.Register<ConfigService>(m_ConfigService);
             m_Registry.Register<SaveService>(m_SaveService);
@@ -107,6 +122,100 @@ namespace Line98.App
             m_Registry.Register<IAnalyticsService>(m_AnalyticsService);
             m_Registry.Register<IAdService>(m_AdService);
             m_Registry.Register<IIapService>(m_IapService);
+            m_Registry.Register<ICosmeticService>(m_CosmeticService);
+            m_Registry.Register<IThemeProvider>(m_CosmeticService);
+            m_Registry.Register<Presentation.IThemeSelector>(m_ThemeSelector);
+        }
+
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            BindPresentationRoot();
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            if (m_CosmeticService != null && m_IsThemeChangeBound)
+            {
+                m_CosmeticService.OnThemeChanged -= HandleThemeChanged;
+            }
+
+            m_IsThemeChangeBound = false;
+            m_BoundPresentationRoot = null;
+            m_BoundShell = null;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            BindPresentationRoot();
+        }
+
+        private void BindPresentationRoot()
+        {
+            BindThemeChanges();
+
+            var presRoot = FindAnyObjectByType<Presentation.PresentationRoot>();
+            if (presRoot != m_BoundPresentationRoot)
+            {
+                m_BoundPresentationRoot = presRoot;
+                if (m_BoundPresentationRoot != null)
+                {
+                    m_BoundPresentationRoot.ThemeSelector = m_ThemeSelector;
+
+                    if (m_CosmeticService?.ActiveTheme != null)
+                    {
+                        m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
+                    }
+                }
+            }
+
+            BindShell();
+        }
+
+        private void BindThemeChanges()
+        {
+            if (m_CosmeticService == null || m_IsThemeChangeBound)
+            {
+                return;
+            }
+
+            m_CosmeticService.OnThemeChanged += HandleThemeChanged;
+            m_IsThemeChangeBound = true;
+        }
+
+        private void BindShell()
+        {
+            var shell = FindAnyObjectByType<Presentation.UiShell>();
+            if (shell == m_BoundShell)
+            {
+                return;
+            }
+
+            m_BoundShell = shell;
+            if (m_BoundShell == null)
+            {
+                return;
+            }
+
+            m_BoundShell.SetThemeSelector(m_ThemeSelector);
+            m_BoundShell.SetThemeCatalog(m_ThemeCatalog);
+            if (m_CosmeticService?.ActiveTheme != null)
+            {
+                m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
+            }
+        }
+
+        private void HandleThemeChanged(ThemeChange change)
+        {
+            if (m_BoundPresentationRoot != null && m_CosmeticService?.ActiveTheme != null)
+            {
+                m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
+            }
+            else if (m_BoundShell != null && m_CosmeticService?.ActiveTheme != null)
+            {
+                m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
+            }
         }
 
         private void InitializeGameplay()
@@ -118,6 +227,8 @@ namespace Line98.App
 
             m_Session.OnMoveCommitted += OnMoveCommitted;
             m_Session.OnGameOver += OnGameOver;
+
+            BindPresentationRoot();
         }
 
         private void Update()

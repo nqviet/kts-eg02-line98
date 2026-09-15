@@ -9,6 +9,13 @@ namespace Line98.Data
     [CreateAssetMenu(fileName = "UiTheme_Default", menuName = "Line98/Definitions/UI Theme")]
     public class UiThemeSO : ScriptableObject
     {
+        [Header("Theme Identity")]
+        [SerializeField] private string m_ThemeId = "default";
+        [SerializeField] private string m_DisplayName = "Default";
+        [SerializeField] private Sprite m_Thumbnail;
+        [SerializeField] private bool m_UnlockedByDefault = true;
+        [SerializeField] private UiPreviewSpriteSetSO m_PreviewSpriteSet;
+
         [Header("Panels (Frosted Family)")]
         [SerializeField] private Color m_PanelCard = new Color(0.918f, 0.949f, 1f, 0.40f);      // #EAF2FF @ 0.40
         [SerializeField] private Color m_PanelButton = new Color(0.918f, 0.949f, 1f, 0.65f);    // #EAF2FF @ 0.65
@@ -45,6 +52,12 @@ namespace Line98.Data
         [SerializeField] private float m_BadgeFontSize = 26f;
         [SerializeField] private float m_TitleFontSize = 36f;
         [SerializeField] private float m_BodyFontSize = 26f;
+
+        public string ThemeId => m_ThemeId;
+        public string DisplayName => m_DisplayName;
+        public Sprite Thumbnail => m_Thumbnail;
+        public bool UnlockedByDefault => m_UnlockedByDefault;
+        public UiPreviewSpriteSetSO PreviewSpriteSet => m_PreviewSpriteSet;
 
         public Color PanelCard => m_PanelCard;
         public Color PanelButton => m_PanelButton;

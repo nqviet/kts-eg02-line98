@@ -11,7 +11,7 @@ namespace Line98.Tests.EditMode
     [TestFixture]
     public class AccessibilityAndDrawCallTests
     {
-        private const string ThemePath = "Assets/_Project/Content/Definitions/BallTheme_Crystal.asset";
+        private const string ThemePath = "Assets/_Project/Content/Definitions/BallTheme_Classic.asset";
         private const string FeedbackPath = "Assets/_Project/Content/Definitions/FeedbackProfile_Tiers.asset";
         private const string PolishedBallShaderPath = "Assets/_Project/Content/Shaders/PolishedBall.shader";
         private const string BallRimGlowShaderPath = "Assets/_Project/Content/Shaders/BallRimGlow.shader";
@@ -105,6 +105,39 @@ namespace Line98.Tests.EditMode
             foreach (var mat in theme.BallMaterials)
             {
                 Assert.AreEqual(0.0f, mat.GetFloat("_PatternStrength"));
+            }
+        }
+
+        [Test]
+        public void AccessibilityPatterns_ParityAcrossThemesAndReassertedOnSwap()
+        {
+            var classic = AssetDatabase.LoadAssetAtPath<BallThemeSO>("Assets/_Project/Content/Definitions/BallTheme_Classic.asset");
+            var crystal = AssetDatabase.LoadAssetAtPath<BallThemeSO>("Assets/_Project/Content/Definitions/BallTheme_Crystal.asset");
+            Assert.IsNotNull(classic);
+            Assert.IsNotNull(crystal);
+
+            // 1. Verify pattern rect parity between classic and crystal
+            for (int i = 0; i < 7; i++)
+            {
+                var classicRect = classic.BallMaterials[i].GetVector("_PatternRect");
+                var crystalRect = crystal.BallMaterials[i].GetVector("_PatternRect");
+                Assert.AreEqual(classicRect, crystalRect, $"Color index {i} must have identical pattern rect across themes");
+            }
+
+            // 2. Verify pattern strength toggle propagates across themes
+            AccessibilityAuthoring.SetPatternsEnabled(true);
+            for (int i = 0; i < 7; i++)
+            {
+                Assert.AreEqual(1.0f, classic.BallMaterials[i].GetFloat("_PatternStrength"));
+                Assert.AreEqual(1.0f, crystal.BallMaterials[i].GetFloat("_PatternStrength"));
+            }
+
+            // 3. Re-assert toggle off
+            AccessibilityAuthoring.SetPatternsEnabled(false);
+            for (int i = 0; i < 7; i++)
+            {
+                Assert.AreEqual(0.0f, classic.BallMaterials[i].GetFloat("_PatternStrength"));
+                Assert.AreEqual(0.0f, crystal.BallMaterials[i].GetFloat("_PatternStrength"));
             }
         }
 
