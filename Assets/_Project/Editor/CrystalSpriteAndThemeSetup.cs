@@ -253,7 +253,9 @@ namespace Line98.Editor
             so.FindProperty("m_PreviewSpriteSet").objectReferenceValue = previewSet;
 
             // Surface colors
-            so.FindProperty("m_SurfacePrimary").colorValue = new Color(0.145f, 0.655f, 0.329f, 1f);       // #25A754 Play green
+            // The sprite carries the gradient; this gentle tint brings its saturation in line
+            // with the softer green from the Crystal menu reference.
+            so.FindProperty("m_SurfacePrimary").colorValue = new Color(1f, 0.90f, 1f, 1f);
             so.FindProperty("m_SurfaceSecondary").colorValue = new Color(0.969f, 0.961f, 0.933f, 1f);     // #F7F5EE Daily cream
             so.FindProperty("m_SurfaceTertiaryZen").colorValue = new Color(0.839f, 0.910f, 0.969f, 1f);   // #D6E8F7 Zen pale blue
             so.FindProperty("m_InkButtonPrimary").colorValue = Color.white;

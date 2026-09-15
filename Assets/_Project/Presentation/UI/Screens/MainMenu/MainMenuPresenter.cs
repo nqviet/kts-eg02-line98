@@ -1,6 +1,7 @@
 using System;
 using TMPro;
 using UnityEngine;
+using Line98.Core;
 using Line98.Data;
 
 namespace Line98.Presentation
@@ -17,6 +18,7 @@ namespace Line98.Presentation
         [SerializeField] private UiValueCard m_BestCard;
         [SerializeField] private TMP_Text m_StreakText;
         [SerializeField] private StreakDotsView m_StreakDotsView;
+        [SerializeField] private UnityEngine.UI.Image[] m_ShowcaseGems = Array.Empty<UnityEngine.UI.Image>();
 
         [Header("Theme")]
         [SerializeField] private UiThemeSO m_Theme;
@@ -27,6 +29,7 @@ namespace Line98.Presentation
         public UiValueCard BestCard => m_BestCard;
         public TMP_Text StreakText => m_StreakText;
         public StreakDotsView StreakDotsView => m_StreakDotsView;
+        public UnityEngine.UI.Image[] ShowcaseGems => m_ShowcaseGems;
         public int BestScore => m_BestScore;
         public int CurrentStreak => m_CurrentStreak;
 
@@ -35,6 +38,11 @@ namespace Line98.Presentation
             m_BestCard = bestCard;
             m_StreakText = streakText;
             m_StreakDotsView = dotsView;
+        }
+
+        public void ConfigureShowcaseGems(UnityEngine.UI.Image[] gems)
+        {
+            m_ShowcaseGems = gems ?? Array.Empty<UnityEngine.UI.Image>();
         }
 
         public void SetStats(int bestScore, int streak, UiThemeSO theme = null)
@@ -54,6 +62,7 @@ namespace Line98.Presentation
             if (theme == null) return;
             m_Theme = theme;
             m_StreakDotsView?.ApplyTheme(m_Theme);
+            RefreshShowcaseGems();
         }
 
         public void Refresh()
@@ -71,6 +80,36 @@ namespace Line98.Presentation
             if (m_StreakDotsView != null)
             {
                 m_StreakDotsView.SetStreak(m_CurrentStreak, m_Theme);
+            }
+
+            RefreshShowcaseGems();
+        }
+
+        private void RefreshShowcaseGems()
+        {
+            if (m_Theme == null || m_Theme.PreviewSpriteSet == null || m_ShowcaseGems == null)
+            {
+                return;
+            }
+
+            BallColor[] colors =
+            {
+                BallColor.Red,
+                BallColor.Orange,
+                BallColor.Yellow,
+                BallColor.Green,
+                BallColor.Cyan,
+                BallColor.Purple,
+                BallColor.Blue
+            };
+
+            int count = Mathf.Min(colors.Length, m_ShowcaseGems.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (m_ShowcaseGems[i] != null)
+                {
+                    m_ShowcaseGems[i].sprite = m_Theme.PreviewSpriteSet.GetSprite(colors[i]);
+                }
             }
         }
     }

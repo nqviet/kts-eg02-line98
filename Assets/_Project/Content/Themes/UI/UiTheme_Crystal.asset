@@ -56,7 +56,7 @@ MonoBehaviour:
   m_InkSublabel: {r: 0.42352942, g: 0.49411765, b: 0.58431375, a: 1}
   m_DividerHairline: {r: 0.871, g: 0.851, b: 0.796, a: 0.6}
   m_ButtonGold: {r: 0.9607843, g: 0.78039217, b: 0.30588236, a: 1}
-  m_SurfacePrimary: {r: 0.145, g: 0.655, b: 0.329, a: 1}
+  m_SurfacePrimary: {r: 1, g: 0.9, b: 1, a: 1}
   m_SurfaceSecondary: {r: 0.969, g: 0.961, b: 0.933, a: 1}
   m_SurfaceTertiaryZen: {r: 0.839, g: 0.91, b: 0.969, a: 1}
   m_InkButtonPrimary: {r: 1, g: 1, b: 1, a: 1}

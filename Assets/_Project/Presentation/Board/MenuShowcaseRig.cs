@@ -30,6 +30,8 @@ namespace Line98.Presentation
 
         [Header("Viewport")]
         [SerializeField] private Rect m_TargetViewport = new Rect(0.225f, 0.411f, 0.596f, 0.338f);
+        [SerializeField, Min(0.1f)] private float m_ShowcaseBallScale = 1.85f;
+        [SerializeField] private bool m_UseUiGemShowcase = true;
 
         private TweenRunner m_TweenRunner;
         private BallViewManager m_BallManager;
@@ -200,7 +202,28 @@ namespace Line98.Presentation
             {
                 GridPos pos = placement.Position;
                 Vector3 worldFloorPos = m_BoardView.GridToWorld(pos);
-                m_BallManager.SpawnBall(pos, placement.Color, worldFloorPos);
+                BallView ball = m_BallManager.SpawnBall(pos, placement.Color, worldFloorPos);
+                if (ball != null)
+                {
+                    ball.transform.localScale = Vector3.one * m_ShowcaseBallScale;
+                    if (m_UseUiGemShowcase)
+                    {
+                        var renderers = ball.GetComponentsInChildren<MeshRenderer>(true);
+                        for (int i = 0; i < renderers.Length; i++)
+                        {
+                            renderers[i].enabled = false;
+                        }
+                    }
+                }
+            }
+
+            if (m_UseUiGemShowcase && m_BallsRoot != null)
+            {
+                var renderers = m_BallsRoot.GetComponentsInChildren<MeshRenderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    renderers[i].enabled = false;
+                }
             }
         }
 

@@ -266,7 +266,7 @@ namespace Line98.Editor
 
             {
                 var so = new SerializedObject(catalog);
-                so.FindProperty("m_DefaultThemeId").stringValue = "classic";
+                so.FindProperty("m_DefaultThemeId").stringValue = "crystal";
                 var themesProp = so.FindProperty("m_Themes");
                 themesProp.arraySize = 2;
                 themesProp.GetArrayElementAtIndex(0).objectReferenceValue = themeClassic;
