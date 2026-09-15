@@ -10,7 +10,7 @@ namespace Line98.Data
     public sealed class ThemeCatalogSO : ScriptableObject
     {
         [SerializeField] private ThemeDefinitionSO[] m_Themes = Array.Empty<ThemeDefinitionSO>();
-        [SerializeField] private string m_DefaultThemeId = "classic";
+        [SerializeField] private string m_DefaultThemeId = "crystal";
 
         public int Count => m_Themes != null ? m_Themes.Length : 0;
         public string DefaultThemeId => m_DefaultThemeId;

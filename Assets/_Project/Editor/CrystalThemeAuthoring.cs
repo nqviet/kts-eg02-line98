@@ -11,7 +11,9 @@ namespace Line98.Editor
     /// <summary>Authors the Crystal UI theme and settings popup from the imported crystal sprite sheet.</summary>
     public static class CrystalThemeAuthoring
     {
-        private const string SpriteSheetPath = "Assets/Art/Sprites/UI/Crystal/sprites_1__crystal.png";
+        // Sheet 2 carries true alpha; sheet 1 has a baked checkerboard behind every sprite.
+        private const string SpriteSheetPath = "Assets/Art/Sprites/UI/Crystal/sprites_2__crystal.png";
+        private const string MenuFontPath = "Assets/_Project/Content/Fonts/RobotoBold_Menu.asset";
         private const string PopupPath = "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Settings.prefab";
         private const string UiThemePath = "Assets/_Project/Content/Themes/UI/UiTheme_Crystal.asset";
         private const string BoardThemePath = "Assets/_Project/Content/Definitions/BoardTheme_Crystal.asset";
@@ -24,6 +26,16 @@ namespace Line98.Editor
         private static readonly Color InkRow = ParseHex("#0E1F44");
         private static readonly Color InkMuted = ParseHex("#6C7E95");
         private static readonly Color Divider = new Color(0.871f, 0.851f, 0.796f, 0.6f);
+
+        // Settings popup tokens sampled from setting_menu__crystal.png.
+        private static readonly Color InkTitle = ParseHex("#0F2557");
+        private static readonly Color InkSubtitle = ParseHex("#5F7391");
+        private static readonly Color RuleNavy = new Color(0.290f, 0.357f, 0.494f, 0.55f);
+        private static readonly Color BackdropWash = new Color(0.953f, 0.961f, 0.933f, 0.90f);
+        private static readonly Color SectionCardTint = new Color(1f, 1f, 1f, 0.82f);
+        private static readonly Color ViewButtonRim = ParseHex("#E0AA35");
+        private static readonly Color ViewButtonFill = ParseHex("#FFF6DC");
+        private static readonly Color ViewButtonInk = ParseHex("#8A5A00");
 
         [MenuItem("Line98/Authoring/Build Crystal Theme and Settings")]
         public static void BuildCrystalThemeAndSettings()
@@ -40,6 +52,21 @@ namespace Line98.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[CrystalThemeAuthoring] Crystal theme and settings popup authored successfully.");
+        }
+
+        /// <summary>Rebuilds only the settings popup (and its toggle sprite tokens) without touching tuned theme colors.</summary>
+        [MenuItem("Line98/Authoring/Build Crystal Settings Popup")]
+        public static void BuildCrystalSettingsPopup()
+        {
+            Dictionary<string, Sprite> sprites = LoadSprites();
+            ValidateRequiredSprites(sprites);
+
+            AssignToggleSprites(sprites);
+            BuildSettingsPopup(sprites);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[CrystalThemeAuthoring] Crystal settings popup authored successfully.");
         }
 
         private static Dictionary<string, Sprite> LoadSprites()
@@ -61,7 +88,7 @@ namespace Line98.Editor
         {
             string[] required =
             {
-                "sp_ui_card_cream", "sp_ui_card_gold", "sp_btn_capsule_cream", "sp_btn_circle_cream",
+                "sp_ui_card_cream", "sp_ui_card_gold", "sp_btn_capsule_cream", "sp_btn_circle_cream", "sp_btn_view_gold",
                 "sp_toggle_track_on", "sp_toggle_track_off", "sp_toggle_knob", "sp_icon_back_arrow",
                 "sp_icon_music", "sp_icon_sfx", "sp_icon_vibrate", "sp_icon_sparkle_fx", "sp_icon_globe",
                 "sp_icon_no_ads", "sp_icon_restore", "sp_icon_shield", "sp_icon_mail", "sp_icon_external_link",
@@ -130,6 +157,19 @@ namespace Line98.Editor
             serializedTheme.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(theme);
             return theme;
+        }
+
+        private static void AssignToggleSprites(Dictionary<string, Sprite> sprites)
+        {
+            UiThemeSO theme = AssetDatabase.LoadAssetAtPath<UiThemeSO>(UiThemePath);
+            if (theme == null) return;
+
+            SerializedObject serializedTheme = new SerializedObject(theme);
+            SetObject(serializedTheme, "m_ToggleTrackOnSprite", sprites["sp_toggle_track_on"]);
+            SetObject(serializedTheme, "m_ToggleTrackOffSprite", sprites["sp_toggle_track_off"]);
+            SetObject(serializedTheme, "m_ToggleThumbSprite", sprites["sp_toggle_knob"]);
+            serializedTheme.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(theme);
         }
 
         private static BoardThemeSO CreateBoardTheme(Dictionary<string, Sprite> sprites)
@@ -234,14 +274,13 @@ namespace Line98.Editor
                 SettingsPopup settingsPopup = GetOrAdd<SettingsPopup>(popup);
                 UiResponsiveModal responsiveModal = GetOrAdd<UiResponsiveModal>(popup);
 
-                GameObject background = CreateImage("BackgroundDecor", popup.transform, null, new Color(0.88f, 0.94f, 0.90f, 1f));
-                Stretch(background.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                // A soft full-screen wash lets the studio backdrop read through while hiding the menu underneath.
+                GameObject background = CreateImage("BackgroundDecor", popup.transform, null, BackdropWash);
+                Stretch(background.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, new Vector2(-1200f, -1200f), new Vector2(1200f, 1200f));
                 background.GetComponent<Image>().raycastTarget = false;
-                CreateDecorLeaf("DecorLeafLeft", background.transform, sprites["sp_icon_leaf"], new Vector2(55f, 280f), new Vector2(290f, 290f), -28f);
-                CreateDecorLeaf("DecorLeafRight", background.transform, sprites["sp_icon_leaf"], new Vector2(-55f, -370f), new Vector2(270f, 270f), 152f);
 
                 GameObject safeArea = CreateObject("SafeArea", popup.transform);
-                Stretch(safeArea.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, new Vector2(24f, 24f), new Vector2(-24f, -24f));
+                Stretch(safeArea.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
                 GameObject scrollView = CreateObject("ScrollView", safeArea.transform, typeof(ScrollRect));
                 Stretch(scrollView.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -267,8 +306,8 @@ namespace Line98.Editor
                 contentRect.pivot = new Vector2(0.5f, 1f);
                 contentRect.sizeDelta = Vector2.zero;
                 VerticalLayoutGroup contentLayout = content.GetComponent<VerticalLayoutGroup>();
-                contentLayout.padding = new RectOffset(20, 20, 24, 52);
-                contentLayout.spacing = 20f;
+                contentLayout.padding = new RectOffset(46, 46, 4, 24);
+                contentLayout.spacing = 12f;
                 contentLayout.childAlignment = TextAnchor.UpperCenter;
                 contentLayout.childControlWidth = true;
                 contentLayout.childControlHeight = true;
@@ -335,37 +374,44 @@ namespace Line98.Editor
 
         private static Button CreateHeader(Transform parent, Dictionary<string, Sprite> sprites)
         {
-            GameObject header = CreateObject("HeaderBar", parent, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            LayoutElement headerLayout = header.GetComponent<LayoutElement>();
-            headerLayout.preferredHeight = 92f;
-            HorizontalLayoutGroup layout = header.GetComponent<HorizontalLayoutGroup>();
-            layout.spacing = 12f;
-            layout.padding = new RectOffset(8, 8, 4, 4);
+            GameObject header = CreateObject("HeaderBar", parent, typeof(LayoutElement));
+            header.GetComponent<LayoutElement>().preferredHeight = 112f;
+
+            Button back = CreateIconButton("BtnBack", header.transform, sprites["sp_btn_circle_cream"], sprites["sp_icon_back_arrow"], 104f, 0.40f);
+            RectTransform backRect = back.GetComponent<RectTransform>();
+            backRect.anchorMin = new Vector2(0f, 0.5f);
+            backRect.anchorMax = new Vector2(0f, 0.5f);
+            backRect.pivot = new Vector2(0f, 0.5f);
+            backRect.anchoredPosition = new Vector2(-18f, 0f);
+            backRect.sizeDelta = new Vector2(104f, 104f);
+            RectTransform backIcon = back.transform.Find("Icon").GetComponent<RectTransform>();
+            backIcon.anchoredPosition = new Vector2(-3f, 0f);
+
+            GameObject titleGroup = CreateObject("TitleGroup", header.transform, typeof(HorizontalLayoutGroup));
+            RectTransform titleGroupRect = titleGroup.GetComponent<RectTransform>();
+            titleGroupRect.anchorMin = new Vector2(0.5f, 0.5f);
+            titleGroupRect.anchorMax = new Vector2(0.5f, 0.5f);
+            titleGroupRect.pivot = new Vector2(0.5f, 0.5f);
+            titleGroupRect.anchoredPosition = new Vector2(24f, 0f);
+            titleGroupRect.sizeDelta = new Vector2(640f, 110f);
+            HorizontalLayoutGroup layout = titleGroup.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 22f;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
-            Button back = CreateIconButton("BtnBack", header.transform, sprites["sp_btn_circle_cream"], sprites["sp_icon_back_arrow"], 76f);
-            CreateLayoutSpacer("RuleLeft", header.transform, 90f, 3f, Divider);
-            TMP_Text title = CreateText("TitleText", header.transform, "SETTINGS", 40f, InkNavy, TextAlignmentOptions.Center, FontStyles.Bold);
-            AddLayoutElement(title.gameObject, 380f, 68f, 1f);
-            GameObject leaf = CreateImage("LeafAccent", title.transform, sprites["sp_icon_leaf"], Color.white);
-            RectTransform leafRect = leaf.GetComponent<RectTransform>();
-            leafRect.anchorMin = new Vector2(0.5f, 1f);
-            leafRect.anchorMax = new Vector2(0.5f, 1f);
-            leafRect.pivot = new Vector2(0.5f, 0.5f);
-            leafRect.anchoredPosition = new Vector2(-52f, 6f);
-            leafRect.sizeDelta = new Vector2(28f, 28f);
-            leaf.GetComponent<Image>().raycastTarget = false;
-            CreateLayoutSpacer("RuleRight", header.transform, 90f, 3f, Divider);
-            CreateLayoutSpacer("HeaderSpacer", header.transform, 76f, 1f, Color.clear);
+            CreateLayoutSpacer("RuleLeft", titleGroup.transform, 72f, 4f, RuleNavy);
+            TMP_Text title = CreateText("TitleText", titleGroup.transform, "SETTINGS", 80f, InkTitle, TextAlignmentOptions.Center, FontStyles.Bold);
+            AddLayoutElement(title.gameObject, -1f, 100f);
+            CreateLayoutSpacer("RuleRight", titleGroup.transform, 72f, 4f, RuleNavy);
             return back;
         }
 
         private static void CreateAudioGroup(Transform parent, Dictionary<string, Sprite> sprites, out UiToggle music, out UiToggle sfx, out UiToggle vibration, out UiToggle reduceEffects)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_AudioFeedback", "AUDIO & FEEDBACK", sprites["sp_ui_card_cream"], 566f, out _);
+            GameObject body = CreateGroup(parent, "GroupCard_AudioFeedback", "AUDIO & FEEDBACK", sprites["sp_ui_card_cream"]);
             music = CreateToggleRow(body.transform, "Row_Music", sprites["sp_icon_music"], "MUSIC", true, sprites);
             sfx = CreateToggleRow(body.transform, "Row_Sfx", sprites["sp_icon_sfx"], "SOUND EFFECTS", true, sprites);
             vibration = CreateToggleRow(body.transform, "Row_Vibration", sprites["sp_icon_vibrate"], "VIBRATION", true, sprites);
@@ -374,139 +420,136 @@ namespace Line98.Editor
 
         private static UiSettingRow CreateLanguageGroup(Transform parent, Dictionary<string, Sprite> sprites)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_Language", "LANGUAGE", sprites["sp_ui_card_cream"], 222f, out _);
+            GameObject body = CreateGroup(parent, "GroupCard_Language", "LANGUAGE", sprites["sp_ui_card_cream"]);
             return CreateActionRow(body.transform, "Row_Language", sprites["sp_icon_globe"], "ENGLISH", "TIẾNG VIỆT AVAILABLE", sprites["sp_icon_back_arrow"], sprites, true);
         }
 
         private static void CreatePurchaseGroup(Transform parent, Dictionary<string, Sprite> sprites, out Button removeAds, out UiSettingRow restore)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_Purchases", "PURCHASES", sprites["sp_ui_card_cream"], 346f, out _);
+            GameObject body = CreateGroup(parent, "GroupCard_Purchases", "PURCHASES", sprites["sp_ui_card_cream"]);
             GameObject featured = CreateImage("FeaturedCard_RemoveAds", body.transform, sprites["sp_ui_card_gold"], Color.white, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             Image featuredImage = featured.GetComponent<Image>();
             featuredImage.type = Image.Type.Sliced;
+            featuredImage.raycastTarget = false;
             AddThemeSpriteTarget(featured, UiThemeApplier.SpriteToken.CardGold, featuredImage);
             LayoutElement featuredLayout = featured.GetComponent<LayoutElement>();
-            featuredLayout.preferredHeight = 130f;
+            featuredLayout.preferredHeight = 136f;
             HorizontalLayoutGroup layout = featured.GetComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(22, 18, 12, 12);
-            layout.spacing = 14f;
-            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.padding = new RectOffset(34, 22, 14, 14);
+            layout.spacing = 26f;
+            layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
-            CreateImageWithLayout("BadgeNoAds", featured.transform, sprites["sp_icon_no_ads"], Color.white, 86f, 86f);
+            CreateImageWithLayout("BadgeNoAds", featured.transform, sprites["sp_icon_no_ads"], Color.white, 96f, 96f);
             GameObject textBlock = CreateObject("TextBlock", featured.transform, typeof(VerticalLayoutGroup), typeof(LayoutElement));
             LayoutElement textLayout = textBlock.GetComponent<LayoutElement>();
-            textLayout.preferredWidth = 348f;
             textLayout.flexibleWidth = 1f;
             VerticalLayoutGroup textGroup = textBlock.GetComponent<VerticalLayoutGroup>();
             textGroup.childAlignment = TextAnchor.MiddleLeft;
-            textGroup.spacing = 2f;
+            textGroup.spacing = 0f;
             textGroup.childControlWidth = true;
             textGroup.childControlHeight = true;
+            textGroup.childForceExpandWidth = true;
             textGroup.childForceExpandHeight = false;
-            CreateTextWithLayout("Title", textBlock.transform, "REMOVE ADS", 28f, InkNavy, FontStyles.Bold, 34f);
-            CreateTextWithLayout("Subtitle", textBlock.transform, "PLAY WITHOUT INTERRUPTIONS", 16f, InkMuted, FontStyles.Bold, 24f);
-            removeAds = CreateTextButton("BtnView", featured.transform, sprites["sp_btn_view_gold"], "VIEW", 128f, 64f, ParseHex("#8A5700"));
+            CreateTextWithLayout("Title", textBlock.transform, "REMOVE ADS", 38f, InkTitle, FontStyles.Bold, 46f);
+            CreateTextWithLayout("Subtitle", textBlock.transform, "PLAY WITHOUT INTERRUPTIONS", 21f, InkSubtitle, FontStyles.Bold, 28f);
+            removeAds = CreateOutlinedButton("BtnView", featured.transform, sprites["sp_btn_view_gold"], "VIEW", 196f, 82f);
 
             restore = CreateActionRow(body.transform, "Row_Restore", sprites["sp_icon_restore"], "RESTORE PURCHASES", null, sprites["sp_icon_back_arrow"], sprites, true);
         }
 
         private static void CreateSupportGroup(Transform parent, Dictionary<string, Sprite> sprites, out UiSettingRow privacy, out UiSettingRow contact)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_Support", "SUPPORT", sprites["sp_ui_card_cream"], 326f, out _);
+            GameObject body = CreateGroup(parent, "GroupCard_Support", "SUPPORT", sprites["sp_ui_card_cream"]);
             privacy = CreateActionRow(body.transform, "Row_Privacy", sprites["sp_icon_shield"], "PRIVACY POLICY", null, sprites["sp_icon_external_link"], sprites, false);
             contact = CreateActionRow(body.transform, "Row_Contact", sprites["sp_icon_mail"], "CONTACT SUPPORT", null, sprites["sp_icon_external_link"], sprites, false);
         }
 
         private static TMP_Text CreateFooter(Transform parent, Dictionary<string, Sprite> sprites)
         {
-            GameObject footer = CreateObject("FooterSection", parent, typeof(VerticalLayoutGroup), typeof(LayoutElement));
-            LayoutElement footerLayout = footer.GetComponent<LayoutElement>();
-            footerLayout.preferredHeight = 132f;
+            GameObject footer = CreateObject("FooterSection", parent, typeof(VerticalLayoutGroup));
             VerticalLayoutGroup layout = footer.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(0, 0, 10, 0);
             layout.spacing = 10f;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             GameObject versionRow = CreateObject("VersionRow", footer.transform, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            versionRow.GetComponent<LayoutElement>().preferredHeight = 34f;
+            versionRow.GetComponent<LayoutElement>().preferredHeight = 36f;
             HorizontalLayoutGroup versionLayout = versionRow.GetComponent<HorizontalLayoutGroup>();
-            versionLayout.spacing = 14f;
+            versionLayout.spacing = 26f;
             versionLayout.childAlignment = TextAnchor.MiddleCenter;
             versionLayout.childControlWidth = true;
             versionLayout.childControlHeight = true;
             versionLayout.childForceExpandWidth = false;
-            CreateLayoutSpacer("RuleLeft", versionRow.transform, 120f, 2f, InkMuted);
-            TMP_Text version = CreateText("VersionText", versionRow.transform, "VERSION 1.0.0", 18f, InkMuted, TextAlignmentOptions.Center, FontStyles.Bold);
-            AddLayoutElement(version.gameObject, 190f, 30f);
-            CreateLayoutSpacer("RuleRight", versionRow.transform, 120f, 2f, InkMuted);
+            versionLayout.childForceExpandHeight = false;
+            CreateLayoutSpacer("RuleLeft", versionRow.transform, 124f, 3f, RuleNavy);
+            TMP_Text version = CreateText("VersionText", versionRow.transform, "VERSION 1.0.0", 26f, InkSubtitle, TextAlignmentOptions.Center, FontStyles.Bold);
+            AddLayoutElement(version.gameObject, -1f, 34f);
+            CreateLayoutSpacer("RuleRight", versionRow.transform, 124f, 3f, RuleNavy);
 
             GameObject gems = CreateObject("GemColorBar", footer.transform, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            gems.GetComponent<LayoutElement>().preferredHeight = 70f;
+            gems.GetComponent<LayoutElement>().preferredHeight = 60f;
             HorizontalLayoutGroup gemLayout = gems.GetComponent<HorizontalLayoutGroup>();
-            gemLayout.spacing = 10f;
+            gemLayout.spacing = 6f;
             gemLayout.childAlignment = TextAnchor.MiddleCenter;
             gemLayout.childControlWidth = true;
             gemLayout.childControlHeight = true;
             gemLayout.childForceExpandWidth = false;
+            gemLayout.childForceExpandHeight = false;
             string[] gemNames = { "sp_gem_red", "sp_gem_orange", "sp_gem_yellow", "sp_gem_green", "sp_gem_cyan", "sp_gem_purple", "sp_gem_magenta" };
             for (int i = 0; i < gemNames.Length; i++)
             {
-                CreateImageWithLayout(gemNames[i], gems.transform, sprites[gemNames[i]], Color.white, 56f, 56f);
+                CreateImageWithLayout(gemNames[i], gems.transform, sprites[gemNames[i]], Color.white, 60f, 60f);
             }
 
             return version;
         }
 
-        private static GameObject CreateGroup(Transform parent, string name, string header, Sprite cardSprite, float height, out UiCardGroup cardGroup)
+        /// <summary>Creates a frosted section card whose header (title + hairline) sits inside the card, returning the card as the row parent.</summary>
+        private static GameObject CreateGroup(Transform parent, string name, string header, Sprite cardSprite)
         {
-            GameObject group = CreateObject(name, parent, typeof(VerticalLayoutGroup), typeof(LayoutElement), typeof(UiCardGroup));
-            group.GetComponent<LayoutElement>().preferredHeight = height;
+            GameObject group = CreateImage(name, parent, cardSprite, SectionCardTint, typeof(VerticalLayoutGroup), typeof(UiCardGroup));
+            Image cardImage = group.GetComponent<Image>();
+            cardImage.type = Image.Type.Sliced;
+            cardImage.raycastTarget = false;
+            AddThemeSpriteTarget(group, UiThemeApplier.SpriteToken.CardBackground, cardImage);
             VerticalLayoutGroup groupLayout = group.GetComponent<VerticalLayoutGroup>();
-            groupLayout.spacing = 8f;
+            groupLayout.padding = new RectOffset(26, 26, 10, 22);
+            groupLayout.spacing = 10f;
             groupLayout.childAlignment = TextAnchor.UpperCenter;
             groupLayout.childControlWidth = true;
             groupLayout.childControlHeight = true;
+            groupLayout.childForceExpandWidth = true;
             groupLayout.childForceExpandHeight = false;
 
             GameObject headerRow = CreateObject("Header", group.transform, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            headerRow.GetComponent<LayoutElement>().preferredHeight = 42f;
+            headerRow.GetComponent<LayoutElement>().preferredHeight = 58f;
             HorizontalLayoutGroup headerLayout = headerRow.GetComponent<HorizontalLayoutGroup>();
-            headerLayout.spacing = 14f;
-            headerLayout.padding = new RectOffset(18, 18, 0, 0);
+            headerLayout.spacing = 26f;
+            headerLayout.padding = new RectOffset(16, 10, 0, 0);
             headerLayout.childAlignment = TextAnchor.MiddleLeft;
             headerLayout.childControlWidth = true;
             headerLayout.childControlHeight = true;
             headerLayout.childForceExpandWidth = false;
-            TMP_Text headerText = CreateText("HeaderText", headerRow.transform, header, 22f, InkNavy, TextAlignmentOptions.Left, FontStyles.Bold);
-            AddLayoutElement(headerText.gameObject, 285f, 40f);
-            CreateLayoutSpacer("Rule", headerRow.transform, 330f, 2f, InkMuted);
+            headerLayout.childForceExpandHeight = false;
+            TMP_Text headerText = CreateText("HeaderText", headerRow.transform, header, 38f, InkTitle, TextAlignmentOptions.Left, FontStyles.Bold);
+            AddLayoutElement(headerText.gameObject, -1f, 50f);
+            GameObject rule = CreateLayoutSpacer("Rule", headerRow.transform, 0f, 3f, RuleNavy);
+            rule.GetComponent<LayoutElement>().flexibleWidth = 1f;
 
-            GameObject body = CreateImage("CardBody", group.transform, cardSprite, Color.white, typeof(VerticalLayoutGroup), typeof(LayoutElement));
-            Image bodyImage = body.GetComponent<Image>();
-            bodyImage.type = Image.Type.Sliced;
-            AddThemeSpriteTarget(body, UiThemeApplier.SpriteToken.CardBackground, bodyImage);
-            LayoutElement bodyLayout = body.GetComponent<LayoutElement>();
-            bodyLayout.flexibleHeight = 1f;
-            VerticalLayoutGroup bodyGroup = body.GetComponent<VerticalLayoutGroup>();
-            bodyGroup.padding = new RectOffset(16, 16, 16, 16);
-            bodyGroup.spacing = 10f;
-            bodyGroup.childAlignment = TextAnchor.UpperCenter;
-            bodyGroup.childControlWidth = true;
-            bodyGroup.childControlHeight = true;
-            bodyGroup.childForceExpandWidth = true;
-            bodyGroup.childForceExpandHeight = false;
-
-            cardGroup = group.GetComponent<UiCardGroup>();
+            UiCardGroup cardGroup = group.GetComponent<UiCardGroup>();
             SerializedObject cardSerialized = new SerializedObject(cardGroup);
             SetObject(cardSerialized, "m_HeaderText", headerText);
-            SetObject(cardSerialized, "m_CardImage", bodyImage);
+            SetObject(cardSerialized, "m_CardImage", cardImage);
             cardSerialized.ApplyModifiedPropertiesWithoutUndo();
-            return body;
+            return group;
         }
 
         private static UiToggle CreateToggleRow(Transform parent, string name, Sprite icon, string title, bool isOn, Dictionary<string, Sprite> sprites)
@@ -522,7 +565,15 @@ namespace Line98.Editor
         private static UiSettingRow CreateActionRow(Transform parent, string name, Sprite icon, string title, string subtitle, Sprite actionIcon, Dictionary<string, Sprite> sprites, bool rotateChevron)
         {
             UiSettingRow row = CreateRow(parent, name, icon, title, subtitle, sprites, out Transform actionSlot);
-            Button button = CreateIconButton("ActionButton", actionSlot, null, actionIcon, 62f);
+            Button button = CreateIconButton("ActionButton", actionSlot, null, actionIcon, 72f, rotateChevron ? 0.56f : 0.66f);
+            // Transparent hit area: the chevron/link glyph is the only visible part of the action.
+            button.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
+            RectTransform buttonRect = button.GetComponent<RectTransform>();
+            buttonRect.anchorMin = new Vector2(1f, 0.5f);
+            buttonRect.anchorMax = new Vector2(1f, 0.5f);
+            buttonRect.pivot = new Vector2(1f, 0.5f);
+            buttonRect.anchoredPosition = Vector2.zero;
+            buttonRect.sizeDelta = new Vector2(72f, 72f);
             Image iconImage = button.transform.Find("Icon").GetComponent<Image>();
             if (rotateChevron) iconImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 180f);
             SerializedObject rowSerialized = new SerializedObject(row);
@@ -534,38 +585,42 @@ namespace Line98.Editor
 
         private static UiSettingRow CreateRow(Transform parent, string name, Sprite icon, string title, string subtitle, Dictionary<string, Sprite> sprites, out Transform actionSlot)
         {
+            bool hasSubtitle = !string.IsNullOrEmpty(subtitle);
             GameObject rowObject = CreateImage(name, parent, sprites["sp_ui_card_cream"], Color.white, typeof(HorizontalLayoutGroup), typeof(LayoutElement), typeof(UiSettingRow));
             Image rowImage = rowObject.GetComponent<Image>();
             rowImage.type = Image.Type.Sliced;
+            rowImage.raycastTarget = false;
             AddThemeSpriteTarget(rowObject, UiThemeApplier.SpriteToken.CardBackground, rowImage);
             LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
-            rowLayout.preferredHeight = subtitle == null ? 94f : 114f;
+            rowLayout.preferredHeight = hasSubtitle ? 110f : 86f;
             HorizontalLayoutGroup layout = rowObject.GetComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(18, 18, 12, 12);
-            layout.spacing = 14f;
+            layout.padding = new RectOffset(26, 20, 8, 8);
+            layout.spacing = 30f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
-            Image iconImage = CreateImageWithLayout("Icon", rowObject.transform, icon, Color.white, 62f, 62f);
+            Image iconImage = CreateImageWithLayout("Icon", rowObject.transform, icon, Color.white, 66f, 66f);
             GameObject textBlock = CreateObject("TextBlock", rowObject.transform, typeof(VerticalLayoutGroup), typeof(LayoutElement));
             LayoutElement textLayout = textBlock.GetComponent<LayoutElement>();
             textLayout.flexibleWidth = 1f;
             VerticalLayoutGroup textLayoutGroup = textBlock.GetComponent<VerticalLayoutGroup>();
-            textLayoutGroup.spacing = 2f;
+            textLayoutGroup.spacing = 0f;
             textLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
             textLayoutGroup.childControlWidth = true;
             textLayoutGroup.childControlHeight = true;
+            textLayoutGroup.childForceExpandWidth = true;
             textLayoutGroup.childForceExpandHeight = false;
-            TMP_Text titleText = CreateTextWithLayout("Title", textBlock.transform, title, 25f, InkRow, FontStyles.Bold, 36f);
-            TMP_Text subtitleText = CreateTextWithLayout("Subtitle", textBlock.transform, subtitle ?? string.Empty, 16f, InkMuted, FontStyles.Bold, 24f);
-            subtitleText.gameObject.SetActive(!string.IsNullOrEmpty(subtitle));
+            TMP_Text titleText = CreateTextWithLayout("Title", textBlock.transform, title, hasSubtitle ? 38f : 32f, InkTitle, FontStyles.Bold, hasSubtitle ? 48f : 42f);
+            TMP_Text subtitleText = CreateTextWithLayout("Subtitle", textBlock.transform, subtitle ?? string.Empty, 22f, InkSubtitle, FontStyles.Bold, 30f);
+            subtitleText.gameObject.SetActive(hasSubtitle);
 
             GameObject action = CreateObject("ActionSlot", rowObject.transform, typeof(LayoutElement));
             LayoutElement actionLayout = action.GetComponent<LayoutElement>();
-            actionLayout.preferredWidth = 124f;
-            actionLayout.preferredHeight = 70f;
+            actionLayout.preferredWidth = 128f;
+            actionLayout.preferredHeight = 72f;
             actionSlot = action.transform;
 
             UiSettingRow row = rowObject.GetComponent<UiSettingRow>();
@@ -579,15 +634,21 @@ namespace Line98.Editor
 
         private static UiToggle CreateToggle(Transform parent, Dictionary<string, Sprite> sprites, bool isOn)
         {
-            GameObject toggleObject = CreateImage("Toggle", parent, sprites["sp_toggle_track_on"], Color.white, typeof(LayoutElement), typeof(UiToggle));
+            GameObject toggleObject = CreateImage("Toggle", parent, isOn ? sprites["sp_toggle_track_on"] : sprites["sp_toggle_track_off"], Color.white, typeof(UiToggle));
             Image track = toggleObject.GetComponent<Image>();
-            track.type = Image.Type.Sliced;
+            track.type = Image.Type.Simple;
+            track.preserveAspect = true;
             track.raycastTarget = true;
-            LayoutElement layout = toggleObject.GetComponent<LayoutElement>();
-            layout.preferredWidth = 108f;
-            layout.preferredHeight = 62f;
+            RectTransform trackRect = toggleObject.GetComponent<RectTransform>();
+            trackRect.anchorMin = new Vector2(1f, 0.5f);
+            trackRect.anchorMax = new Vector2(1f, 0.5f);
+            trackRect.pivot = new Vector2(1f, 0.5f);
+            trackRect.anchoredPosition = Vector2.zero;
+            trackRect.sizeDelta = new Vector2(128f, 61f);
 
-            GameObject thumbObject = CreateImage("Thumb", toggleObject.transform, sprites["sp_toggle_knob"], Color.white);
+            // The Crystal track sprites already paint their knob, so the animated thumb stays as an
+            // invisible transform to keep UiToggle's contract without drawing a second knob.
+            GameObject thumbObject = CreateImage("Thumb", toggleObject.transform, sprites["sp_toggle_knob"], new Color(1f, 1f, 1f, 0f));
             Image thumb = thumbObject.GetComponent<Image>();
             thumb.raycastTarget = false;
             RectTransform thumbRect = thumbObject.GetComponent<RectTransform>();
@@ -595,7 +656,7 @@ namespace Line98.Editor
             thumbRect.anchorMax = new Vector2(0.5f, 0.5f);
             thumbRect.pivot = new Vector2(0.5f, 0.5f);
             thumbRect.sizeDelta = new Vector2(52f, 52f);
-            thumbRect.anchoredPosition = isOn ? new Vector2(22f, 0f) : new Vector2(-22f, 0f);
+            thumbRect.anchoredPosition = isOn ? new Vector2(33f, 0f) : new Vector2(-33f, 0f);
 
             UiToggle toggle = toggleObject.GetComponent<UiToggle>();
             SerializedObject toggleSerialized = new SerializedObject(toggle);
@@ -605,34 +666,42 @@ namespace Line98.Editor
             SetObject(toggleSerialized, "m_TrackOnSprite", sprites["sp_toggle_track_on"]);
             SetObject(toggleSerialized, "m_TrackOffSprite", sprites["sp_toggle_track_off"]);
             SetObject(toggleSerialized, "m_ThumbSprite", sprites["sp_toggle_knob"]);
-            SetFloat(toggleSerialized, "m_ThumbTravelDistance", 44f);
+            SetFloat(toggleSerialized, "m_ThumbTravelDistance", 66f);
             SetFloat(toggleSerialized, "m_TransitionDuration", 0.22f);
             SetBool(toggleSerialized, "m_IsOn", isOn);
             toggleSerialized.ApplyModifiedPropertiesWithoutUndo();
             return toggle;
         }
 
-        private static Button CreateTextButton(string name, Transform parent, Sprite sprite, string label, float width, float height, Color labelColor)
+        /// <summary>Gold-rimmed capsule: a tinted rim capsule with an inset cream capsule and label.</summary>
+        private static Button CreateOutlinedButton(string name, Transform parent, Sprite capsule, string label, float width, float height)
         {
-            GameObject buttonObject = CreateImage(name, parent, sprite, Color.white, typeof(Button), typeof(LayoutElement), typeof(UiButtonFx));
-            Image image = buttonObject.GetComponent<Image>();
-            image.type = Image.Type.Sliced;
+            GameObject buttonObject = CreateImage(name, parent, capsule, ViewButtonRim, typeof(Button), typeof(LayoutElement), typeof(UiButtonFx));
+            Image rim = buttonObject.GetComponent<Image>();
+            rim.type = Image.Type.Sliced;
             Button button = buttonObject.GetComponent<Button>();
-            button.targetGraphic = image;
+            button.targetGraphic = rim;
             LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
             layout.preferredWidth = width;
             layout.preferredHeight = height;
-            TMP_Text text = CreateText("Label", buttonObject.transform, label, 24f, labelColor, TextAlignmentOptions.Center, FontStyles.Bold);
+            layout.flexibleWidth = 0f;
+
+            GameObject fill = CreateImage("Fill", buttonObject.transform, capsule, ViewButtonFill);
+            Image fillImage = fill.GetComponent<Image>();
+            fillImage.type = Image.Type.Sliced;
+            fillImage.raycastTarget = false;
+            Stretch(fillImage.rectTransform, Vector2.zero, Vector2.one, new Vector2(5f, 5f), new Vector2(-5f, -5f));
+
+            TMP_Text text = CreateText("Label", buttonObject.transform, label, 38f, ViewButtonInk, TextAlignmentOptions.Center, FontStyles.Bold);
             Stretch(text.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            text.raycastTarget = false;
             return button;
         }
 
-        private static Button CreateIconButton(string name, Transform parent, Sprite backgroundSprite, Sprite iconSprite, float size)
+        private static Button CreateIconButton(string name, Transform parent, Sprite backgroundSprite, Sprite iconSprite, float size, float iconScale = 0.56f)
         {
             GameObject buttonObject = CreateImage(name, parent, backgroundSprite, Color.white, typeof(Button), typeof(LayoutElement), typeof(UiButtonFx));
             Image background = buttonObject.GetComponent<Image>();
-            if (backgroundSprite != null) background.type = Image.Type.Sliced;
+            if (backgroundSprite != null) background.preserveAspect = true;
             Button button = buttonObject.GetComponent<Button>();
             button.targetGraphic = background;
             LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
@@ -641,11 +710,12 @@ namespace Line98.Editor
             GameObject icon = CreateImage("Icon", buttonObject.transform, iconSprite, Color.white);
             Image iconImage = icon.GetComponent<Image>();
             iconImage.raycastTarget = false;
+            iconImage.preserveAspect = true;
             RectTransform iconRect = icon.GetComponent<RectTransform>();
             iconRect.anchorMin = new Vector2(0.5f, 0.5f);
             iconRect.anchorMax = new Vector2(0.5f, 0.5f);
             iconRect.pivot = new Vector2(0.5f, 0.5f);
-            iconRect.sizeDelta = new Vector2(size * 0.56f, size * 0.56f);
+            iconRect.sizeDelta = new Vector2(size * iconScale, size * iconScale);
             return button;
         }
 
@@ -655,7 +725,10 @@ namespace Line98.Editor
             LayoutElement layout = imageObject.GetComponent<LayoutElement>();
             layout.preferredWidth = width;
             layout.preferredHeight = height;
-            return imageObject.GetComponent<Image>();
+            Image image = imageObject.GetComponent<Image>();
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            return image;
         }
 
         private static TMP_Text CreateTextWithLayout(string name, Transform parent, string value, float size, Color color, FontStyles style, float height)
@@ -669,7 +742,8 @@ namespace Line98.Editor
         {
             GameObject textObject = CreateObject(name, parent, typeof(TextMeshProUGUI));
             TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
-            text.font = TMP_Settings.defaultFontAsset;
+            TMP_FontAsset menuFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(MenuFontPath);
+            text.font = menuFont != null ? menuFont : TMP_Settings.defaultFontAsset;
             text.text = value;
             text.fontSize = size;
             text.color = color;
@@ -689,20 +763,6 @@ namespace Line98.Editor
             layout.preferredWidth = width;
             layout.preferredHeight = height;
             return spacer;
-        }
-
-        private static void CreateDecorLeaf(string name, Transform parent, Sprite sprite, Vector2 position, Vector2 size, float rotation)
-        {
-            GameObject leaf = CreateImage(name, parent, sprite, new Color(0.20f, 0.48f, 0.31f, 0.16f));
-            Image image = leaf.GetComponent<Image>();
-            image.raycastTarget = false;
-            RectTransform rect = leaf.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(position.x >= 0f ? 0f : 1f, position.y >= 0f ? 1f : 0f);
-            rect.anchorMax = rect.anchorMin;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            rect.localRotation = Quaternion.Euler(0f, 0f, rotation);
         }
 
         private static void AddThemeSpriteTarget(GameObject target, UiThemeApplier.SpriteToken token, Image image)

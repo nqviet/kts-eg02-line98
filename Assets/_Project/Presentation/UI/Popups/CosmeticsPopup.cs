@@ -22,7 +22,7 @@ namespace Line98.Presentation
 
         private readonly List<GameObject> m_SpawnedTiles = new List<GameObject>();
         private ThemeCatalogSO m_Catalog;
-        private string m_ActiveThemeId = "classic";
+        private string m_ActiveThemeId = "crystal";
         private IThemeSelector m_Selector;
 
         public event Action<string> OnThemeRequested;
@@ -35,7 +35,7 @@ namespace Line98.Presentation
         {
             bool catalogChanged = m_Catalog != catalog;
             m_Catalog = catalog;
-            m_ActiveThemeId = !string.IsNullOrEmpty(activeThemeId) ? activeThemeId : "classic";
+            m_ActiveThemeId = !string.IsNullOrEmpty(activeThemeId) ? activeThemeId : "crystal";
             m_Selector = selector;
 
             if (m_Catalog == null)
