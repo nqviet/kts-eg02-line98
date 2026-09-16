@@ -267,8 +267,8 @@ namespace Line98.Tests.EditMode
 
             popup.Populate(summary);
 
-            Assert.AreEqual("00450", finalScoreText.text);
-            Assert.AreEqual("01200", bestScoreText.text);
+            Assert.AreEqual("450", finalScoreText.text);
+            Assert.AreEqual("1,200", bestScoreText.text);
             Assert.AreEqual("4", linesText.text);
             Assert.AreEqual("6", longestText.text);
             Assert.AreEqual("18", movesText.text);

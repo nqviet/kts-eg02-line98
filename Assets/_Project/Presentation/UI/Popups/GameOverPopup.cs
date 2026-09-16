@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,6 +22,7 @@ namespace Line98.Presentation
         [SerializeField] private TMP_Text m_TotalMovesText;
         [SerializeField] private Button m_ContinueButton;
         [SerializeField] private Button m_NewGameButton;
+        [SerializeField] private GameObject m_NewBestBadge;
 
         public TMP_Text FinalScoreText => m_FinalScoreText;
         public TMP_Text BestScoreText => m_BestScoreText;
@@ -30,6 +32,7 @@ namespace Line98.Presentation
 
         public Button ContinueButton => m_ContinueButton != null ? m_ContinueButton : PrimaryButton;
         public Button NewGameButton => m_NewGameButton != null ? m_NewGameButton : SecondaryButton;
+        public override bool UsesFullLayoutHeight => true;
 
         protected override void Awake()
         {
@@ -63,8 +66,8 @@ namespace Line98.Presentation
             int totalMoves,
             bool canContinue)
         {
-            if (m_FinalScoreText != null) m_FinalScoreText.text = finalScore.ToString("D5");
-            if (m_BestScoreText != null) m_BestScoreText.text = bestScore.ToString("D5");
+            if (m_FinalScoreText != null) m_FinalScoreText.text = finalScore.ToString("N0", CultureInfo.InvariantCulture);
+            if (m_BestScoreText != null) m_BestScoreText.text = bestScore.ToString("N0", CultureInfo.InvariantCulture);
             if (m_LinesClearedText != null) m_LinesClearedText.text = linesCleared.ToString();
             if (m_LongestLineText != null) m_LongestLineText.text = longestLine.ToString();
             if (m_TotalMovesText != null) m_TotalMovesText.text = totalMoves.ToString();
@@ -73,6 +76,11 @@ namespace Line98.Presentation
             if (continueBtn != null)
             {
                 continueBtn.gameObject.SetActive(canContinue);
+            }
+
+            if (m_NewBestBadge != null)
+            {
+                m_NewBestBadge.SetActive(finalScore > 0 && finalScore >= bestScore);
             }
         }
 

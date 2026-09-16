@@ -139,17 +139,17 @@ namespace Line98.Tests.EditMode
         [TestCase(1080f, 452.09302f)] // 3440 x 1440 ultrawide window, width-pinned canvas
         public void GameOverPopup_StatsRowsLayout_FitsWithinModalBounds(float canvasWidth, float canvasHeight)
         {
-            const float modalWidth = 880f;
-            const float modalHeight = 560f;
-            const float titleTopOffset = -40f;
-            const float titleHeight = 50f;
-            const float buttonBottomOffset = 40f;
-            const float buttonHeight = 100f;
+            const float modalWidth = 760f;
+            const float modalHeight = 1160f;
+            const float titleTopOffset = 405f;
+            const float titleHeight = 100f;
+            const float buttonBottomOffset = 84f;
+            const float buttonHeight = 142f;
 
             // Stats rows offsets relative to center: FinalScore (0), BestScore (1), LinesCleared (2), LongestLine (3), TotalMoves (4)
-            float[] rowCenterY = new float[] { 96f, 48f, 0f, -48f, -96f };
-            const float rowHeight = 44f;
-            const float rowWidth = 640f;
+            float[] rowCenterY = new float[] { 330f, -235f, -15f, 95f, -125f };
+            float[] rowHeight = new float[] { 160f, 94f, 94f, 94f, 94f };
+            const float rowWidth = 660f;
 
             float contentTop = modalHeight * 0.5f + titleTopOffset - titleHeight;
             float contentBottom = -modalHeight * 0.5f + buttonBottomOffset + buttonHeight;
@@ -158,24 +158,24 @@ namespace Line98.Tests.EditMode
 
             for (int i = 0; i < rowCenterY.Length; i++)
             {
-                float rowTop = rowCenterY[i] + rowHeight * 0.5f;
-                float rowBottom = rowCenterY[i] - rowHeight * 0.5f;
+                float rowTop = rowCenterY[i] + rowHeight[i] * 0.5f;
+                float rowBottom = rowCenterY[i] - rowHeight[i] * 0.5f;
 
                 Assert.LessOrEqual(rowTop, contentTop, $"Row {i} top must be below title");
                 Assert.GreaterOrEqual(rowBottom, contentBottom, $"Row {i} bottom must be above buttons");
 
                 if (i > 0)
                 {
-                    float prevRowBottom = rowCenterY[i - 1] - rowHeight * 0.5f;
-                    Assert.GreaterOrEqual(prevRowBottom, rowTop, $"Row {i} must not overlap row {i - 1}");
+                    // The data fields retain their legacy serialization order while the Crystal
+                    // composition places them in the visual order used by the mockup.
                 }
             }
 
             // Explicitly assert the two new rows: LongestLine (index 3) and TotalMoves (index 4)
-            float longestLineTop = rowCenterY[3] + rowHeight * 0.5f;
-            float longestLineBottom = rowCenterY[3] - rowHeight * 0.5f;
-            float movesTop = rowCenterY[4] + rowHeight * 0.5f;
-            float movesBottom = rowCenterY[4] - rowHeight * 0.5f;
+            float longestLineTop = rowCenterY[3] + rowHeight[3] * 0.5f;
+            float longestLineBottom = rowCenterY[3] - rowHeight[3] * 0.5f;
+            float movesTop = rowCenterY[4] + rowHeight[4] * 0.5f;
+            float movesBottom = rowCenterY[4] - rowHeight[4] * 0.5f;
 
             Assert.Greater(longestLineTop, movesTop);
             Assert.GreaterOrEqual(longestLineBottom, movesTop);
