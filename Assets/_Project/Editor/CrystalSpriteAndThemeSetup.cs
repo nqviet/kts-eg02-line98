@@ -186,7 +186,12 @@ namespace Line98.Editor
                 CreateSpriteRect("sp_toggle_track_on", new Rect(24, 432, 126, 60), new Vector4(28, 28, 28, 28)),
                 CreateSpriteRect("sp_toggle_track_off", new Rect(154, 432, 126, 60), new Vector4(28, 28, 28, 28)),
                 CreateSpriteRect("sp_toggle_knob", new Rect(1028, 674, 92, 92)),
-                CreateSpriteRect("sp_divider_hairline", new Rect(904, 457, 122, 13))
+                CreateSpriteRect("sp_divider_hairline", new Rect(904, 457, 122, 13)),
+
+                // Game-over popup glyphs. Both sit in the sheet's unsliced gaps, so they are
+                // listed here to survive a re-slice pass.
+                CreateSpriteRect("sp_icon_dots_grid", new Rect(1057, 240, 69, 65)),
+                CreateSpriteRect("sp_fx_sunburst_gold", new Rect(470, 130, 92, 92))
             };
 
             dataProvider.SetSpriteRects(spriteRects.ToArray());

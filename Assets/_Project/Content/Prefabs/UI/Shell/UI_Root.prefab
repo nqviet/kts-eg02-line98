@@ -443,7 +443,7 @@ MonoBehaviour:
   m_SettingsPopup: {fileID: 1983801363791788697}
   m_StatisticsPopup: {fileID: 1051810366333592584}
   m_CosmeticsPopup: {fileID: 6041202599815732318}
-  m_UiTheme: {fileID: 0}
+  m_UiTheme: {fileID: 11400000, guid: a7507a5c9cb94244aa5de8f0f3a78b31, type: 2}
   m_ThemeCatalog: {fileID: 11400000, guid: ea797b60fa200374497d9313bb5d1ffc, type: 2}
   m_CanvasStack: {fileID: 1253194037384901136}
   m_PopupRegistry: {fileID: 2076274951748985837}
@@ -478,7 +478,7 @@ MonoBehaviour:
   m_StatsActionButton: {fileID: 4210038436951831919}
   m_GameOverNewGameActionButton: {fileID: 4203422226953672351}
   m_UIRouter: {fileID: 7039184613299368687}
-  m_Theme: {fileID: 11400000, guid: ba1cc3a76393e2943946dfaa1bc26dd3, type: 2}
+  m_Theme: {fileID: 11400000, guid: a7507a5c9cb94244aa5de8f0f3a78b31, type: 2}
 --- !u!114 &96386978427822653
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -9,6 +9,7 @@
 [Mm]emoryCaptures/
 [Rr]ecordings/
 /Data/
+/.utmp/
 
 # Asset meta data should be committed, but results of asset import should not
 # Keep *.meta files

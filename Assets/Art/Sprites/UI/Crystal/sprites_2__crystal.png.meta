@@ -1556,11 +1556,55 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: sp_icon_dots_grid
+      rect:
+        serializedVersion: 2
+        x: 1057
+        y: 240
+        width: 69
+        height: 65
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5e0117ff929c33147868db2c02291252
+      internalID: 190568579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sp_fx_sunburst_gold
+      rect:
+        serializedVersion: 2
+        x: 470
+        y: 130
+        width: 92
+        height: 92
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1e836a0856a4e6e4abc0638e141d1382
+      internalID: 900919915
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 0f4bf6708d3fd6a4f8988d71089aa741
     internalID: 0
     vertices: []
     indices: 
@@ -1579,6 +1623,7 @@ TextureImporter:
       sp_btn_circle_grey: -3405555888129172630
       sp_btn_view_gold: 4989540779082606511
       sp_divider_hairline: -1888350959222930414
+      sp_fx_sunburst_gold: 900919915
       sp_gem_blue: -1368544199743531944
       sp_gem_cyan: -4095754298707592765
       sp_gem_green: -4553873810694447925
@@ -1594,6 +1639,7 @@ TextureImporter:
       sp_icon_chart: -3818669721474099864
       sp_icon_close: 497214379007808746
       sp_icon_crown: 925174925378022947
+      sp_icon_dots_grid: 190568579
       sp_icon_external_link: 8192206564873308426
       sp_icon_flame: -6753497500808353371
       sp_icon_gear: 2014195682787275723

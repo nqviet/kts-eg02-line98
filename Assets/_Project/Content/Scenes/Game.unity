@@ -596,8 +596,8 @@ MonoBehaviour:
   m_MotionProfile: {fileID: 0}
   m_FeedbackProfile: {fileID: 0}
   m_CameraProfile: {fileID: 11400000, guid: 6bb49989f55a01a47b2f00429a6508fb, type: 2}
-  m_BallTheme: {fileID: 11400000, guid: 34e23c37cab92804d950976e2e09bc3d, type: 2}
-  m_BoardTheme: {fileID: 11400000, guid: 15b2a0a477e964a4eaac0243fcc2c372, type: 2}
+  m_BallTheme: {fileID: 11400000, guid: aa4735cf058775748b4a43e99f9fbfe4, type: 2}
+  m_BoardTheme: {fileID: 11400000, guid: 3f9a35197852a41478a4ed39c0247989, type: 2}
   m_VfxCatalog: {fileID: 11400000, guid: 712daad88f5573c4487a0ed0e1548184, type: 2}
   m_AudioCatalog: {fileID: 11400000, guid: 5c86eb60e3f6ea24bba76b4dc6613f8a, type: 2}
   m_MainMixer: {fileID: 24100000, guid: 45e32949eb099194aa8197c89a07c988, type: 2}
@@ -623,7 +623,7 @@ MonoBehaviour:
   m_InputRouter: {fileID: 0}
   m_UIRouter: {fileID: 2029189735}
   m_HudPresenter: {fileID: 2029189734}
-  m_UiTheme: {fileID: 11400000, guid: ba1cc3a76393e2943946dfaa1bc26dd3, type: 2}
+  m_UiTheme: {fileID: 11400000, guid: a7507a5c9cb94244aa5de8f0f3a78b31, type: 2}
 --- !u!4 &2030192842
 Transform:
   m_ObjectHideFlags: 0

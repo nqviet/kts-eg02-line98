@@ -23592,6 +23592,10 @@ PrefabInstance:
       propertyPath: m_PreviewQueue
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 8765046764383485703, guid: 4e6472eecefd16e4da04fb9605db740b, type: 3}
+      propertyPath: m_Interactable
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 3962189216203663365, guid: 4e6472eecefd16e4da04fb9605db740b, type: 3}
