@@ -27,7 +27,7 @@ namespace Line98.Editor
         private static Sprite[] s_CachedSprites;
         private static int s_CurrentIndex = -1;
 
-        [MenuItem("Line98/Dev/Show Design Reference Overlay _F9", false, 101)]
+        [MenuItem("Line98/Dev/Show Design Reference Overlay #F9", false, 101)]
         public static void ToggleOverlay()
         {
             EnsureInstances();

@@ -118,6 +118,21 @@ namespace Line98.Presentation
             return popup != null;
         }
 
+        /// <summary>
+        /// Returns an already-registered popup without instantiating a catalog prefab.
+        /// Use this for state inspection where the lazy-instantiate side effect of TryGet is unwanted.
+        /// </summary>
+        public bool TryGetRegistered(UiPopupId id, out PopupView popup)
+        {
+            if (m_Instances.TryGetValue(id, out popup) && popup != null)
+            {
+                return true;
+            }
+
+            popup = null;
+            return false;
+        }
+
         public bool Open(UiPopupId id, IUiPopupPayload payload = null)
         {
             if (m_Shell == null)

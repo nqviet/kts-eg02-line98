@@ -1,9 +1,11 @@
 using System;
+using System.Globalization;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Line98.App;
 using Line98.Core;
 using Line98.Gameplay;
 using Line98.Presentation;
@@ -217,45 +219,7 @@ namespace Line98.Tests.EditMode
         [Test]
         public void GameOverPopup_Populate_BindsAllFiveStatsAndContinueButton()
         {
-            var go = new GameObject("TestGameOverPopup");
-            var popup = go.AddComponent<GameOverPopup>();
-
-            var finalScoreGo = new GameObject("FinalScore", typeof(TextMeshProUGUI));
-            finalScoreGo.transform.SetParent(go.transform);
-            var finalScoreText = finalScoreGo.GetComponent<TextMeshProUGUI>();
-
-            var bestScoreGo = new GameObject("BestScore", typeof(TextMeshProUGUI));
-            bestScoreGo.transform.SetParent(go.transform);
-            var bestScoreText = bestScoreGo.GetComponent<TextMeshProUGUI>();
-
-            var linesGo = new GameObject("Lines", typeof(TextMeshProUGUI));
-            linesGo.transform.SetParent(go.transform);
-            var linesText = linesGo.GetComponent<TextMeshProUGUI>();
-
-            var longestGo = new GameObject("Longest", typeof(TextMeshProUGUI));
-            longestGo.transform.SetParent(go.transform);
-            var longestText = longestGo.GetComponent<TextMeshProUGUI>();
-
-            var movesGo = new GameObject("Moves", typeof(TextMeshProUGUI));
-            movesGo.transform.SetParent(go.transform);
-            var movesText = movesGo.GetComponent<TextMeshProUGUI>();
-
-            var continueBtnGo = new GameObject("BtnContinue", typeof(Button));
-            continueBtnGo.transform.SetParent(go.transform);
-            var continueBtn = continueBtnGo.GetComponent<Button>();
-
-            var newGameBtnGo = new GameObject("BtnNewGame", typeof(Button));
-            newGameBtnGo.transform.SetParent(go.transform);
-            var newGameBtn = newGameBtnGo.GetComponent<Button>();
-
-            // Set private fields via reflection
-            typeof(GameOverPopup).GetField("m_FinalScoreText", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, finalScoreText);
-            typeof(GameOverPopup).GetField("m_BestScoreText", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, bestScoreText);
-            typeof(GameOverPopup).GetField("m_LinesClearedText", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, linesText);
-            typeof(GameOverPopup).GetField("m_LongestLineText", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, longestText);
-            typeof(GameOverPopup).GetField("m_TotalMovesText", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, movesText);
-            typeof(GameOverPopup).GetField("m_ContinueButton", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, continueBtn);
-            typeof(GameOverPopup).GetField("m_NewGameButton", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(popup, newGameBtn);
+            PopupFixture fixture = CreatePopupFixture("TestGameOverPopup");
 
             var summary = new SessionSummary(
                 finalScore: 450,
@@ -265,20 +229,131 @@ namespace Line98.Tests.EditMode
                 totalMoves: 18,
                 canContinue: true);
 
-            popup.Populate(summary);
+            fixture.Popup.Populate(summary);
 
-            Assert.AreEqual("450", finalScoreText.text);
-            Assert.AreEqual("1,200", bestScoreText.text);
-            Assert.AreEqual("4", linesText.text);
-            Assert.AreEqual("6", longestText.text);
-            Assert.AreEqual("18", movesText.text);
-            Assert.IsTrue(continueBtn.gameObject.activeSelf);
+            Assert.AreEqual("450", fixture.FinalScore.text);
+            Assert.AreEqual("1,200", fixture.BestScore.text);
+            Assert.AreEqual("4", fixture.Lines.text);
+            Assert.AreEqual("6", fixture.Longest.text);
+            Assert.AreEqual("18", fixture.Moves.text);
+            Assert.IsTrue(fixture.ContinueButton.gameObject.activeSelf);
 
             // Also assert New Game button is available without ad gate
-            Assert.IsNotNull(popup.NewGameButton);
-            Assert.IsTrue(popup.NewGameButton.gameObject.activeSelf);
+            Assert.IsNotNull(fixture.Popup.NewGameButton);
+            Assert.IsTrue(fixture.Popup.NewGameButton.gameObject.activeSelf);
 
-            UnityEngine.Object.DestroyImmediate(go);
+            UnityEngine.Object.DestroyImmediate(fixture.Root);
+        }
+
+        [Test]
+        public void DebugHud_MockSummaries_ExerciseEveryGameOverPopupBranch()
+        {
+            Assert.IsNotNull(DebugHud.MockSummaries, "The popup debug hub must expose mock summaries.");
+            Assert.GreaterOrEqual(DebugHud.MockSummaries.Count, 2, "The hub needs an alternate fixture to cycle between.");
+
+            for (int i = 0; i < DebugHud.MockSummaries.Count; i++)
+            {
+                SessionSummary summary = DebugHud.MockSummaries[i];
+                PopupFixture fixture = CreatePopupFixture($"TestMockFixture{i}");
+
+                Assert.DoesNotThrow(() => fixture.Popup.Populate(summary), $"Fixture {i} must populate without throwing.");
+
+                Assert.AreEqual(
+                    summary.FinalScore.ToString("N0", CultureInfo.InvariantCulture),
+                    fixture.FinalScore.text,
+                    $"Fixture {i}: final score must use N0 formatting.");
+                Assert.AreEqual(
+                    summary.BestScore.ToString("N0", CultureInfo.InvariantCulture),
+                    fixture.BestScore.text,
+                    $"Fixture {i}: best score must use N0 formatting.");
+                Assert.AreEqual(
+                    summary.LinesCleared.ToString(),
+                    fixture.Lines.text,
+                    $"Fixture {i}: lines cleared must not be swapped with the longest line.");
+                Assert.AreEqual(
+                    summary.LongestLine.ToString(),
+                    fixture.Longest.text,
+                    $"Fixture {i}: longest line must not be swapped with lines cleared.");
+                Assert.AreEqual(summary.TotalMoves.ToString(), fixture.Moves.text, $"Fixture {i}: total moves must bind.");
+
+                Assert.AreEqual(
+                    summary.CanContinue,
+                    fixture.ContinueButton.gameObject.activeSelf,
+                    $"Fixture {i}: continue visibility must follow CanContinue.");
+
+                bool expectsNewBest = summary.FinalScore > 0 && summary.FinalScore >= summary.BestScore;
+                Assert.AreEqual(
+                    expectsNewBest,
+                    fixture.NewBestBadge.activeSelf,
+                    $"Fixture {i}: new-best badge must follow finalScore >= bestScore.");
+
+                UnityEngine.Object.DestroyImmediate(fixture.Root);
+            }
+        }
+
+        private sealed class PopupFixture
+        {
+            public GameObject Root;
+            public GameOverPopup Popup;
+            public TextMeshProUGUI FinalScore;
+            public TextMeshProUGUI BestScore;
+            public TextMeshProUGUI Lines;
+            public TextMeshProUGUI Longest;
+            public TextMeshProUGUI Moves;
+            public Button ContinueButton;
+            public Button NewGameButton;
+            public GameObject NewBestBadge;
+        }
+
+        /// <summary>
+        /// Builds a GameOverPopup with every serialized reference bound the way the
+        /// Popup_GameOver prefab binds them, so Populate can be asserted in isolation.
+        /// </summary>
+        private static PopupFixture CreatePopupFixture(string name)
+        {
+            var fixture = new PopupFixture { Root = new GameObject(name) };
+            fixture.Popup = fixture.Root.AddComponent<GameOverPopup>();
+            fixture.FinalScore = CreateChildText(fixture.Root, "FinalScore");
+            fixture.BestScore = CreateChildText(fixture.Root, "BestScore");
+            fixture.Lines = CreateChildText(fixture.Root, "Lines");
+            fixture.Longest = CreateChildText(fixture.Root, "Longest");
+            fixture.Moves = CreateChildText(fixture.Root, "Moves");
+            fixture.ContinueButton = CreateChildButton(fixture.Root, "BtnContinue");
+            fixture.NewGameButton = CreateChildButton(fixture.Root, "BtnNewGame");
+            fixture.NewBestBadge = new GameObject("NewBestBadge");
+            fixture.NewBestBadge.transform.SetParent(fixture.Root.transform);
+
+            SetPrivateField(fixture.Popup, "m_FinalScoreText", fixture.FinalScore);
+            SetPrivateField(fixture.Popup, "m_BestScoreText", fixture.BestScore);
+            SetPrivateField(fixture.Popup, "m_LinesClearedText", fixture.Lines);
+            SetPrivateField(fixture.Popup, "m_LongestLineText", fixture.Longest);
+            SetPrivateField(fixture.Popup, "m_TotalMovesText", fixture.Moves);
+            SetPrivateField(fixture.Popup, "m_ContinueButton", fixture.ContinueButton);
+            SetPrivateField(fixture.Popup, "m_NewGameButton", fixture.NewGameButton);
+            SetPrivateField(fixture.Popup, "m_NewBestBadge", fixture.NewBestBadge);
+
+            return fixture;
+        }
+
+        private static TextMeshProUGUI CreateChildText(GameObject parent, string name)
+        {
+            var go = new GameObject(name, typeof(TextMeshProUGUI));
+            go.transform.SetParent(parent.transform);
+            return go.GetComponent<TextMeshProUGUI>();
+        }
+
+        private static Button CreateChildButton(GameObject parent, string name)
+        {
+            var go = new GameObject(name, typeof(Button));
+            go.transform.SetParent(parent.transform);
+            return go.GetComponent<Button>();
+        }
+
+        private static void SetPrivateField(object target, string fieldName, object value)
+        {
+            typeof(GameOverPopup)
+                .GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(target, value);
         }
     }
 }

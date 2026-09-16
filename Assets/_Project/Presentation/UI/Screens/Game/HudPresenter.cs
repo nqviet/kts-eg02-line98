@@ -386,9 +386,11 @@ namespace Line98.Presentation
 
         private void OnGameOverNewGameClicked()
         {
-            if (m_UIRouter != null && m_UIRouter.GameOverPopup != null)
+            // Close through the shell so the modal stack and the scrim stay consistent:
+            // calling PopupView.Hide() directly leaves the popup on the stack.
+            if (m_UIRouter != null && !m_UIRouter.TryClosePopup(UiPopupId.GameOver))
             {
-                m_UIRouter.GameOverPopup.Hide();
+                m_UIRouter.CloseAllPopups();
             }
 
             m_Session?.StartNewGame();

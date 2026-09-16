@@ -60,6 +60,8 @@ namespace Line98.Presentation
         public UiScreenRegistry ScreenRegistry => m_ScreenRegistry;
         public Transform ScreenParent => m_DynamicCanvas != null ? m_DynamicCanvas.transform : transform;
         public bool IsAnyPopupOpen => m_PopupStack.Count > 0;
+        public int PopupStackCount => m_PopupStack.Count;
+        public PopupView TopPopup => m_PopupStack.Count > 0 ? m_PopupStack.Peek() : null;
         public bool IsInitialized => m_IsInitialized;
 
         protected virtual void Awake()
@@ -268,6 +270,31 @@ namespace Line98.Presentation
                     m_CanvasStack?.SetModalVisible(false);
                 }
             });
+        }
+
+        /// <summary>
+        /// Closes the popup with the given id when it is the top of the modal stack.
+        /// Returns false when it is not on top, leaving the stack and the scrim untouched.
+        /// </summary>
+        public bool TryClosePopup(UiPopupId id)
+        {
+            if (m_PopupStack.Count == 0 || m_PopupRegistry == null)
+            {
+                return false;
+            }
+
+            if (!m_PopupRegistry.TryGetRegistered(id, out PopupView popup) || popup == null)
+            {
+                return false;
+            }
+
+            if (!ReferenceEquals(m_PopupStack.Peek(), popup))
+            {
+                return false;
+            }
+
+            PopPopup();
+            return true;
         }
 
         private void HandlePopupCloseRequested(PopupView popup)
