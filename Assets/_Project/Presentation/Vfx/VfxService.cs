@@ -96,9 +96,9 @@ namespace Line98.Presentation.Vfx
             }
         }
 
-        public bool PlayBurst(string key, Vector3 worldPosition, object owner = null)
+        public GameObject PlayBurst(string key, Vector3 worldPosition, object owner = null)
         {
-            if (string.IsNullOrEmpty(key)) return false;
+            if (string.IsNullOrEmpty(key)) return null;
 
             // Enforce burst concurrency cap <= 4
             if (m_ActiveBurstCount >= MaxBurstConcurrency)
@@ -107,7 +107,7 @@ namespace Line98.Presentation.Vfx
             }
 
             GameObject instance = GetPooledInstance(key);
-            if (instance == null) return false;
+            if (instance == null) return null;
 
             instance.transform.position = worldPosition;
             instance.transform.rotation = Quaternion.identity;
@@ -123,7 +123,7 @@ namespace Line98.Presentation.Vfx
             float lifetime = GetLifetime(key, 1.0f);
             RegisterActive(instance, ps, null, null, lifetime, owner, key, isBurst: true, isPopup: false);
             m_ActiveBurstCount++;
-            return true;
+            return instance;
         }
 
         public bool PlayScorePopup(int score, Vector3 worldPosition, float comboMultiplier = 1.0f, object owner = null)

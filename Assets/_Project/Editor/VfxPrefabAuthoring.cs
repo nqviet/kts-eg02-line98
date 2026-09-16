@@ -60,13 +60,16 @@ namespace Line98.Editor
             // 10. VFX_Game_Over_Frost
             BuildGameOverFrost();
 
+            // 11. VFX_Clear_Combo
+            BuildCombo(glowMat);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             // Populate Catalog
             PopulateCatalog();
 
-            Debug.Log("[VfxPrefabAuthoring] Successfully authored 10 VFX prefabs and populated VfxCatalog_Default!");
+            Debug.Log("[VfxPrefabAuthoring] Successfully authored 11 VFX prefabs and populated VfxCatalog_Default!");
         }
 
         private static void BuildBallSelectPulse(Material mat)
@@ -231,8 +234,52 @@ namespace Line98.Editor
 
             var bannerAnchor = new GameObject("BannerAnchor");
             bannerAnchor.transform.SetParent(go.transform, false);
+            bannerAnchor.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+
+            var bannerTextGo = new GameObject("BannerText");
+            bannerTextGo.transform.SetParent(bannerAnchor.transform, false);
+            var bannerTmp = bannerTextGo.AddComponent<TextMeshPro>();
+            bannerTmp.text = "PERFECT LINE";
+            bannerTmp.fontSize = 5.0f;
+            bannerTmp.alignment = TextAlignmentOptions.Center;
+            bannerTmp.color = new Color(1f, 0.84f, 0f, 1f);
+            var bannerRect = bannerTextGo.GetComponent<RectTransform>();
+            if (bannerRect != null)
+            {
+                bannerRect.sizeDelta = new Vector2(8f, 2f);
+            }
 
             string path = $"{PrefabDir}/VFX_Clear_Tier4_Perfect.prefab";
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+        }
+
+        private static void BuildCombo(Material mat)
+        {
+            var go = new GameObject("VFX_Clear_Combo");
+            var ps = go.AddComponent<ParticleSystem>();
+            var psr = go.GetComponent<ParticleSystemRenderer>();
+            psr.sharedMaterial = mat;
+
+            var main = ps.main;
+            main.loop = false;
+            main.duration = 0.9f;
+            main.startLifetime = 0.8f;
+            main.startSpeed = 2.8f;
+            main.startSize = 0.45f;
+            main.startColor = new Color(1f, 0.6f, 0.1f, 1f); // Orange-gold combo burst
+            main.maxParticles = 60;
+            main.playOnAwake = false;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 40) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.4f;
+
+            string path = $"{PrefabDir}/VFX_Clear_Combo.prefab";
             PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
         }
@@ -301,6 +348,7 @@ namespace Line98.Editor
                 new VfxEntry("ClearTier2", AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/VFX_Clear_Tier2_6_7Balls.prefab"), poolSize: 4, lifetime: 0.8f),
                 new VfxEntry("ClearTier3", AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/VFX_Clear_Tier3_8Balls.prefab"), poolSize: 4, lifetime: 1.1f),
                 new VfxEntry("ClearTier4", AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/VFX_Clear_Tier4_Perfect.prefab"), poolSize: 4, lifetime: 1.8f),
+                new VfxEntry("ComboBurst", AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/VFX_Clear_Combo.prefab"), poolSize: 4, lifetime: 0.9f),
                 new VfxEntry("ScorePopup", AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/VFX_Score_Popup.prefab"), poolSize: 8, lifetime: 0.75f),
                 new VfxEntry("GameOverFrost", AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/VFX_Game_Over_Frost.prefab"), poolSize: 2, lifetime: 1.2f)
             };

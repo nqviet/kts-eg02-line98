@@ -186,5 +186,78 @@ namespace Line98.Tests.EditMode
 
             manager.Dispose();
         }
+
+        [Test]
+        public void BallView_ActionShake_DampedOscillationAndReset()
+        {
+            var ballGo = new GameObject("ShakeTestBall");
+            ballGo.transform.SetParent(m_RootGo.transform);
+            var ballView = ballGo.AddComponent<BallView>();
+            var tweenRunner = new TweenRunner();
+            ballView.InitializeHierarchy(m_BallMesh, null, m_GlowMaterial, null);
+            ballView.Setup(new GridPos(0, 0), BallColor.Red, null, m_GlowMaterial, tweenRunner);
+
+            ballView.PlayShake(Vector3.right, 0.08f);
+            Assert.AreEqual(1, tweenRunner.ActiveCount, "PlayShake must register a tween with TweenRunner");
+
+            float minX = 0f;
+            float maxX = 0f;
+            for (int i = 0; i < 20; i++)
+            {
+                tweenRunner.Tick(0.016f);
+                minX = Mathf.Min(minX, ballView.ShakeOffset.x);
+                maxX = Mathf.Max(maxX, ballView.ShakeOffset.x);
+            }
+
+            Assert.Less(minX, -0.005f, "Shake oscillation must swing into negative X");
+            Assert.Greater(maxX, 0.005f, "Shake oscillation must swing into positive X");
+            Assert.AreEqual(0f, ballView.ShakeOffset.y, 0.0001f, "Shake must not introduce Y offset");
+            Assert.AreEqual(0f, ballView.ShakeOffset.z, 0.0001f, "Shake along right axis must have 0 Z offset");
+
+            // Tick past the 240ms duration
+            for (int i = 0; i < 10; i++)
+            {
+                tweenRunner.Tick(0.016f);
+            }
+
+            Assert.AreEqual(0, tweenRunner.ActiveCount, "Tween must complete after 240ms");
+            Assert.AreEqual(Vector3.zero, ballView.ShakeOffset, "Shake offset must return to Vector3.zero upon completion");
+        }
+
+        [Test]
+        public void BallView_ActionShake_FollowsShakeAxis()
+        {
+            var ballGo = new GameObject("ShakeAxisBall");
+            ballGo.transform.SetParent(m_RootGo.transform);
+            var ballView = ballGo.AddComponent<BallView>();
+            ballView.InitializeHierarchy(m_BallMesh, null, m_GlowMaterial, null);
+
+            ballView.ShakeAxis = Vector3.forward;
+            ballView.OnTweenUpdate(BallView.ActionShake, 0.06f);
+
+            Assert.AreEqual(new Vector3(0f, 0f, 0.06f), ballView.ShakeOffset, "ShakeOffset must follow configured ShakeAxis");
+            Assert.AreEqual(0.06f, ballView.Visual.localPosition.z, 0.0001f, "Visual local Z must reflect ShakeOffset Z");
+
+            ballView.OnTweenComplete(BallView.ActionShake);
+            Assert.AreEqual(Vector3.zero, ballView.ShakeOffset, "OnTweenComplete must reset ShakeOffset");
+        }
+
+        [Test]
+        public void BallView_ShakeTween_DoesNotSurvivePoolRelease()
+        {
+            var ballGo = new GameObject("ShakeReleaseBall");
+            ballGo.transform.SetParent(m_RootGo.transform);
+            var ballView = ballGo.AddComponent<BallView>();
+            var tweenRunner = new TweenRunner();
+            ballView.InitializeHierarchy(m_BallMesh, null, m_GlowMaterial, null);
+            ballView.Setup(new GridPos(0, 0), BallColor.Red, null, m_GlowMaterial, tweenRunner);
+
+            ballView.PlayShake(Vector3.right, 0.08f);
+            Assert.AreEqual(1, tweenRunner.ActiveCount);
+
+            ballView.Release();
+            Assert.AreEqual(0, tweenRunner.ActiveCount, "Releasing ball must cancel active shake tween");
+            Assert.AreEqual(Vector3.zero, ballView.ShakeOffset, "Released ball must reset shake offset");
+        }
     }
 }

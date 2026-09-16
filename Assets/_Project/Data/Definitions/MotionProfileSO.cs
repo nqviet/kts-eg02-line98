@@ -25,6 +25,9 @@ namespace Line98.Data
         [SerializeField] private float m_LandingMs = 160f;
         [SerializeField] private float m_StaggerPerCellMs = 22f;
         [SerializeField] private float m_SpawnStaggerMs = 70f;
+        [SerializeField] private float m_PathPreviewMs = 140f;
+        [SerializeField] private float m_ScorePopupMs = 480f;
+        [SerializeField] private float m_SlowMoMs = 400f;
 
         [Header("Landing Damped Sine")]
         [SerializeField] private float m_LandingDecay = 9f;
@@ -34,6 +37,7 @@ namespace Line98.Data
         [SerializeField] private float m_ClockScale = 1f;
         [SerializeField] private float m_AnimationScale = 1f;
         [SerializeField] private float m_ShakeScale = 1f;
+        [SerializeField] private float m_SlowMoScale = 0.35f;
         [SerializeField] private int m_MaxFlightWaypoints = 10;
 
         public AnimationCurve OutCubic => m_OutCubic;
@@ -53,12 +57,16 @@ namespace Line98.Data
         public float LandingMs => m_LandingMs;
         public float StaggerPerCellMs => m_StaggerPerCellMs;
         public float SpawnStaggerMs => m_SpawnStaggerMs;
+        public float PathPreviewMs => m_PathPreviewMs;
+        public float ScorePopupMs => m_ScorePopupMs;
+        public float SlowMoMs => m_SlowMoMs;
         public float LandingDecay => m_LandingDecay;
         public float LandingFrequency => m_LandingFrequency;
 
         public float ClockScale => m_ClockScale;
         public float AnimationScale => m_AnimationScale;
         public float ShakeScale => m_ShakeScale;
+        public float SlowMoScale => m_SlowMoScale;
         public int MaxFlightWaypoints => m_MaxFlightWaypoints;
 
         private static MotionProfileSO s_Default;
@@ -89,6 +97,10 @@ namespace Line98.Data
             int maxFlightWaypoints = 10,
             float landingDecay = 9f,
             float landingFrequency = 28f,
+            float pathPreviewMs = 140f,
+            float scorePopupMs = 480f,
+            float slowMoScale = 0.35f,
+            float slowMoMs = 400f,
             AnimationCurve outCubic = null,
             AnimationCurve outBack = null,
             AnimationCurve inExpo = null,
@@ -106,6 +118,10 @@ namespace Line98.Data
             m_LandingMs = landingMs;
             m_StaggerPerCellMs = staggerPerCellMs;
             m_SpawnStaggerMs = spawnStaggerMs;
+            m_PathPreviewMs = pathPreviewMs;
+            m_ScorePopupMs = scorePopupMs;
+            m_SlowMoScale = slowMoScale;
+            m_SlowMoMs = slowMoMs;
             m_ClockScale = clockScale;
             m_AnimationScale = animationScale;
             m_ShakeScale = shakeScale;

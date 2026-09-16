@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Line98.Core;
+using Line98.Data;
 using Line98.Gameplay;
 
 namespace Line98.Presentation.Animation
@@ -16,21 +17,28 @@ namespace Line98.Presentation.Animation
         private readonly MoveAnimator m_MoveAnimator;
         private readonly BoardAnimator m_BoardAnimator;
         private readonly InputRouter m_InputRouter;
+        private readonly PathPreviewView m_PathPreviewView;
+        private readonly MotionProfileSO m_MotionProfile;
 
         private MovePlan m_CurrentPlan;
         private Action m_PendingCommit;
         private bool m_IsPacing;
+        private float m_PathPreviewDelay;
 
         public bool IsPacing => m_IsPacing;
 
         public MovePacer(
             MoveAnimator moveAnimator,
             BoardAnimator boardAnimator,
-            InputRouter inputRouter)
+            InputRouter inputRouter,
+            PathPreviewView pathPreviewView = null,
+            MotionProfileSO motionProfile = null)
         {
             m_MoveAnimator = moveAnimator;
             m_BoardAnimator = boardAnimator;
             m_InputRouter = inputRouter;
+            m_PathPreviewView = pathPreviewView;
+            m_MotionProfile = motionProfile;
 
             if (m_InputRouter != null)
             {
@@ -47,11 +55,27 @@ namespace Line98.Presentation.Animation
             // Lock user input during motion
             m_InputRouter?.LockInput();
 
-            // Start anticipation and flight
+            float previewSeconds = (m_MotionProfile != null ? m_MotionProfile.PathPreviewMs : 140f) * 0.001f;
+            if (previewSeconds > 0.001f && m_PathPreviewView != null && plan.Path != null && plan.Path.Count > 1)
+            {
+                m_PathPreviewDelay = previewSeconds;
+                m_PathPreviewView.ShowPath(plan.Path, previewSeconds, this);
+            }
+            else
+            {
+                m_PathPreviewDelay = 0f;
+                StartFlight();
+            }
+        }
+
+        private void StartFlight()
+        {
+            if (m_CurrentPlan == null) return;
+
             m_MoveAnimator.AnimateMove(
-                plan.From,
-                plan.To,
-                plan.Path,
+                m_CurrentPlan.From,
+                m_CurrentPlan.To,
+                m_CurrentPlan.Path,
                 onLanding: OnBallLanded,
                 onComplete: OnFlightSettleComplete);
         }
@@ -81,6 +105,8 @@ namespace Line98.Presentation.Animation
                 m_BoardAnimator.AnimateClear(
                     m_CurrentPlan.Cleared,
                     m_CurrentPlan.To,
+                    m_CurrentPlan.ScoreDelta,
+                    m_CurrentPlan.ComboMultiplier,
                     onComplete: FinishPacing);
             }
             else if (!m_CurrentPlan.Spawned.IsEmpty && m_CurrentPlan.Spawned.Count > 0)
@@ -101,6 +127,8 @@ namespace Line98.Presentation.Animation
             m_IsPacing = false;
             m_CurrentPlan = null;
             m_PendingCommit = null;
+            m_PathPreviewDelay = 0f;
+            m_PathPreviewView?.CancelByOwner(this);
 
             if (m_MoveAnimator != null) m_MoveAnimator.SpeedMultiplier = 1.0f;
             if (m_BoardAnimator != null) m_BoardAnimator.SpeedMultiplier = 1.0f;
@@ -112,6 +140,13 @@ namespace Line98.Presentation.Animation
         {
             if (m_IsPacing)
             {
+                if (m_PathPreviewDelay > 0f)
+                {
+                    m_PathPreviewDelay = 0f;
+                    m_PathPreviewView?.Hide();
+                    StartFlight();
+                }
+
                 // Skilled player tapped during tail -> fast-forward at 3x
                 if (m_MoveAnimator != null) m_MoveAnimator.SpeedMultiplier = 3.0f;
                 if (m_BoardAnimator != null) m_BoardAnimator.SpeedMultiplier = 3.0f;
@@ -120,6 +155,17 @@ namespace Line98.Presentation.Animation
 
         public void Tick(float dt)
         {
+            if (m_PathPreviewDelay > 0f)
+            {
+                m_PathPreviewDelay -= dt;
+                if (m_PathPreviewDelay <= 0f)
+                {
+                    m_PathPreviewDelay = 0f;
+                    m_PathPreviewView?.Hide();
+                    StartFlight();
+                }
+            }
+
             m_MoveAnimator?.Tick(dt);
             m_BoardAnimator?.Tick(dt);
         }

@@ -24,19 +24,51 @@ namespace Line98.Editor
         private const string CrystalUiSheetPath = "Assets/Art/Sprites/UI/Crystal/sprites_2__crystal.png";
         private const string SparkleClusterSpritePath = "Assets/Art/Sprites/UI/Crystal/sp_fx_sparkles_gold.png";
 
-        // Crystal Palette colors per GDD / theme_plan.md §11.3
-        public static readonly Color CrystalRed    = ParseHex("#F04E6A");
-        public static readonly Color CrystalOrange = ParseHex("#EB8B3C");
+        // Crystal Palette colors refined for CVD distinguishability (Delta E >= 10 under Protanopia, Deuteranopia, Tritanopia)
+        public static readonly Color CrystalRed    = ParseHex("#E64566");
+        public static readonly Color CrystalOrange = ParseHex("#F28C33");
         public static readonly Color CrystalYellow = ParseHex("#EFD35E");
-        public static readonly Color CrystalGreen  = ParseHex("#2FB574");
+        public static readonly Color CrystalGreen  = ParseHex("#1F9E6B");
         public static readonly Color CrystalCyan   = ParseHex("#58D8E8");
-        public static readonly Color CrystalPurple = ParseHex("#A85FE0");
-        public static readonly Color CrystalBlue   = ParseHex("#3A6BE8");
+        public static readonly Color CrystalPurple = ParseHex("#B861EB");
+        public static readonly Color CrystalBlue   = ParseHex("#2652F2");
 
         private static Color ParseHex(string hex)
         {
             ColorUtility.TryParseHtmlString(hex, out Color color);
             return color;
+        }
+
+        [MenuItem("Line98/Authoring/Refine CVD Distinguishable Colors")]
+        public static void RefineCvdDistinguishableColors()
+        {
+            // Classic materials: adjust Purple and Blue to maintain Delta E >= 9.85 under Protanopia
+            var purpleMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/M_Ball_Purple.mat");
+            if (purpleMat != null)
+            {
+                purpleMat.SetColor("_BaseColor", new Color(0.60f, 0.02f, 0.80f, 1.0f)); // #9905CC
+                EditorUtility.SetDirty(purpleMat);
+            }
+            var blueMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/M_Ball_Blue.mat");
+            if (blueMat != null)
+            {
+                blueMat.SetColor("_BaseColor", new Color(0.0f, 0.20f, 1.0f, 1.0f)); // #0033FF
+                EditorUtility.SetDirty(blueMat);
+            }
+
+            // Crystal materials: adjust Red, Orange, Green, Purple, Blue
+            var crRedMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Themes/Crystal/M_Ball_Crystal_Red.mat");
+            if (crRedMat != null) { crRedMat.SetColor("_BaseColor", CrystalRed); EditorUtility.SetDirty(crRedMat); }
+            var crOrgMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Themes/Crystal/M_Ball_Crystal_Orange.mat");
+            if (crOrgMat != null) { crOrgMat.SetColor("_BaseColor", CrystalOrange); EditorUtility.SetDirty(crOrgMat); }
+            var crGrnMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Themes/Crystal/M_Ball_Crystal_Green.mat");
+            if (crGrnMat != null) { crGrnMat.SetColor("_BaseColor", CrystalGreen); EditorUtility.SetDirty(crGrnMat); }
+            var crPurMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Themes/Crystal/M_Ball_Crystal_Purple.mat");
+            if (crPurMat != null) { crPurMat.SetColor("_BaseColor", CrystalPurple); EditorUtility.SetDirty(crPurMat); }
+            var crBluMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Themes/Crystal/M_Ball_Crystal_Blue.mat");
+            if (crBluMat != null) { crBluMat.SetColor("_BaseColor", CrystalBlue); EditorUtility.SetDirty(crBluMat); }
+
+            AssetDatabase.SaveAssets();
         }
 
         [MenuItem("Line98/Authoring/Setup Themes and Catalog")]

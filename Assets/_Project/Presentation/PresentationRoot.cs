@@ -17,7 +17,7 @@ namespace Line98.Presentation
     /// Dispatches a single unified Tick(dt) across all presentation sub-systems.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PresentationRoot : MonoBehaviour, ITickable
+    public sealed class PresentationRoot : MonoBehaviour, ITickable, ISlowMoController
     {
         [Header("Profiles & Definitions")]
         [SerializeField] private MotionProfileSO m_MotionProfile;
@@ -55,18 +55,31 @@ namespace Line98.Presentation
         private MoveAnimator m_MoveAnimator;
         private BoardAnimator m_BoardAnimator;
         private MovePacer m_MovePacer;
+        private PathPreviewView m_PathPreviewView;
         private VfxService m_VfxService;
         private AudioService m_AudioService;
+        private bool m_OwnsAudioService = true;
         private ThemeSwapController m_ThemeSwapController;
         private IThemeSelector m_ThemeSelector;
         private bool m_IsInitialized;
+        private float m_ClockScale = 1.0f;
+        private float m_SlowMoRemaining;
 
         public bool IsInitialized => m_IsInitialized;
+        public float ClockScale => m_ClockScale;
         public CameraRig CameraRig => m_CameraRig;
         public BoardView BoardView => m_BoardView;
         public BallViewManager BallManager => m_BallManager;
         public TweenRunner TweenRunner => m_TweenRunner;
         public MovePacer MovePacer => m_MovePacer;
+
+        public void RequestSlowMo(float scale, float durationSeconds)
+        {
+            if (durationSeconds <= 0f) return;
+            m_ClockScale = Mathf.Clamp(scale, 0.05f, 1.0f);
+            m_SlowMoRemaining = durationSeconds;
+        }
+        public PathPreviewView PathPreviewView => m_PathPreviewView;
         public VfxService VfxService => m_VfxService;
         public AudioService AudioService => m_AudioService;
         public AudioCatalogSO AudioCatalog => m_AudioCatalog;
@@ -102,7 +115,8 @@ namespace Line98.Presentation
             AudioCatalogSO audioCatalog = null,
             AudioMixer mainMixer = null,
             IThemeSelector themeSelector = null,
-            UiThemeSO uiTheme = null)
+            UiThemeSO uiTheme = null,
+            AudioService audioService = null)
         {
             m_Session = session;
             if (motionProfile != null) m_MotionProfile = motionProfile;
@@ -138,7 +152,16 @@ namespace Line98.Presentation
             m_VfxService.PrewarmShaders();
 
             // 1c. Initialize AudioService
-            m_AudioService = new AudioService(m_AudioCatalog, m_MainMixer, transform);
+            if (audioService != null)
+            {
+                m_AudioService = audioService;
+                m_OwnsAudioService = false;
+            }
+            else
+            {
+                m_AudioService = new AudioService(m_AudioCatalog, m_MainMixer, transform);
+                m_OwnsAudioService = true;
+            }
 
             // 2. Initialize BoardView
             if (m_BoardView == null)
@@ -201,7 +224,7 @@ namespace Line98.Presentation
 
             FeedbackRules feedbackRules = m_FeedbackProfile != null ? m_FeedbackProfile.ToRules() : FeedbackRules.Default;
             m_MoveAnimator = new MoveAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_MotionProfile ?? MotionProfileSO.Default, m_VfxService, m_AudioService);
-            m_BoardAnimator = new BoardAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_CameraRig.CamShake, feedbackRules, m_GlowMaterial, m_VfxService, m_AudioService);
+            m_BoardAnimator = new BoardAnimator(m_BoardView, m_BallManager, m_TweenRunner, m_CameraRig.CamShake, feedbackRules, m_GlowMaterial, m_VfxService, m_AudioService, m_MotionProfile ?? MotionProfileSO.Default, this);
 
             // 6. Initialize InputRouter
             if (m_InputRouter == null)
@@ -213,14 +236,16 @@ namespace Line98.Presentation
             m_InputRouter.Initialize(m_CameraRig.Camera, m_BoardView, m_Session);
             m_InputRouter.OnInvalidMoveAttempted += HandleInvalidMoveAttempted;
 
-            // 7. Initialize MovePacer and bind to GameSession
-            m_MovePacer = new MovePacer(m_MoveAnimator, m_BoardAnimator, m_InputRouter);
+            // 7. Initialize PathPreviewView and MovePacer and bind to GameSession
+            m_PathPreviewView = new PathPreviewView(m_BoardView, null, null, transform);
+            m_MovePacer = new MovePacer(m_MoveAnimator, m_BoardAnimator, m_InputRouter, m_PathPreviewView, m_MotionProfile ?? MotionProfileSO.Default);
             if (m_Session != null)
             {
                 m_Session.Pacer = m_MovePacer;
                 m_Session.OnBallSelected += HandleBallSelected;
                 m_Session.OnBallDeselected += HandleBallDeselected;
                 m_Session.OnMoveCommitted += HandleMoveCommitted;
+                m_Session.OnGameOver += HandleGameOver;
 
                 // Sync initial board state (e.g. 5 initial balls)
                 m_BallManager.SyncFromBoard(m_Session.Board, m_BoardView);
@@ -234,7 +259,7 @@ namespace Line98.Presentation
 
             if (m_HudPresenter != null && m_Session != null)
             {
-                m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme);
+                m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme, m_PathPreviewView);
             }
 
             // 9. Initialize ThemeSwapController
@@ -428,6 +453,16 @@ namespace Line98.Presentation
 
         private void HandleInvalidMoveAttempted(GridPos pos)
         {
+            var ball = m_BallManager?.GetBallAt(pos);
+            if (ball != null)
+            {
+                Vector3 shakeAxis = m_CameraRig != null ? m_CameraRig.YawRightAxis : Vector3.right;
+                ball.PlayShake(shakeAxis);
+            }
+            if (m_VfxService != null && m_BoardView != null)
+            {
+                m_VfxService.PlayVfx("InvalidShake", m_BoardView.GridToWorld(pos));
+            }
             m_AudioService?.PlaySfx("sfx_ball_invalid");
         }
 
@@ -436,17 +471,40 @@ namespace Line98.Presentation
             // Visual commit sync if not handled by pacer
         }
 
+        private void HandleGameOver(SessionSummary summary)
+        {
+            Vector3 center = m_BoardView != null ? m_BoardView.transform.position : Vector3.zero;
+            m_VfxService?.PlayVfx("GameOverFrost", center);
+            m_AudioService?.PlaySfx("sfx_game_over");
+        }
+
         public void Tick(float dt)
         {
+            if (m_SlowMoRemaining > 0f)
+            {
+                m_SlowMoRemaining -= dt;
+                if (m_SlowMoRemaining <= 0f)
+                {
+                    m_SlowMoRemaining = 0f;
+                    m_ClockScale = 1.0f;
+                }
+            }
+
             if (!m_IsInitialized) return;
 
-            m_TweenRunner.Tick(dt);
-            m_CameraRig.Tick(dt);
-            m_MovePacer.Tick(dt);
+            float presentationDt = dt * m_ClockScale;
+
+            m_TweenRunner.Tick(presentationDt);
+            m_PathPreviewView?.Tick(presentationDt);
+            m_CameraRig.Tick(presentationDt);
+            m_MovePacer.Tick(presentationDt);
             m_InputRouter.Tick(dt);
-            m_UIRouter?.Tick(dt);
-            m_VfxService?.Tick(dt);
-            m_AudioService?.Tick(dt);
+            m_UIRouter?.Tick(presentationDt);
+            m_VfxService?.Tick(presentationDt);
+            if (m_OwnsAudioService)
+            {
+                m_AudioService?.Tick(dt);
+            }
         }
 
         private void Update()
@@ -466,8 +524,12 @@ namespace Line98.Presentation
                 m_Session.OnBallSelected -= HandleBallSelected;
                 m_Session.OnBallDeselected -= HandleBallDeselected;
                 m_Session.OnMoveCommitted -= HandleMoveCommitted;
+                m_Session.OnGameOver -= HandleGameOver;
             }
-            m_AudioService?.Dispose();
+            if (m_OwnsAudioService)
+            {
+                m_AudioService?.Dispose();
+            }
             m_BallManager?.Dispose();
         }
     }

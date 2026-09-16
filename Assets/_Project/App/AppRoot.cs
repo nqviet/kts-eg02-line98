@@ -23,6 +23,8 @@ namespace Line98.App
         [SerializeField] private Line98.Data.SpawnColorPolicySO m_SpawnColorPolicy;
         [SerializeField] private Line98.Data.GameConfigSO m_GameConfig;
         [SerializeField] private Line98.Data.ThemeCatalogSO m_ThemeCatalog;
+        [SerializeField] private Line98.Data.AudioCatalogSO m_AudioCatalog;
+        [SerializeField] private UnityEngine.Audio.AudioMixer m_MainMixer;
 
         private ServiceRegistry m_Registry;
         private ConfigService m_ConfigService;
@@ -36,6 +38,7 @@ namespace Line98.App
         private IIapService m_IapService;
         private ICosmeticService m_CosmeticService;
         private CosmeticThemeSelector m_ThemeSelector;
+        private Presentation.Audio.AudioService m_AudioService;
         private Presentation.PresentationRoot m_BoundPresentationRoot;
         private Presentation.MenuShowcaseRig m_BoundShowcaseRig;
         private Presentation.MainMenuPresenter m_BoundMenuPresenter;
@@ -47,6 +50,7 @@ namespace Line98.App
 
         public ConfigService Config => m_ConfigService;
         public GameSession Session => m_Session;
+        public Presentation.Audio.AudioService AudioService => m_AudioService;
         public Presentation.IThemeSelector ThemeSelector => m_ThemeSelector;
         public Presentation.PresentationRoot PresentationRoot => m_BoundPresentationRoot;
         public Presentation.MenuShowcaseRig ShowcaseRig => m_BoundShowcaseRig;
@@ -82,7 +86,18 @@ namespace Line98.App
         {
             m_GameManager.StartClassicGame();
 
+            StartCoroutine(PlayBootMusic());
+
             LoadMainMenuFromBoot(SceneManager.GetActiveScene());
+        }
+
+        private System.Collections.IEnumerator PlayBootMusic()
+        {
+            yield return null;
+            if (m_AudioService != null && !m_AudioService.IsMusicPlaying && !m_AudioService.IsAmbiencePlaying)
+            {
+                m_AudioService.PlayMusic("bgm_classic_main");
+            }
         }
 
         private void InitializeServices()
@@ -107,6 +122,14 @@ namespace Line98.App
             {
                 m_ThemeCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.ThemeCatalogSO>("Assets/_Project/Content/Definitions/ThemeCatalog_Default.asset");
             }
+            if (m_AudioCatalog == null)
+            {
+                m_AudioCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.AudioCatalogSO>("Assets/_Project/Content/Definitions/AudioCatalog_Default.asset");
+            }
+            if (m_MainMixer == null)
+            {
+                m_MainMixer = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Audio.AudioMixer>("Assets/_Project/Content/Audio/MainMixer.mixer");
+            }
 #endif
 
             m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
@@ -128,6 +151,12 @@ namespace Line98.App
             m_IapService = new EditorStubIapService();
             m_CosmeticService = new CosmeticService(m_ThemeCatalog, new FileSaveBackend());
             m_ThemeSelector = new CosmeticThemeSelector(m_CosmeticService);
+
+            if (m_AudioCatalog != null && m_MainMixer != null)
+            {
+                m_AudioService = new Presentation.Audio.AudioService(m_AudioCatalog, m_MainMixer, transform);
+                m_Registry.Register<Presentation.Audio.AudioService>(m_AudioService);
+            }
 
             m_Registry.Register<ConfigService>(m_ConfigService);
             m_Registry.Register<SaveService>(m_SaveService);
@@ -179,16 +208,36 @@ namespace Line98.App
                 {
                     case Presentation.UiSceneNavigator.GameModeRequest.Daily:
                         m_GameManager?.StartDailyChallenge();
+                        m_AudioService?.StopAmbience();
+                        if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
+                        {
+                            m_AudioService.PlayMusic("bgm_classic_main");
+                        }
                         break;
                     case Presentation.UiSceneNavigator.GameModeRequest.Zen:
                         m_GameManager?.StartZenMode();
+                        m_AudioService?.StopMusic(1.0f);
+                        m_AudioService?.PlayAmbience("bgm_zen_ambience");
                         break;
                     case Presentation.UiSceneNavigator.GameModeRequest.Classic:
                     default:
                         m_GameManager?.StartClassicGame();
+                        m_AudioService?.StopAmbience();
+                        if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
+                        {
+                            m_AudioService.PlayMusic("bgm_classic_main");
+                        }
                         break;
                 }
                 Presentation.UiSceneNavigator.PendingModeRequest = Presentation.UiSceneNavigator.GameModeRequest.None;
+            }
+            else if (scene.name == "MainMenu")
+            {
+                m_AudioService?.StopAmbience();
+                if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
+                {
+                    m_AudioService.PlayMusic("bgm_classic_main");
+                }
             }
 
             m_IsLoadingMainMenuFromBoot = false;
@@ -225,7 +274,8 @@ namespace Line98.App
                             themeSelector: m_ThemeSelector,
                             ballTheme: m_CosmeticService?.ActiveTheme?.BallTheme,
                             boardTheme: m_CosmeticService?.ActiveTheme?.BoardTheme,
-                            uiTheme: m_CosmeticService?.ActiveTheme?.UiTheme);
+                            uiTheme: m_CosmeticService?.ActiveTheme?.UiTheme,
+                            audioService: m_AudioService);
                     }
 
                     if (m_CosmeticService?.ActiveTheme != null)
@@ -356,6 +406,7 @@ namespace Line98.App
         public void Tick(float dt)
         {
             TryBindSettingsPresenter();
+            m_AudioService?.Tick(dt);
             if (m_BoundShowcaseRig != null)
             {
                 m_BoundShowcaseRig.Tick(dt);
@@ -373,10 +424,8 @@ namespace Line98.App
                 return;
             }
 
-            // MainMenu has no PresentationRoot: bind without audio so preferences (e.g. Reduce Effects) still apply.
-            var audioService = m_BoundPresentationRoot != null && m_BoundPresentationRoot.IsInitialized
-                ? m_BoundPresentationRoot.AudioService
-                : null;
+            var audioService = m_AudioService
+                ?? (m_BoundPresentationRoot != null && m_BoundPresentationRoot.IsInitialized ? m_BoundPresentationRoot.AudioService : null);
 
             if (m_SettingsPresenter != null &&
                 m_SettingsPresenter.View == m_BoundShell.SettingsPopup &&
@@ -441,6 +490,12 @@ namespace Line98.App
         private void OnApplicationQuit()
         {
             Autosave();
+        }
+
+        private void OnDestroy()
+        {
+            m_AudioService?.Dispose();
+            m_AudioService = null;
         }
 
         private void Autosave()

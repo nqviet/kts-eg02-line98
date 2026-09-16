@@ -34,8 +34,15 @@ namespace Line98.Presentation.Animation
         private float m_StepDuration = 0.06f;
         private float m_FlightElapsed;
         private float m_TotalFlightDuration;
-        private bool m_IsFlying;
         private float m_SpeedMultiplier = 1.0f;
+        private bool m_IsFlying;
+
+        // Anticipation pull-back state
+        private bool m_IsAnticipating;
+        private float m_AnticipationElapsed;
+        private float m_AnticipationDuration = 0.04f;
+        private Vector3 m_AnticipationOrigin;
+        private Vector3 m_AnticipationPullBack;
 
         // Landing bounce state
         private bool m_IsLanding;
@@ -43,7 +50,8 @@ namespace Line98.Presentation.Animation
         private float m_LandingDuration = 0.16f;
         private Vector3 m_LandingWorldPos;
 
-        public bool IsActive => m_IsFlying || m_IsLanding;
+        public bool IsActive => m_IsAnticipating || m_IsFlying || m_IsLanding;
+        public bool IsAnticipating => m_IsAnticipating;
         public MotionProfileSO Profile => m_MotionProfile;
         public float StepDuration => m_StepDuration;
         public float TotalFlightDuration => m_TotalFlightDuration;
@@ -132,8 +140,26 @@ namespace Line98.Presentation.Animation
             m_TotalFlightDuration = stepCount * m_StepDuration;
             m_LandingDuration = m_MotionProfile.LandingMs * 0.001f * m_MotionProfile.AnimationScale;
             m_FlightElapsed = 0f;
-            m_IsFlying = true;
-            m_IsLanding = false;
+
+            m_AnticipationDuration = m_MotionProfile.AnticipationMs * 0.001f * m_MotionProfile.AnimationScale;
+            m_AnticipationElapsed = 0f;
+
+            if (m_AnticipationDuration > 0.001f && m_WaypointCount >= 2)
+            {
+                m_IsAnticipating = true;
+                m_IsFlying = false;
+                m_IsLanding = false;
+                m_AnticipationOrigin = m_WaypointBuffer[0];
+                Vector3 seg0Direction = (m_WaypointBuffer[1] - m_WaypointBuffer[0]).normalized;
+                float cellPitch = m_BoardView != null ? m_BoardView.CellPitch : 1.0f;
+                m_AnticipationPullBack = -seg0Direction * (0.08f * cellPitch);
+            }
+            else
+            {
+                m_IsAnticipating = false;
+                m_IsFlying = true;
+                m_IsLanding = false;
+            }
 
             // Relocate spatial reference in manager immediately
             m_BallManager.RelocateBall(from, to);
@@ -167,13 +193,63 @@ namespace Line98.Presentation.Animation
         {
             float scaledDt = dt * m_SpeedMultiplier;
 
-            if (m_IsFlying)
+            if (m_IsAnticipating)
             {
-                TickFlight(scaledDt);
+                float timeToFinish = Mathf.Max(0f, m_AnticipationDuration - m_AnticipationElapsed);
+                if (scaledDt >= timeToFinish)
+                {
+                    TickAnticipation(timeToFinish);
+                    scaledDt -= timeToFinish;
+                }
+                else
+                {
+                    TickAnticipation(scaledDt);
+                    scaledDt = 0f;
+                }
             }
-            else if (m_IsLanding)
+
+            if (scaledDt > 0f && m_IsFlying)
+            {
+                float timeToFinish = Mathf.Max(0f, m_TotalFlightDuration - m_FlightElapsed);
+                if (scaledDt >= timeToFinish)
+                {
+                    TickFlight(timeToFinish);
+                    scaledDt -= timeToFinish;
+                }
+                else
+                {
+                    TickFlight(scaledDt);
+                    scaledDt = 0f;
+                }
+            }
+
+            if (scaledDt > 0f && m_IsLanding)
             {
                 TickLanding(scaledDt);
+            }
+        }
+
+        private void TickAnticipation(float dt)
+        {
+            m_AnticipationElapsed += dt;
+            float t = m_AnticipationDuration > 0f ? Mathf.Clamp01(m_AnticipationElapsed / m_AnticipationDuration) : 1f;
+
+            // Offset −0.08 × CellPitch along reverse of segment 0 and return smoothly
+            float curve = Mathf.Sin(t * Mathf.PI);
+            if (m_ActiveFlightBall != null)
+            {
+                m_ActiveFlightBall.transform.position = m_AnticipationOrigin + m_AnticipationPullBack * curve;
+            }
+
+            if (t >= 1.0f)
+            {
+                m_IsAnticipating = false;
+                m_IsFlying = true;
+                m_FlightElapsed = 0f;
+                if (m_ActiveFlightBall != null)
+                {
+                    m_ActiveFlightBall.transform.position = m_AnticipationOrigin;
+                }
             }
         }
 
@@ -270,6 +346,7 @@ namespace Line98.Presentation.Animation
 
         public void Cancel()
         {
+            m_IsAnticipating = false;
             m_IsFlying = false;
             m_IsLanding = false;
             if (m_ActiveFlightBall != null)

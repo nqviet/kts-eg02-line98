@@ -62,6 +62,7 @@ namespace Line98.Gameplay
             if (LineDetector.TryBuildClearGroup(m_ScratchBoard, request.To, out ClearGroup clearedGroup))
             {
                 plan.Cleared = clearedGroup;
+                plan.ComboMultiplier = ScoreEvaluator.GetComboMultiplier(clearedGroup.RunCount, in scoreRules);
                 plan.ScoreDelta = ScoreEvaluator.Evaluate(clearedGroup, scoreRules);
 
                 // Clear balls on scratch board

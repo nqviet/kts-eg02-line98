@@ -15,8 +15,10 @@ namespace Line98.Presentation.Animation
     /// - Board diagonal wipe on game entry
     /// Zero garbage allocation during active gameplay.
     /// </summary>
-    public sealed class BoardAnimator : ITickable
+    public sealed class BoardAnimator : ITickable, ITweenTarget
     {
+        public const int ActionBanner = 10;
+
         private readonly BoardView m_BoardView;
         private readonly BallViewManager m_BallManager;
         private readonly TweenRunner m_TweenRunner;
@@ -24,7 +26,13 @@ namespace Line98.Presentation.Animation
         private readonly FeedbackRules m_FeedbackRules;
         private readonly Material m_RibbonMaterial;
         private readonly VfxService m_VfxService;
+        private readonly ISlowMoController m_SlowMoController;
         private Material m_CreatedRibbonMaterial;
+
+        private Transform m_BannerTransform;
+        private TMPro.TMP_Text m_BannerText;
+        private Vector3 m_BannerBaseLocalPos;
+        private Color m_BannerBaseColor;
 
         private bool m_IsAnimatingSpawns;
         private bool m_IsAnimatingClears;
@@ -37,7 +45,7 @@ namespace Line98.Presentation.Animation
         private float m_ClearTimer;
         private float m_ClearTotalDuration;
         private ClearGroup m_PendingClears;
-        private FeedbackTierRule m_ActiveTierRule;
+        private FeedbackCue m_ActiveTierRule;
         private GridPos m_PlacedPos;
         private Action m_OnClearsComplete;
         private readonly List<BallView> m_ClearingBalls = new List<BallView>(16);
@@ -48,11 +56,15 @@ namespace Line98.Presentation.Animation
         private readonly List<GridPos> m_RunDiag = new List<GridPos>(16);
 
         private readonly Line98.Presentation.Audio.AudioService m_AudioService;
+        private readonly MotionProfileSO m_MotionProfile;
         private float m_SpeedMultiplier = 1.0f;
         private ClearEffectSO m_ClearEffect;
+        private int m_ScoreDelta;
+        private float m_ComboMultiplier = 1.0f;
+        private bool m_HasPlayedScorePopup;
 
         public bool IsActive => m_IsAnimatingSpawns || m_IsAnimatingClears;
-        public FeedbackTierRule ActiveTierRule => m_ActiveTierRule;
+        public FeedbackCue ActiveTierRule => m_ActiveTierRule;
         public float ClearTotalDuration => m_ClearTotalDuration;
         public LineRenderer[] RibbonRenderers => m_RibbonRenderers;
         public ClearEffectSO ClearEffect => m_ClearEffect;
@@ -76,7 +88,9 @@ namespace Line98.Presentation.Animation
             FeedbackRules feedbackRules,
             Material ribbonMaterial = null,
             VfxService vfxService = null,
-            Line98.Presentation.Audio.AudioService audioService = null)
+            Line98.Presentation.Audio.AudioService audioService = null,
+            MotionProfileSO motionProfile = null,
+            ISlowMoController slowMoController = null)
         {
             m_BoardView = boardView;
             m_BallManager = ballManager;
@@ -86,6 +100,8 @@ namespace Line98.Presentation.Animation
             m_RibbonMaterial = ribbonMaterial;
             m_VfxService = vfxService;
             m_AudioService = audioService;
+            m_MotionProfile = motionProfile;
+            m_SlowMoController = slowMoController;
         }
 
         public void AnimateSpawns(SpawnBatch batch, Action onComplete)
@@ -106,8 +122,15 @@ namespace Line98.Presentation.Animation
 
         public void AnimateClear(ClearGroup clears, GridPos placedPos, Action onComplete)
         {
+            AnimateClear(clears, placedPos, 0, 1.0f, onComplete);
+        }
+
+        public void AnimateClear(ClearGroup clears, GridPos placedPos, int scoreDelta, float comboMultiplier, Action onComplete)
+        {
             m_PendingClears = clears;
             m_PlacedPos = placedPos.IsValid ? placedPos : (clears.Positions != null && clears.Positions.Length > 0 ? clears.Positions[0] : placedPos);
+            m_ScoreDelta = scoreDelta;
+            m_ComboMultiplier = comboMultiplier;
             m_OnClearsComplete = onComplete;
             m_SpeedMultiplier = 1.0f;
             m_ClearingBalls.Clear();
@@ -118,25 +141,8 @@ namespace Line98.Presentation.Animation
                 return;
             }
 
-            // Determine feedback tier from rule set
-            int count = clears.Count;
-            FeedbackTierRule chosenRule = m_FeedbackRules.Tiers != null && m_FeedbackRules.Tiers.Length > 0
-                ? m_FeedbackRules.Tiers[0]
-                : FeedbackRules.Default.Tiers[0];
-
-            if (m_FeedbackRules.Tiers != null)
-            {
-                for (int i = 0; i < m_FeedbackRules.Tiers.Length; i++)
-                {
-                    var rule = m_FeedbackRules.Tiers[i];
-                    if (count >= rule.MinLength && count <= rule.MaxLength)
-                    {
-                        chosenRule = rule;
-                        break;
-                    }
-                }
-            }
-            m_ActiveTierRule = chosenRule;
+            // Determine feedback tier from FeedbackDirector (Gameplay authority)
+            m_ActiveTierRule = FeedbackDirector.Evaluate(clears, m_FeedbackRules);
 
             // Collect active ball views for clearing
             for (int i = 0; i < clears.Positions.Length; i++)
@@ -158,9 +164,21 @@ namespace Line98.Presentation.Animation
             SetupRibbons(clears);
 
             m_HasPlayedBurstVfx = false;
+            m_HasPlayedScorePopup = false;
             m_ClearTimer = 0f;
-            // Total clear timeline duration based on tier: Connect(90) + Pulse(190) + Glow(200) + Burst(140) + Hold
-            m_ClearTotalDuration = (0.62f + m_ActiveTierRule.HoldMs * 0.001f) * m_ActiveTierRule.AnimationScale;
+
+            // Total clear timeline duration based on Animation §5 per-tier totals:
+            // Tier 1: ~0.94s, Tier 2: ~1.15s, Tier 3: ~1.45s, Tier 4: ~2.10s
+            float baseDuration;
+            switch (m_ActiveTierRule.Tier)
+            {
+                case 1: baseDuration = 0.94f; break;
+                case 2: baseDuration = 1.15f; break;
+                case 3: baseDuration = 1.45f; break;
+                case 4: baseDuration = 2.10f; break;
+                default: baseDuration = 0.94f; break;
+            }
+            m_ClearTotalDuration = baseDuration * m_ActiveTierRule.AnimationScale;
             m_IsAnimatingClears = true;
         }
 
@@ -329,6 +347,22 @@ namespace Line98.Presentation.Animation
             }
         }
 
+        private Vector3 CalculateCentroid()
+        {
+            Vector3 centroid = Vector3.zero;
+            if (m_PendingClears.Positions != null && m_PendingClears.Positions.Length > 0)
+            {
+                for (int p = 0; p < m_PendingClears.Positions.Length; p++)
+                {
+                    centroid += m_BoardView != null
+                        ? m_BoardView.GridToWorld(m_PendingClears.Positions[p])
+                        : new Vector3(m_PendingClears.Positions[p].X, 0f, m_PendingClears.Positions[p].Y);
+                }
+                centroid /= m_PendingClears.Positions.Length;
+            }
+            return centroid;
+        }
+
         public void Tick(float dt)
         {
             float scaledDt = dt * m_SpeedMultiplier;
@@ -423,21 +457,27 @@ namespace Line98.Presentation.Animation
                 if (!m_HasPlayedBurstVfx)
                 {
                     m_HasPlayedBurstVfx = true;
-                    Vector3 centroid = Vector3.zero;
-                    if (m_PendingClears.Positions != null && m_PendingClears.Positions.Length > 0)
-                    {
-                        for (int p = 0; p < m_PendingClears.Positions.Length; p++)
-                        {
-                            centroid += m_BoardView != null
-                                ? m_BoardView.GridToWorld(m_PendingClears.Positions[p])
-                                : new Vector3(m_PendingClears.Positions[p].X, 0f, m_PendingClears.Positions[p].Y);
-                        }
-                        centroid /= m_PendingClears.Positions.Length;
-                    }
+                    Vector3 centroid = CalculateCentroid();
 
+                    GameObject burstInstance = null;
                     if (!string.IsNullOrEmpty(m_ActiveTierRule.VfxKey))
                     {
-                        m_VfxService?.PlayBurst(m_ActiveTierRule.VfxKey, centroid, this);
+                        burstInstance = m_VfxService?.PlayBurst(m_ActiveTierRule.VfxKey, centroid, this);
+                    }
+
+                    if (m_ActiveTierRule.ShowBanner && burstInstance != null)
+                    {
+                        AnimateBanner(burstInstance);
+                    }
+
+                    if (m_ActiveTierRule.AllowSlowMo && m_SlowMoController != null && m_MotionProfile != null)
+                    {
+                        float slowMoMs = m_MotionProfile.SlowMoMs;
+                        float slowMoScale = m_MotionProfile.SlowMoScale > 0f ? m_MotionProfile.SlowMoScale : 0.35f;
+                        if (slowMoMs > 0f)
+                        {
+                            m_SlowMoController.RequestSlowMo(slowMoScale, slowMoMs * 0.001f);
+                        }
                     }
 
                     string audioKey = !string.IsNullOrEmpty(m_ActiveTierRule.AudioKey)
@@ -471,6 +511,24 @@ namespace Line98.Presentation.Animation
                 }
             }
 
+            // Score popup and combo burst at ScorePopupMs
+            float scorePopupTime = (m_MotionProfile != null ? m_MotionProfile.ScorePopupMs : 480f) * 0.001f * m_ActiveTierRule.AnimationScale;
+            if (m_ClearTimer >= scorePopupTime && !m_HasPlayedScorePopup)
+            {
+                m_HasPlayedScorePopup = true;
+                Vector3 centroid = CalculateCentroid();
+                if (m_ScoreDelta > 0 && m_VfxService != null)
+                {
+                    m_VfxService.PlayScorePopup(m_ScoreDelta, centroid, m_ComboMultiplier, this);
+                }
+
+                if (m_PendingClears.RunCount >= 2)
+                {
+                    m_VfxService?.PlayBurst("ComboBurst", centroid, this);
+                    m_AudioService?.PlaySfx("sfx_combo_up");
+                }
+            }
+
             if (t >= 1.0f)
             {
                 m_IsAnimatingClears = false;
@@ -490,12 +548,100 @@ namespace Line98.Presentation.Animation
             }
         }
 
+        private void AnimateBanner(GameObject burstInstance)
+        {
+            if (burstInstance == null || m_TweenRunner == null) return;
+
+            var tmp = burstInstance.GetComponentInChildren<TMPro.TMP_Text>();
+            if (tmp == null) return;
+
+            m_BannerTransform = tmp.transform;
+            m_BannerText = tmp;
+            m_BannerBaseLocalPos = m_BannerTransform.localPosition;
+            m_BannerBaseColor = tmp.color;
+
+            m_BannerTransform.localScale = Vector3.zero;
+            Color initialColor = m_BannerBaseColor;
+            initialColor.a = 0f;
+            tmp.color = initialColor;
+
+            var tween = new Tween
+            {
+                From = 0f,
+                To = 1f,
+                Duration = 1.2f,
+                Source = TimeSource.Scaled,
+                Owner = this,
+                ActionId = ActionBanner,
+                Target = this
+            };
+            m_TweenRunner.Play(in tween);
+        }
+
+        public void OnTweenUpdate(int actionId, float value)
+        {
+            if (actionId == ActionBanner && m_BannerTransform != null && m_BannerText != null)
+            {
+                // Punch OutBack in first 35% of duration
+                float punchT = Mathf.Clamp01(value / 0.35f);
+                float scale = Easing.OutBack(punchT);
+                m_BannerTransform.localScale = Vector3.one * scale;
+
+                // Float up by +0.7 units
+                m_BannerTransform.localPosition = m_BannerBaseLocalPos + Vector3.up * (value * 0.7f);
+
+                // Alpha ramp: fade in quickly (first 20%), hold, fade out at end (last 30%)
+                float alpha;
+                if (value < 0.2f)
+                {
+                    alpha = value / 0.2f;
+                }
+                else if (value > 0.7f)
+                {
+                    alpha = Mathf.Clamp01((1.0f - value) / 0.3f);
+                }
+                else
+                {
+                    alpha = 1.0f;
+                }
+
+                Color color = m_BannerBaseColor;
+                color.a = alpha;
+                m_BannerText.color = color;
+            }
+        }
+
+        public void OnTweenComplete(int actionId)
+        {
+            if (actionId == ActionBanner)
+            {
+                if (m_BannerTransform != null)
+                {
+                    m_BannerTransform.localScale = Vector3.zero;
+                    m_BannerTransform.localPosition = m_BannerBaseLocalPos;
+                }
+                if (m_BannerText != null)
+                {
+                    m_BannerText.color = m_BannerBaseColor;
+                }
+                m_BannerTransform = null;
+                m_BannerText = null;
+            }
+        }
+
         public void Cancel()
         {
             m_IsAnimatingSpawns = false;
             m_IsAnimatingClears = false;
             m_ClearingBalls.Clear();
             ReleaseRibbons();
+            if (m_BannerTransform != null)
+            {
+                m_BannerTransform.localScale = Vector3.zero;
+                m_BannerTransform.localPosition = m_BannerBaseLocalPos;
+                m_BannerTransform = null;
+                m_BannerText = null;
+            }
             m_VfxService?.CancelByOwner(this);
             m_TweenRunner?.CancelByOwner(this);
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
@@ -50,6 +51,8 @@ namespace Line98.Presentation
 
         private GameSession m_Session;
         private TweenRunner m_TweenRunner;
+        private PathPreviewView m_PathPreviewView;
+        private readonly List<GridPos> m_HintPathCache = new List<GridPos>(BoardModel.CellCount);
         private int m_BestScore;
         private bool m_HasPoppedCrownThisSession;
         private bool m_AreButtonsBound;
@@ -65,7 +68,7 @@ namespace Line98.Presentation
         public Button ThemesButton => m_ThemesButton;
         public UiActionButton ThemesActionButton => m_ThemesActionButton;
 
-        public void Initialize(GameSession session, UiShell uiRouter, TweenRunner tweenRunner, UiThemeSO theme = null)
+        public void Initialize(GameSession session, UiShell uiRouter, TweenRunner tweenRunner, UiThemeSO theme = null, PathPreviewView pathPreviewView = null)
         {
             UnbindSession();
             UnbindButtons();
@@ -74,6 +77,7 @@ namespace Line98.Presentation
             m_UIRouter = uiRouter;
             m_TweenRunner = tweenRunner;
             if (theme != null) m_Theme = theme;
+            if (pathPreviewView != null) m_PathPreviewView = pathPreviewView;
 
             BindButtons();
             BindSession();
@@ -344,17 +348,21 @@ namespace Line98.Presentation
         private void OnUndoClicked()
         {
             if (m_Session == null || m_Session.Phase != GamePhase.Playing) return;
-            m_Session.TryUndo();
+            if (m_Session.TryUndo())
+            {
+                m_UIRouter?.Services?.AudioService?.PlaySfx("sfx_reward_earned");
+            }
         }
 
         private void OnHintClicked()
         {
             if (m_Session == null || m_Session.Phase != GamePhase.Playing) return;
 
-            if (m_Session.RequestHint(out GridPos from, out GridPos to))
+            if (m_Session.RequestHint(out GridPos from, out GridPos to, m_HintPathCache))
             {
                 // Select hint ball
                 m_Session.TrySelect(from);
+                m_PathPreviewView?.ShowHint(from, to, m_HintPathCache, 1.6f, this);
             }
         }
 

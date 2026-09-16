@@ -38,8 +38,8 @@ namespace Line98.Tests.EditMode
         {
             for (int i = 0; i < 200; i++)
             {
-                bool played = m_VfxService.PlayBurst("ClearTier1", Vector3.zero);
-                Assert.IsTrue(played, $"Failed to play burst at iteration {i}");
+                GameObject played = m_VfxService.PlayBurst("ClearTier1", Vector3.zero);
+                Assert.IsNotNull(played, $"Failed to play burst at iteration {i}");
                 Assert.LessOrEqual(m_VfxService.ActiveBurstCount, VfxService.MaxBurstConcurrency,
                     $"Burst concurrency exceeded cap of {VfxService.MaxBurstConcurrency} at iteration {i}");
             }

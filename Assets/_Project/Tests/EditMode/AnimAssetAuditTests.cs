@@ -34,7 +34,7 @@ namespace Line98.Tests.EditMode
         }
 
         [Test]
-        public void AllTenCatalogKeys_ExistWithValidPrefabs()
+        public void AllElevenCatalogKeys_ExistWithValidPrefabs()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<VfxCatalogSO>(CatalogPath);
             Assert.IsNotNull(catalog, $"Missing VFX catalog at {CatalogPath}");
@@ -49,6 +49,7 @@ namespace Line98.Tests.EditMode
                 "ClearTier2",
                 "ClearTier3",
                 "ClearTier4",
+                "ComboBurst",
                 "ScorePopup",
                 "GameOverFrost"
             };
@@ -104,6 +105,21 @@ namespace Line98.Tests.EditMode
                         $"Prefab '{entry.Prefab.name}' contains banned VisualEffect (VFX Graph) component.");
                 }
             }
+        }
+
+        [Test]
+        public void GameScenePresentationRoot_HasAssignedProfiles()
+        {
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Content/Scenes/Game.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            var root = Object.FindAnyObjectByType<Line98.Presentation.PresentationRoot>();
+            Assert.IsNotNull(root, "PresentationRoot must exist in Game.unity");
+
+            var so = new SerializedObject(root);
+            var motionProp = so.FindProperty("m_MotionProfile");
+            var feedbackProp = so.FindProperty("m_FeedbackProfile");
+
+            Assert.IsNotNull(motionProp?.objectReferenceValue, "m_MotionProfile must not be null on PresentationRoot in Game.unity");
+            Assert.IsNotNull(feedbackProp?.objectReferenceValue, "m_FeedbackProfile must not be null on PresentationRoot in Game.unity");
         }
     }
 }

@@ -50,6 +50,7 @@ namespace Line98.Core
         public ClearGroup Cleared { get; set; }
         public SpawnBatch Spawned { get; set; }
         public int ScoreDelta { get; set; }
+        public float ComboMultiplier { get; set; } = 1f;
         public XorShift128 PostMoveRng { get; set; }
         public BallColor[] NextPreviewQueue { get; } = new BallColor[PreviewQueue.DefaultCapacity];
         public bool IsGameOver { get; set; }
@@ -65,6 +66,7 @@ namespace Line98.Core
             Cleared = ClearGroup.Empty;
             Spawned = SpawnBatch.Empty;
             ScoreDelta = 0;
+            ComboMultiplier = 1f;
             PostMoveRng = default;
             IsGameOver = false;
         }
@@ -76,13 +78,15 @@ namespace Line98.Core
         public readonly ClearGroup Cleared;
         public readonly SpawnBatch Spawned;
         public readonly int ScoreDelta;
+        public readonly float ComboMultiplier;
 
-        public MoveResult(MoveOutcome outcome, ClearGroup cleared, SpawnBatch spawned, int scoreDelta)
+        public MoveResult(MoveOutcome outcome, ClearGroup cleared, SpawnBatch spawned, int scoreDelta, float comboMultiplier = 1f)
         {
             Outcome = outcome;
             Cleared = cleared;
             Spawned = spawned;
             ScoreDelta = scoreDelta;
+            ComboMultiplier = comboMultiplier;
         }
     }
 }

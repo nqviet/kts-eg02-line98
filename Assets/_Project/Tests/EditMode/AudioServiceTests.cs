@@ -162,5 +162,24 @@ namespace Line98.Tests.EditMode
                 Assert.IsNotNull(entry.Clip, $"Required clip for '{key}' is null");
             }
         }
+
+        [Test]
+        public void MusicAndAmbience_PlayStopPropertiesReflectState()
+        {
+            Assert.IsFalse(m_AudioService.IsMusicPlaying);
+            Assert.IsFalse(m_AudioService.IsAmbiencePlaying);
+
+            m_AudioService.PlayMusic("bgm_classic_main", loop: true, fadeDuration: 0f);
+            Assert.IsTrue(m_AudioService.IsMusicPlaying);
+
+            m_AudioService.StopMusic(fadeDuration: 0f);
+            Assert.IsFalse(m_AudioService.IsMusicPlaying);
+
+            m_AudioService.PlayAmbience("bgm_zen_ambience");
+            Assert.IsTrue(m_AudioService.IsAmbiencePlaying);
+
+            m_AudioService.StopAmbience();
+            Assert.IsFalse(m_AudioService.IsAmbiencePlaying);
+        }
     }
 }

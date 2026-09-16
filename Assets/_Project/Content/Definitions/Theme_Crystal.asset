@@ -19,5 +19,5 @@ MonoBehaviour:
   m_InheritsFrom: {fileID: 11400000, guid: fc60eb4eb54cd4c47b2d2347f1dbd89d, type: 2}
   m_BallTheme: {fileID: 11400000, guid: aa4735cf058775748b4a43e99f9fbfe4, type: 2}
   m_BoardTheme: {fileID: 11400000, guid: 3f9a35197852a41478a4ed39c0247989, type: 2}
-  m_UiTheme: {fileID: 0}
+  m_UiTheme: {fileID: 11400000, guid: a7507a5c9cb94244aa5de8f0f3a78b31, type: 2}
   m_ClearEffect: {fileID: 11400000, guid: 737e39aadb360844cb1b4f8dd110d81f, type: 2}

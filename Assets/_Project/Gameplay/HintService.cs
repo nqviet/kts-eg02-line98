@@ -8,6 +8,8 @@ namespace Line98.Gameplay
     {
         private static readonly BoardModel s_TestBoard = new BoardModel();
         private static readonly List<GridPos> s_PathCache = new List<GridPos>(BoardModel.CellCount);
+        private static readonly List<GridPos> s_BestPathCache = new List<GridPos>(BoardModel.CellCount);
+        private static readonly List<GridPos> s_FallbackPathCache = new List<GridPos>(BoardModel.CellCount);
 
         public static bool TryFindBestMove(
             BoardModel board,
@@ -16,8 +18,20 @@ namespace Line98.Gameplay
             out GridPos bestFrom,
             out GridPos bestTo)
         {
+            return TryFindBestMove(board, previewQueue, scoreRules, out bestFrom, out bestTo, null);
+        }
+
+        public static bool TryFindBestMove(
+            BoardModel board,
+            PreviewQueue previewQueue,
+            ScoreRules scoreRules,
+            out GridPos bestFrom,
+            out GridPos bestTo,
+            List<GridPos> pathOut)
+        {
             bestFrom = default;
             bestTo = default;
+            pathOut?.Clear();
 
             if (board == null || board.IsEmptyBoard || board.IsFull)
             {
@@ -28,6 +42,8 @@ namespace Line98.Gameplay
             bool foundAnyMove = false;
             GridPos fallbackFrom = default;
             GridPos fallbackTo = default;
+            s_BestPathCache.Clear();
+            s_FallbackPathCache.Clear();
 
             for (int y = 0; y < BoardModel.Size; y++)
             {
@@ -62,6 +78,8 @@ namespace Line98.Gameplay
                                 fallbackFrom = from;
                                 fallbackTo = to;
                                 foundAnyMove = true;
+                                s_FallbackPathCache.Clear();
+                                s_FallbackPathCache.AddRange(s_PathCache);
                             }
 
                             // Simulate on test board
@@ -77,6 +95,8 @@ namespace Line98.Gameplay
                                     bestScore = score;
                                     bestFrom = from;
                                     bestTo = to;
+                                    s_BestPathCache.Clear();
+                                    s_BestPathCache.AddRange(s_PathCache);
                                 }
                             }
                         }
@@ -86,6 +106,10 @@ namespace Line98.Gameplay
 
             if (bestScore > 0)
             {
+                if (pathOut != null)
+                {
+                    pathOut.AddRange(s_BestPathCache);
+                }
                 return true;
             }
 
@@ -93,6 +117,10 @@ namespace Line98.Gameplay
             {
                 bestFrom = fallbackFrom;
                 bestTo = fallbackTo;
+                if (pathOut != null)
+                {
+                    pathOut.AddRange(s_FallbackPathCache);
+                }
                 return true;
             }
 

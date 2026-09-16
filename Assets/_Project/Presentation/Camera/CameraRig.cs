@@ -54,6 +54,7 @@ namespace Line98.Presentation
 
         public Camera Camera => m_Camera;
         public CamShake CamShake => m_CamShake;
+        public Vector3 YawRightAxis => m_Camera != null ? m_Camera.transform.right : Vector3.right;
         public float SolvedDistance => m_SolvedDistance;
         public float SolvedOrthographicSize => m_SolvedOrthographicSize;
         public bool IsOrthographic => m_Camera != null && m_Camera.orthographic;

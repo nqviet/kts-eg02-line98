@@ -59,6 +59,17 @@ namespace Line98.Core
     /// </summary>
     public static class ScoreEvaluator
     {
+        public static float GetComboMultiplier(int runCount, in ScoreRules rules)
+        {
+            int safeRunCount = Math.Max(1, runCount);
+            float comboMultiplier = 1.0f + rules.ComboStep * (safeRunCount - 1);
+            if (comboMultiplier > rules.MaxComboMultiplier)
+            {
+                comboMultiplier = rules.MaxComboMultiplier;
+            }
+            return comboMultiplier;
+        }
+
         public static int Evaluate(in ClearGroup group, in ScoreRules rules)
         {
             if (group.IsEmpty)
@@ -67,14 +78,7 @@ namespace Line98.Core
             }
 
             int baseScore = rules.GetBaseScoreForLength(group.LongestRun);
-
-            // If multiple runs exist (e.g. intersecting cross)
-            int runCount = Math.Max(1, group.RunCount);
-            float comboMultiplier = 1.0f + rules.ComboStep * (runCount - 1);
-            if (comboMultiplier > rules.MaxComboMultiplier)
-            {
-                comboMultiplier = rules.MaxComboMultiplier;
-            }
+            float comboMultiplier = GetComboMultiplier(group.RunCount, in rules);
 
             return (int)Math.Round(baseScore * comboMultiplier);
         }

@@ -62,6 +62,7 @@ namespace Line98.Presentation
         public bool IsAnyPopupOpen => m_PopupStack.Count > 0;
         public int PopupStackCount => m_PopupStack.Count;
         public PopupView TopPopup => m_PopupStack.Count > 0 ? m_PopupStack.Peek() : null;
+        public UiServices Services => m_Services;
         public bool IsInitialized => m_IsInitialized;
 
         protected virtual void Awake()

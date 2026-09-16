@@ -49,15 +49,26 @@ namespace Line98.Presentation
         private BallColor m_Color;
         private float m_Pitch = 1.0f;
         private float m_RestHeight = 0.30f;
+        private float m_CurrentLiftY;
+        private Vector3 m_ShakeAxis = Vector3.right;
+        private Vector3 m_ShakeOffset = Vector3.zero;
+        private float m_ShakeAmplitude = 0.08f;
         private bool m_IsSelected;
         private TweenRunner m_TweenRunner;
         private int m_GlowTweenHandle;
+        private int m_ShakeTweenHandle;
 
         public GridPos Position => m_GridPos;
         public BallColor Color => m_Color;
         public bool IsSelected => m_IsSelected;
         public float RestHeight => m_RestHeight;
         public Transform Visual => m_Visual;
+        public Vector3 ShakeAxis
+        {
+            get => m_ShakeAxis;
+            set => m_ShakeAxis = value;
+        }
+        public Vector3 ShakeOffset => m_ShakeOffset;
         public float GlowShellScale
         {
             get => m_GlowShellScale;
@@ -308,6 +319,57 @@ namespace Line98.Presentation
             }
         }
 
+        private static readonly Func<float, float> s_ShakeEase = t =>
+        {
+            // 3-cycle 27 Hz damped over 240 ms
+            float tSec = t * 0.24f;
+            float decay = Mathf.Exp(-12f * tSec);
+            return decay * Mathf.Sin(27f * tSec * Mathf.PI * 2f);
+        };
+
+        public void PlayShake(Vector3 axis, float amplitude = 0.08f)
+        {
+            if (m_TweenRunner == null) return;
+            m_ShakeAxis = axis.sqrMagnitude > 0.001f ? axis.normalized : Vector3.right;
+            m_ShakeAmplitude = amplitude;
+
+            CancelShakeTween();
+
+            var tween = new Tween
+            {
+                From = 0f,
+                To = m_ShakeAmplitude,
+                Duration = 0.24f,
+                Ease = s_ShakeEase,
+                Source = TimeSource.Scaled,
+                Owner = this,
+                ActionId = ActionShake,
+                Target = this
+            };
+
+            int handle = m_TweenRunner.Play(in tween);
+            if (handle > 0)
+            {
+                m_ShakeTweenHandle = handle;
+            }
+        }
+
+        public void CancelShakeTween()
+        {
+            if (m_ShakeTweenHandle > 0 && m_TweenRunner != null)
+            {
+                m_TweenRunner.Cancel(m_ShakeTweenHandle);
+            }
+            m_ShakeTweenHandle = 0;
+            SetShakeOffset(Vector3.zero);
+        }
+
+        public void SetShakeOffset(Vector3 offset)
+        {
+            m_ShakeOffset = offset;
+            UpdateVisualTransforms();
+        }
+
         public void SetSquash(float sx, float sy, float sz)
         {
             transform.localScale = new Vector3(sx, sy, sz);
@@ -315,14 +377,8 @@ namespace Line98.Presentation
 
         public void SetHeightLift(float liftY)
         {
-            if (m_Visual != null)
-            {
-                m_Visual.localPosition = new Vector3(0f, m_RestHeight + liftY, 0f);
-            }
-            if (m_GlowShell != null)
-            {
-                m_GlowShell.localPosition = new Vector3(0f, m_RestHeight + liftY, 0f);
-            }
+            m_CurrentLiftY = liftY;
+            UpdateVisualTransforms();
 
             // Scale blob shadow inversely with lift
             if (m_BlobShadow != null)
@@ -332,12 +388,31 @@ namespace Line98.Presentation
             }
         }
 
+        private void UpdateVisualTransforms()
+        {
+            Vector3 localPos = new Vector3(m_ShakeOffset.x, m_RestHeight + m_CurrentLiftY + m_ShakeOffset.y, m_ShakeOffset.z);
+            if (m_Visual != null)
+            {
+                m_Visual.localPosition = localPos;
+            }
+            if (m_GlowShell != null)
+            {
+                m_GlowShell.localPosition = localPos;
+            }
+            if (m_BlobShadow != null)
+            {
+                m_BlobShadow.localPosition = new Vector3(m_ShakeOffset.x, 0.005f, m_ShakeOffset.z);
+            }
+        }
+
         public void ResetVisuals()
         {
             CancelGlowTween();
+            CancelShakeTween();
             transform.localScale = Vector3.one;
             transform.localRotation = Quaternion.identity;
             SetHeightLift(0f);
+            SetShakeOffset(Vector3.zero);
             SetGlow(false);
             if (m_BlobShadow != null)
             {
@@ -348,6 +423,8 @@ namespace Line98.Presentation
 
         public void Release()
         {
+            CancelGlowTween();
+            CancelShakeTween();
             if (m_TweenRunner != null)
             {
                 m_TweenRunner.CancelByOwner(this);
@@ -384,6 +461,10 @@ namespace Line98.Presentation
                 case ActionGlowBreathe:
                     float breathe = Mathf.Sin(value * Mathf.PI * 2f);
                     SetGlowShellScale(m_GlowShellScale * (1f + m_GlowBreatheAmplitude * breathe));
+                    break;
+
+                case ActionShake:
+                    SetShakeOffset(m_ShakeAxis * value);
                     break;
             }
         }
@@ -426,6 +507,11 @@ namespace Line98.Presentation
                     {
                         m_GlowShell.gameObject.SetActive(false);
                     }
+                    break;
+
+                case ActionShake:
+                    m_ShakeTweenHandle = 0;
+                    SetShakeOffset(Vector3.zero);
                     break;
             }
         }

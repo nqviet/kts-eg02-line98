@@ -31,7 +31,7 @@ Material:
     m_Floats:
     - _PatternStrength: 0
     m_Colors:
-    - _BaseColor: {r: 0.70980394, g: 0.07058824, b: 0.92941177, a: 1}
+    - _BaseColor: {r: 0.6, g: 0.02, b: 0.8, a: 1}
     - _PatternColor: {r: 1, g: 1, b: 1, a: 1}
     - _PatternRect: {r: 0.74219, g: 0.40625, b: 0.18555, a: 0.18555}
   m_BuildTextureStacks: []

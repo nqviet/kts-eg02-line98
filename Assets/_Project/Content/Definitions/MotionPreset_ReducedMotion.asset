@@ -307,7 +307,11 @@ MonoBehaviour:
   m_LandingMs: 160
   m_StaggerPerCellMs: 22
   m_SpawnStaggerMs: 70
+  m_PathPreviewMs: 0
+  m_ScorePopupMs: 480
+  m_SlowMoMs: 0
   m_ClockScale: 1
   m_AnimationScale: 0.3
   m_ShakeScale: 0
+  m_SlowMoScale: 0.35
   m_MaxFlightWaypoints: 10

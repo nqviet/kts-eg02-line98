@@ -69,6 +69,9 @@ namespace Line98.Presentation.Audio
             }
         }
 
+        public bool IsMusicPlaying => (m_ActiveMusicSource != null && m_ActiveMusicSource.isPlaying) || (m_FadingMusicSource != null && m_FadingMusicSource.isPlaying);
+        public bool IsAmbiencePlaying => m_AmbienceSource != null && m_AmbienceSource.isPlaying;
+
         public AudioService(AudioCatalogSO catalog, AudioMixer mixer, Transform parent)
         {
             m_Catalog = catalog;

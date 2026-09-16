@@ -45,6 +45,10 @@ MonoBehaviour:
     m_Prefab: {fileID: 2176291134981092092, guid: 3e415c1ffcd7b0740b38da062ddf87e8, type: 3}
     m_PoolSize: 4
     m_Lifetime: 1.8
+  - m_Key: ComboBurst
+    m_Prefab: {fileID: 314322633636382762, guid: be23e3d92721eec4c91c3b9ba1c01f3b, type: 3}
+    m_PoolSize: 4
+    m_Lifetime: 0.9
   - m_Key: ScorePopup
     m_Prefab: {fileID: 8363451264072076277, guid: f893d722fba0ab54a99009b5f9d59b00, type: 3}
     m_PoolSize: 8

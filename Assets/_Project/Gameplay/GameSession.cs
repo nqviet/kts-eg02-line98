@@ -305,7 +305,8 @@ namespace Line98.Gameplay
                 plan.Outcome,
                 plan.Cleared,
                 plan.Spawned,
-                plan.ScoreDelta);
+                plan.ScoreDelta,
+                plan.ComboMultiplier);
 
             OnMoveCommitted?.Invoke(result);
 
@@ -354,6 +355,11 @@ namespace Line98.Gameplay
 
         public bool RequestHint(out GridPos from, out GridPos to)
         {
+            return RequestHint(out from, out to, null);
+        }
+
+        public bool RequestHint(out GridPos from, out GridPos to, List<GridPos> pathOut)
+        {
             from = default;
             to = default;
 
@@ -367,7 +373,8 @@ namespace Line98.Gameplay
                 m_PreviewQueue,
                 m_Mode.GetScoreRules(),
                 out from,
-                out to);
+                out to,
+                pathOut);
         }
 
         public void Revive(int ballsToRemove = 3)
