@@ -1,5 +1,6 @@
 using System;
 using Line98.Core;
+using Line98.Data;
 using Line98.Gameplay;
 using Line98.Services;
 using UnityEngine;
@@ -305,9 +306,19 @@ namespace Line98.App
 
         private void HandleThemeChanged(ThemeChange change)
         {
-            if (m_BoundPresentationRoot != null && m_CosmeticService?.ActiveTheme != null)
+            if (m_BoundPresentationRoot != null)
             {
-                m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
+                bool isCategoryOverride = (change.Category == ThemeCategory.Ball && !string.IsNullOrEmpty(m_CosmeticService?.BallOverrideId))
+                    || (change.Category == ThemeCategory.Board && !string.IsNullOrEmpty(m_CosmeticService?.BoardOverrideId));
+
+                if (isCategoryOverride)
+                {
+                    m_BoundPresentationRoot.ApplyCategoryTheme(change.Category, change.ThemeId);
+                }
+                else if (m_CosmeticService?.ActiveTheme != null)
+                {
+                    m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
+                }
             }
             if (m_BoundShowcaseRig != null && m_CosmeticService?.ActiveTheme != null)
             {

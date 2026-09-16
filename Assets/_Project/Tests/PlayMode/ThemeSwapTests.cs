@@ -151,19 +151,215 @@ namespace Line98.Tests.PlayMode
             CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
             Assert.IsNotNull(popup);
             Assert.IsNotNull(popup.Catalog);
-            Assert.AreEqual(popup.Catalog.Count, popup.TilesContainer.childCount, "The picker must create one tile per theme.");
+            Assert.IsNotNull(popup.TabStrip, "Cosmetics popup must include the tab strip.");
+            Assert.AreEqual(popup.Catalog.Count, popup.ItemsContainer.childCount, "The picker must create one item per theme in the BALLS tab.");
 
-            Transform crystalTile = popup.TilesContainer.Find("Tile_crystal");
-            Assert.IsNotNull(crystalTile, "The Crystal theme tile must be available.");
-            var button = crystalTile.GetComponent<UnityEngine.UI.Button>();
-            Assert.IsNotNull(button);
+            Transform crystalItem = popup.ItemsContainer.Find("Item_crystal");
+            Assert.IsNotNull(crystalItem, "The Crystal theme item must be available.");
+            var listItem = crystalItem.GetComponent<UiThemeListItem>();
+            Assert.IsNotNull(listItem, "Item must have UiThemeListItem component.");
 
-            button.onClick.Invoke();
+            Assert.IsNotNull(listItem.StatusButton, "Item must have StatusButton.");
+            listItem.StatusButton.onClick.Invoke();
             yield return null;
 
             Assert.IsNotNull(presRoot.ActiveTheme);
             Assert.AreEqual("crystal", presRoot.ActiveTheme.ThemeId);
-            Assert.AreEqual(popup.Catalog.Count, popup.TilesContainer.childCount, "Changing a theme must update existing tiles instead of growing the grid.");
+            Assert.AreEqual(popup.Catalog.Count, popup.ItemsContainer.childCount, "Changing a theme must update existing items instead of growing the container.");
+        }
+
+        [UnityTest]
+        public IEnumerator CosmeticsPopup_F2_InitialState_ShowsAppliedThemeAndNoActivePreview()
+        {
+            if (!SceneManager.GetActiveScene().name.Equals("Game"))
+            {
+                yield return SceneManager.LoadSceneAsync("Game");
+            }
+
+            yield return null;
+
+            var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
+            Assert.IsNotNull(presRoot);
+
+            presRoot.ThemeSelector.RequestTheme("crystal");
+            yield return null;
+
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+
+            CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
+            Assert.IsNotNull(popup);
+            Assert.IsTrue(popup.IsOpen);
+
+            // F2 Assertions:
+            // - ActivePartId is null (no preview item active)
+            Assert.IsNull(popup.ActivePartId, "ActivePartId must be null upon open (no card previewed yet)");
+            // - SelectedBadge is inactive when viewing default state
+            Assert.IsFalse(popup.PreviewPanel.SelectedBadge != null && popup.PreviewPanel.SelectedBadge.activeSelf, "SelectedBadge must be inactive on open");
+
+            // - Exactly one card shows DEFAULT (the applied one: crystal)
+            int defaultCount = 0;
+            int selectCount = 0;
+            for (int i = 0; i < popup.ItemsContainer.childCount; i++)
+            {
+                var item = popup.ItemsContainer.GetChild(i).GetComponent<UiThemeListItem>();
+                if (item != null)
+                {
+                    if (item.IsApplied)
+                    {
+                        defaultCount++;
+                        Assert.AreEqual("crystal", item.PartId, "Crystal must be the applied theme");
+                    }
+                    else
+                    {
+                        selectCount++;
+                    }
+                }
+            }
+            Assert.AreEqual(1, defaultCount, "Exactly one card must show DEFAULT status");
+            Assert.AreEqual(1, selectCount, "Inactive cards must show SELECT status");
+
+            popup.Close();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CosmeticsPopup_F3_TappingCard_PreviewsWithoutApplying()
+        {
+            if (!SceneManager.GetActiveScene().name.Equals("Game"))
+            {
+                yield return SceneManager.LoadSceneAsync("Game");
+            }
+
+            yield return null;
+
+            var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
+            Assert.IsNotNull(presRoot);
+
+            presRoot.ThemeSelector.RequestTheme("crystal");
+            yield return null;
+
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+
+            CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
+            Assert.IsNotNull(popup);
+
+            Transform classicItem = popup.ItemsContainer.Find("Item_classic");
+            Assert.IsNotNull(classicItem);
+            var listItem = classicItem.GetComponent<UiThemeListItem>();
+            Assert.IsNotNull(listItem);
+
+            // Tap card (CardButton) to preview Classic
+            listItem.CardButton.onClick.Invoke();
+            yield return null;
+
+            // F3 Assertions:
+            // - Preview panel updates to "classic"
+            Assert.AreEqual("classic", popup.ActivePartId, "Tapping card must preview classic");
+            Assert.AreEqual("CLASSIC", popup.PreviewPanel.ThemeName.ToUpperInvariant());
+
+            // - Real game board theme has NOT changed
+            Assert.AreEqual("crystal", presRoot.ActiveTheme.ThemeId, "Tapping card must not apply the theme to the live game");
+            Assert.AreEqual("crystal", popup.ActiveThemeId, "Active applied theme ID must remain crystal");
+
+            popup.Close();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CosmeticsPopup_F4_TappingSelect_AppliesThemeAndIsIdempotent()
+        {
+            if (!SceneManager.GetActiveScene().name.Equals("Game"))
+            {
+                yield return SceneManager.LoadSceneAsync("Game");
+            }
+
+            yield return null;
+
+            var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
+            Assert.IsNotNull(presRoot);
+
+            presRoot.ThemeSelector.RequestTheme("crystal");
+            yield return null;
+
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+
+            CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
+            Assert.IsNotNull(popup);
+
+            Transform classicItem = popup.ItemsContainer.Find("Item_classic");
+            var classicListItem = classicItem.GetComponent<UiThemeListItem>();
+            Transform crystalItem = popup.ItemsContainer.Find("Item_crystal");
+            var crystalListItem = crystalItem.GetComponent<UiThemeListItem>();
+
+            // Before tap: Crystal is applied, Classic is SELECT
+            Assert.IsTrue(crystalListItem.IsApplied);
+            Assert.IsFalse(classicListItem.IsApplied);
+
+            // Tap SELECT on Classic
+            classicListItem.StatusButton.onClick.Invoke();
+            yield return null;
+
+            // F4 Assertions:
+            // - Classic is now applied, Crystal is SELECT
+            Assert.IsTrue(classicListItem.IsApplied, "Classic must now be DEFAULT/applied");
+            Assert.IsFalse(crystalListItem.IsApplied, "Crystal must now be SELECT");
+            Assert.AreEqual("classic", presRoot.ThemeSelector.ActiveBallThemeId, "Live theme must be classic");
+
+            // Idempotent re-tap: tap status button again on Classic
+            classicListItem.StatusButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsTrue(classicListItem.IsApplied, "Classic must remain applied after re-tap");
+            Assert.IsFalse(crystalListItem.IsApplied);
+            Assert.AreEqual("classic", presRoot.ThemeSelector.ActiveBallThemeId);
+
+            popup.Close();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CosmeticsPopup_F6_CloseAndReopen_ResetsActivePreview()
+        {
+            if (!SceneManager.GetActiveScene().name.Equals("Game"))
+            {
+                yield return SceneManager.LoadSceneAsync("Game");
+            }
+
+            yield return null;
+
+            var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
+            Assert.IsNotNull(presRoot);
+
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+
+            CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
+            Assert.IsNotNull(popup);
+
+            // Preview classic
+            Transform classicItem = popup.ItemsContainer.Find("Item_classic");
+            var listItem = classicItem.GetComponent<UiThemeListItem>();
+            listItem.CardButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsNotNull(popup.ActivePartId);
+
+            // Close popup
+            popup.Close();
+            yield return null;
+
+            // Re-open
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+
+            // F6: ActivePartId is reset to null
+            Assert.IsNull(popup.ActivePartId, "Reopening popup must reset ActivePartId to null");
+
+            popup.Close();
+            yield return null;
         }
 
         [UnityTest]
@@ -192,10 +388,12 @@ namespace Line98.Tests.PlayMode
 
             CosmeticsPopup popup = shell.CosmeticsPopup;
             Assert.IsTrue(popup.IsOpen, "Themes must open from Settings.");
-            Transform crystalTile = popup.TilesContainer.Find("Tile_crystal");
-            Assert.IsNotNull(crystalTile, "The Crystal theme tile must be present in MainMenu.");
+            Transform crystalItem = popup.ItemsContainer.Find("Item_crystal");
+            Assert.IsNotNull(crystalItem, "The Crystal theme item must be present in MainMenu.");
 
-            crystalTile.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            var listItem = crystalItem.GetComponent<UiThemeListItem>();
+            Assert.IsNotNull(listItem);
+            listItem.StatusButton.onClick.Invoke();
             yield return null;
 
             Assert.AreEqual("crystal", popup.ActiveThemeId, "Selecting Crystal must update the active MainMenu theme.");

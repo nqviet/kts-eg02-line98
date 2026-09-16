@@ -29,6 +29,7 @@ namespace Line98.Presentation
         private bool m_IsInitialized;
 
         public float CellPitch => m_CellPitch;
+        public BoardThemeSO Theme => m_Theme;
         public float BoardExtent => BoardDimension * m_CellPitch;
         public float RowPitchScale => m_Theme != null ? m_Theme.RowPitchScale : 1f;
         public float BoardDepth => BoardExtent * RowPitchScale;

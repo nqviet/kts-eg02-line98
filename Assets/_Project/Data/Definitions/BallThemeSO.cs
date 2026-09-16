@@ -18,6 +18,7 @@ namespace Line98.Data
         [SerializeField] private Sprite m_Thumbnail;
         [SerializeField] private bool m_UnlockedByDefault = true;
         [SerializeField] private Mesh m_BallMesh;
+        [SerializeField] private UiPreviewSpriteSetSO m_PreviewSpriteSet;
         [SerializeField] private Color[] m_PreviewTints = Array.Empty<Color>();
 
         public Material[] BallMaterials => m_BallMaterials;
@@ -35,6 +36,7 @@ namespace Line98.Data
         public Sprite Thumbnail => m_Thumbnail;
         public bool UnlockedByDefault => m_UnlockedByDefault;
         public Mesh BallMesh => m_BallMesh;
+        public UiPreviewSpriteSetSO PreviewSpriteSet => m_PreviewSpriteSet;
         public Color[] PreviewTints => m_PreviewTints;
     }
 }

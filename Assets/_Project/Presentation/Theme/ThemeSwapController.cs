@@ -30,41 +30,63 @@ namespace Line98.Presentation
             m_BoardAnimator = boardAnimator;
         }
 
+        public void ApplyBallTheme(BallThemeSO ballTheme)
+        {
+            if (ballTheme == null) return;
+            if (m_BallManager != null)
+            {
+                m_BallManager.ApplyTheme(ballTheme);
+            }
+            if (m_HudPresenter != null)
+            {
+                m_HudPresenter.ApplyTheme(null, ballTheme);
+            }
+        }
+
+        public void ApplyBoardTheme(BoardThemeSO boardTheme)
+        {
+            if (boardTheme == null || m_BoardView == null) return;
+            m_BoardView.ApplyTheme(boardTheme);
+        }
+
+        public void ApplyClearEffect(ClearEffectSO clearEffect)
+        {
+            if (clearEffect == null || m_BoardAnimator == null) return;
+            m_BoardAnimator.ApplyClearEffect(clearEffect);
+        }
+
+        public void ApplyUiTheme(UiThemeSO uiTheme, string themeId)
+        {
+            m_UiShell?.ApplyTheme(uiTheme, themeId);
+            if (uiTheme != null)
+            {
+                m_HudPresenter?.ApplyTheme(uiTheme, null);
+            }
+        }
+
         public void ApplyTheme(ThemeDefinitionSO theme)
         {
             if (theme == null) return;
 
             // 1. Board
-            if (theme.BoardTheme != null && m_BoardView != null)
+            if (theme.BoardTheme != null)
             {
-                m_BoardView.ApplyTheme(theme.BoardTheme);
+                ApplyBoardTheme(theme.BoardTheme);
             }
 
             // 2. Balls
-            if (theme.BallTheme != null && m_BallManager != null)
+            if (theme.BallTheme != null)
             {
-                m_BallManager.ApplyTheme(theme.BallTheme);
+                ApplyBallTheme(theme.BallTheme);
             }
 
             // 3. UI
-            if (theme.UiTheme != null)
-            {
-                m_UiShell?.ApplyTheme(theme.UiTheme, theme.ThemeId);
-                m_HudPresenter?.ApplyTheme(theme.UiTheme, theme.BallTheme);
-            }
-            else
-            {
-                m_UiShell?.ApplyTheme(null, theme.ThemeId);
-                if (theme.BallTheme != null)
-                {
-                    m_HudPresenter?.ApplyTheme(null, theme.BallTheme);
-                }
-            }
+            ApplyUiTheme(theme.UiTheme, theme.ThemeId);
 
             // 4. Clear effect
-            if (theme.ClearEffect != null && m_BoardAnimator != null)
+            if (theme.ClearEffect != null)
             {
-                m_BoardAnimator.ApplyClearEffect(theme.ClearEffect);
+                ApplyClearEffect(theme.ClearEffect);
             }
         }
     }

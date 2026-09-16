@@ -39,6 +39,7 @@ namespace Line98.Presentation
         private Vector2 m_SecondarySize;
         private Vector2 m_ClosePosition;
         private Vector2 m_CloseSize;
+        private Vector3 m_ModalRestScale = Vector3.one;
 
         public bool IsOpen => m_IsOpen;
         public CanvasGroup CanvasGroup => m_CanvasGroup;
@@ -47,12 +48,15 @@ namespace Line98.Presentation
         public Button SecondaryButton => m_SecondaryButton;
         public Button CloseButton => m_CloseButton;
         public virtual bool UsesFullLayoutHeight => false;
+        public virtual bool UsesDimScrim => true;
         public event Action<PopupView> OnCloseRequested;
+        public void Close() => HandleCloseRequested();
 
         protected virtual void Awake()
         {
             if (m_CanvasGroup == null) m_CanvasGroup = GetComponent<CanvasGroup>();
             if (m_ModalContainer == null) m_ModalContainer = transform as RectTransform;
+            if (m_ModalContainer != null) m_ModalRestScale = m_ModalContainer.localScale;
             CacheResponsiveBaseline();
 
             if (m_CloseButton != null)
@@ -84,7 +88,7 @@ namespace Line98.Presentation
         /// Constrains the modal to the responsive HUD column and keeps its content readable
         /// when a short window or a landscape editor view leaves little vertical space.
         /// </summary>
-        public void ApplyResponsiveLayout(float layoutWidth, float middleHeight)
+        public virtual void ApplyResponsiveLayout(float layoutWidth, float middleHeight)
         {
             CacheResponsiveBaseline();
             if (!m_HasResponsiveBaseline || m_ModalContainer == null)
@@ -215,6 +219,21 @@ namespace Line98.Presentation
             rect.sizeDelta = size * scale;
         }
 
+        /// <summary>
+        /// Changes the scale the modal returns to after its show animation. Complex popup
+        /// compositions can use this to fit an authored reference layout without the shared
+        /// show/hide tween resetting their responsive scale to one.
+        /// </summary>
+        protected void SetModalRestScale(Vector3 scale)
+        {
+            m_ModalRestScale = scale;
+
+            if (m_ModalContainer != null)
+            {
+                m_ModalContainer.localScale = m_ModalRestScale;
+            }
+        }
+
         public virtual void Show(Action onComplete = null)
         {
             gameObject.SetActive(true);
@@ -253,7 +272,10 @@ namespace Line98.Presentation
                         Duration = 0.32f,
                         Ease = Easing.OutBack,
                         Owner = this,
-                        OnUpdate = val => m_ModalContainer.localScale = new Vector3(val, val, 1.0f)
+                        OnUpdate = val => m_ModalContainer.localScale = new Vector3(
+                            m_ModalRestScale.x * val,
+                            m_ModalRestScale.y * val,
+                            m_ModalRestScale.z)
                     };
                     m_TweenRunner.Play(in scaleTween);
                 }
@@ -261,7 +283,7 @@ namespace Line98.Presentation
             else
             {
                 if (m_CanvasGroup != null) m_CanvasGroup.alpha = 1.0f;
-                if (m_ModalContainer != null) m_ModalContainer.localScale = Vector3.one;
+                if (m_ModalContainer != null) m_ModalContainer.localScale = m_ModalRestScale;
                 onComplete?.Invoke();
             }
         }
@@ -305,7 +327,10 @@ namespace Line98.Presentation
                         Duration = 0.18f,
                         Ease = Easing.InExpo,
                         Owner = this,
-                        OnUpdate = val => m_ModalContainer.localScale = new Vector3(val, val, 1.0f)
+                        OnUpdate = val => m_ModalContainer.localScale = new Vector3(
+                            m_ModalRestScale.x * val,
+                            m_ModalRestScale.y * val,
+                            m_ModalRestScale.z)
                     };
                     m_TweenRunner.Play(in scaleTween);
                 }
@@ -318,7 +343,7 @@ namespace Line98.Presentation
             }
         }
 
-        private void HandleCloseRequested()
+        protected virtual void HandleCloseRequested()
         {
             OnCloseRequested?.Invoke(this);
         }

@@ -24,12 +24,19 @@ namespace Line98.Presentation
         public readonly ThemeCatalogSO Catalog;
         public readonly string ActiveThemeId;
         public readonly IThemeSelector Selector;
+        public readonly ThemeCategory InitialTab;
 
-        public CosmeticsPopupPayload(ThemeCatalogSO catalog, string activeThemeId, IThemeSelector selector)
+        public CosmeticsPopupPayload(ThemeCatalogSO catalog, string activeThemeId, IThemeSelector selector, ThemeCategory initialTab = ThemeCategory.Ball)
         {
             Catalog = catalog;
             ActiveThemeId = activeThemeId;
             Selector = selector;
+            InitialTab = initialTab;
+        }
+
+        public CosmeticsPopupPayload(ThemeCatalogSO catalog, IThemeSelector selector, ThemeCategory initialTab = ThemeCategory.Ball)
+            : this(catalog, selector?.ActiveBallThemeId, selector, initialTab)
+        {
         }
     }
 
@@ -212,7 +219,7 @@ namespace Line98.Presentation
             }
             else if (payload is CosmeticsPopupPayload cosmeticsPayload && popup is CosmeticsPopup cosmeticsPopup)
             {
-                cosmeticsPopup.Populate(cosmeticsPayload.Catalog, cosmeticsPayload.ActiveThemeId, cosmeticsPayload.Selector);
+                cosmeticsPopup.Populate(cosmeticsPayload.Catalog, cosmeticsPayload.ActiveThemeId, cosmeticsPayload.Selector, cosmeticsPayload.InitialTab);
             }
         }
 

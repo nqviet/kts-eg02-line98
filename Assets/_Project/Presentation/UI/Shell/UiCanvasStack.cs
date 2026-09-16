@@ -57,11 +57,18 @@ namespace Line98.Presentation
             if (m_PopupCanvas != null) m_PopupCanvas.sortingOrder = 20;
         }
 
-        public void SetModalVisible(bool visible)
+        public void SetModalVisible(bool visible, bool dimScrim = true)
         {
             if (m_ScrimGroup == null)
             {
                 return;
+            }
+
+            if (m_ScrimImage != null && visible)
+            {
+                m_ScrimImage.color = dimScrim
+                    ? new Color(0.039f, 0.078f, 0.157f, 0.61f)
+                    : new Color(0.96f, 0.97f, 0.98f, 0.75f);
             }
 
             m_ScrimGroup.blocksRaycasts = visible;

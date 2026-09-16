@@ -33,6 +33,7 @@ namespace Line98.Presentation
         [SerializeField] private Button m_NewGameButton;
         [SerializeField] private Button m_SettingsButton;
         [SerializeField] private Button m_StatsButton;
+        [SerializeField] private Button m_ThemesButton;
 
         [Header("Semantic Action Controls")]
         [SerializeField] private UiActionButton m_UndoActionButton;
@@ -40,6 +41,7 @@ namespace Line98.Presentation
         [SerializeField] private UiActionButton m_NewGameActionButton;
         [SerializeField] private UiActionButton m_SettingsActionButton;
         [SerializeField] private UiActionButton m_StatsActionButton;
+        [SerializeField] private UiActionButton m_ThemesActionButton;
         [SerializeField] private UiActionButton m_GameOverNewGameActionButton;
 
         [Header("Sub-Systems & Theme")]
@@ -60,6 +62,8 @@ namespace Line98.Presentation
         public Button NewGameButton => m_NewGameButton;
         public Button SettingsButton => m_SettingsButton;
         public Button StatsButton => m_StatsButton;
+        public Button ThemesButton => m_ThemesButton;
+        public UiActionButton ThemesActionButton => m_ThemesActionButton;
 
         public void Initialize(GameSession session, UiShell uiRouter, TweenRunner tweenRunner, UiThemeSO theme = null)
         {
@@ -102,6 +106,7 @@ namespace Line98.Presentation
             Subscribe(m_NewGameActionButton, m_NewGameButton, OnNewGameClicked);
             Subscribe(m_SettingsActionButton, m_SettingsButton, OnSettingsClicked);
             Subscribe(m_StatsActionButton, m_StatsButton, OnStatsClicked);
+            Subscribe(m_ThemesActionButton, m_ThemesButton, OnThemesClicked);
             Subscribe(m_GameOverNewGameActionButton, m_UIRouter != null && m_UIRouter.GameOverPopup != null ? m_UIRouter.GameOverPopup.NewGameButton : null, OnGameOverNewGameClicked);
             m_AreButtonsBound = true;
         }
@@ -118,6 +123,7 @@ namespace Line98.Presentation
             Unsubscribe(m_NewGameActionButton, m_NewGameButton, OnNewGameClicked);
             Unsubscribe(m_SettingsActionButton, m_SettingsButton, OnSettingsClicked);
             Unsubscribe(m_StatsActionButton, m_StatsButton, OnStatsClicked);
+            Unsubscribe(m_ThemesActionButton, m_ThemesButton, OnThemesClicked);
             Unsubscribe(m_GameOverNewGameActionButton, m_UIRouter != null && m_UIRouter.GameOverPopup != null ? m_UIRouter.GameOverPopup.NewGameButton : null, OnGameOverNewGameClicked);
             m_AreButtonsBound = false;
         }
@@ -381,6 +387,14 @@ namespace Line98.Presentation
             if (m_UIRouter != null)
             {
                 m_UIRouter.OpenSettings();
+            }
+        }
+
+        public void OnThemesClicked()
+        {
+            if (m_UIRouter != null)
+            {
+                m_UIRouter.OpenCosmetics();
             }
         }
 

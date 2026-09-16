@@ -73,6 +73,12 @@ namespace Line98.Data
         [SerializeField] private Color m_StreakDotOn = new Color(0.145f, 0.722f, 0.365f, 1f);        // #25B85D
         [SerializeField] private Color m_StreakDotOff = new Color(0.812f, 0.839f, 0.863f, 1f);       // #CFD6DC
 
+        [Header("Theme Selection Surface Tokens")]
+        [SerializeField] private Color m_SelectedBadgeFill = new Color(0.875f, 0.965f, 0.898f, 1f); // #DFF6E5
+        [SerializeField] private Color m_SelectedBadgeInk = new Color(0.118f, 0.478f, 0.239f, 1f);  // #1E7A3D
+        [SerializeField] private Color m_ActiveCardBorder = new Color(0.184f, 0.733f, 0.380f, 1f);  // #2FBB61
+        [SerializeField] private Color m_LightScrim = new Color(0.96f, 0.97f, 0.98f, 0.75f);
+
         [Header("Crystal UI Sprite Tokens")]
         [SerializeField] private Sprite m_CardBackgroundSprite;
         [SerializeField] private Sprite m_CardGoldSprite;
@@ -150,6 +156,11 @@ namespace Line98.Data
         public Color InkButtonPrimary => m_InkButtonPrimary;
         public Color StreakDotOn => m_StreakDotOn;
         public Color StreakDotOff => m_StreakDotOff;
+
+        public Color SelectedBadgeFill => m_SelectedBadgeFill.a > 0.001f ? m_SelectedBadgeFill : new Color(0.875f, 0.965f, 0.898f, 1f);
+        public Color SelectedBadgeInk => m_SelectedBadgeInk.a > 0.001f ? m_SelectedBadgeInk : new Color(0.118f, 0.478f, 0.239f, 1f);
+        public Color ActiveCardBorder => m_ActiveCardBorder.a > 0.001f ? m_ActiveCardBorder : new Color(0.184f, 0.733f, 0.380f, 1f);
+        public Color LightScrim => m_LightScrim.a > 0.001f ? m_LightScrim : new Color(0.96f, 0.97f, 0.98f, 0.75f);
 
         public Sprite CardBackgroundSprite => m_CardBackgroundSprite;
         public Sprite CardGoldSprite => m_CardGoldSprite;

@@ -30,5 +30,12 @@ namespace Line98.Data
 
             return index >= 0 && index < m_Sprites.Length ? m_Sprites[index] : null;
         }
+
+        public Sprite GetSpriteByIndex(int index)
+        {
+            return m_Sprites != null && index >= 0 && index < m_Sprites.Length ? m_Sprites[index] : null;
+        }
+
+        public int Count => m_Sprites != null ? m_Sprites.Length : 0;
     }
 }

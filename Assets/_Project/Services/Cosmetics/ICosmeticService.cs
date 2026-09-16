@@ -11,6 +11,9 @@ namespace Line98.Services
     {
         string ActiveThemeId { get; }
         ThemeDefinitionSO ActiveTheme { get; }
+        string ActiveClearEffectThemeId { get; }
+        string BallOverrideId { get; }
+        string BoardOverrideId { get; }
         event Action<ThemeChange> OnThemeChanged;
 
         void SetTheme(string themeId);

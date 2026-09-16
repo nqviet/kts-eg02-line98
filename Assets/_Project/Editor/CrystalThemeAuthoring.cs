@@ -115,7 +115,7 @@ namespace Line98.Editor
 
             SerializedObject serializedTheme = new SerializedObject(theme);
             SetString(serializedTheme, "m_ThemeId", "crystal");
-            SetString(serializedTheme, "m_DisplayName", "Crystal");
+            SetString(serializedTheme, "m_DisplayName", "Crystal Garden");
             SetBool(serializedTheme, "m_UnlockedByDefault", true);
             SetObject(serializedTheme, "m_Thumbnail", sprites["sp_gem_cyan"]);
 
@@ -184,7 +184,7 @@ namespace Line98.Editor
             BoardThemeSO classicTheme = AssetDatabase.LoadAssetAtPath<BoardThemeSO>("Assets/_Project/Content/Definitions/BoardTheme_Classic.asset");
             SerializedObject serializedTheme = new SerializedObject(boardTheme);
             SetString(serializedTheme, "m_ThemeId", "crystal");
-            SetString(serializedTheme, "m_DisplayName", "Crystal");
+            SetString(serializedTheme, "m_DisplayName", "Crystal Garden");
             SetBool(serializedTheme, "m_UnlockedByDefault", true);
             SetObject(serializedTheme, "m_Thumbnail", sprites["sp_gem_cyan"]);
 
@@ -213,9 +213,9 @@ namespace Line98.Editor
 
             SerializedObject serializedEffect = new SerializedObject(effect);
             SetString(serializedEffect, "m_ThemeId", "crystal");
-            SetString(serializedEffect, "m_DisplayName", "Crystal");
+            SetString(serializedEffect, "m_DisplayName", "Crystal Garden");
             SetBool(serializedEffect, "m_UnlockedByDefault", true);
-            SetObject(serializedEffect, "m_Thumbnail", sprites["sp_gem_cyan"]);
+            SetObject(serializedEffect, "m_Thumbnail", ThemeAuthoring.EnsureSparkleClusterSprite() ?? sprites["sp_gem_cyan"]);
             SetColor(serializedEffect, "m_RibbonTint", new Color(0.9f, 0.95f, 1f, 0.9f));
             SetColor(serializedEffect, "m_RibbonTintBanner", new Color(1f, 0.84f, 0.4f, 0.95f));
             SetColor(serializedEffect, "m_BurstTint", ParseHex("#58D8E8"));
@@ -238,7 +238,7 @@ namespace Line98.Editor
             ThemeDefinitionSO classicTheme = AssetDatabase.LoadAssetAtPath<ThemeDefinitionSO>("Assets/_Project/Content/Definitions/Theme_Classic.asset");
             SerializedObject serializedTheme = new SerializedObject(crystalTheme);
             SetString(serializedTheme, "m_ThemeId", "crystal");
-            SetString(serializedTheme, "m_DisplayName", "Crystal");
+            SetString(serializedTheme, "m_DisplayName", "Crystal Garden");
             SetBool(serializedTheme, "m_UnlockedByDefault", true);
             SetObject(serializedTheme, "m_Thumbnail", sprites["sp_gem_cyan"]);
             SetObject(serializedTheme, "m_InheritsFrom", classicTheme);

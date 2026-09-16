@@ -238,7 +238,7 @@ namespace Line98.Presentation
             if (m_PopupStack.Contains(popup))
             {
                 popup.transform.SetAsLastSibling();
-                m_CanvasStack?.SetModalVisible(true);
+                m_CanvasStack?.SetModalVisible(true, popup.UsesDimScrim);
                 if (!popup.IsOpen)
                 {
                     popup.Show();
@@ -251,7 +251,7 @@ namespace Line98.Presentation
             popup.OnCloseRequested += HandlePopupCloseRequested;
             m_PopupStack.Push(popup);
             popup.transform.SetAsLastSibling();
-            m_CanvasStack?.SetModalVisible(true);
+            m_CanvasStack?.SetModalVisible(true, popup.UsesDimScrim);
             popup.Show();
         }
 
@@ -268,6 +268,10 @@ namespace Line98.Presentation
                 if (m_PopupStack.Count == 0)
                 {
                     m_CanvasStack?.SetModalVisible(false);
+                }
+                else
+                {
+                    m_CanvasStack?.SetModalVisible(true, m_PopupStack.Peek().UsesDimScrim);
                 }
             });
         }

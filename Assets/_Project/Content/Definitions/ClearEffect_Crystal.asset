@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Line98.Data::Line98.Data.ClearEffectSO
   m_ThemeId: crystal
   m_DisplayName: Crystal
-  m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_Thumbnail: {fileID: 21300000, guid: 0510784277bddfb4597bea0c40330bae, type: 3}
   m_UnlockedByDefault: 1
   m_RibbonTint: {r: 0.9, g: 0.95, b: 1, a: 0.9}
   m_RibbonTintBanner: {r: 1, g: 0.84, b: 0.4, a: 0.95}

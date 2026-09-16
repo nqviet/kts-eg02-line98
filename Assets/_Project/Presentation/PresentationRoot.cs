@@ -120,7 +120,7 @@ namespace Line98.Presentation
             }
             else if (m_ThemeSelector == null && m_UIRouter != null && m_UIRouter.ThemeCatalog != null)
             {
-                ThemeSelector = new CatalogThemeSelector(m_UIRouter.ThemeCatalog, ApplyTheme);
+                ThemeSelector = new CatalogThemeSelector(m_UIRouter.ThemeCatalog, ApplyTheme, this);
             }
 
             // 1. Initialize procedural TweenRunner
@@ -253,20 +253,124 @@ namespace Line98.Presentation
             m_ThemeSwapController?.ApplyTheme(theme);
         }
 
+        public void ApplyBallTheme(BallThemeSO ballTheme)
+        {
+            if (ballTheme == null) return;
+            m_BallTheme = ballTheme;
+            m_BallMaterials = ballTheme.BallMaterials;
+            m_ThemeSwapController?.ApplyBallTheme(ballTheme);
+        }
+
+        public void ApplyBoardTheme(BoardThemeSO boardTheme)
+        {
+            if (boardTheme == null) return;
+            m_BoardTheme = boardTheme;
+            m_ThemeSwapController?.ApplyBoardTheme(boardTheme);
+        }
+
+        public void ApplyClearEffect(ClearEffectSO clearEffect)
+        {
+            if (clearEffect == null) return;
+            m_ThemeSwapController?.ApplyClearEffect(clearEffect);
+        }
+
+        public void ApplyUiTheme(UiThemeSO uiTheme, string themeId)
+        {
+            if (uiTheme == null) return;
+            m_UiTheme = uiTheme;
+            m_ThemeSwapController?.ApplyUiTheme(uiTheme, themeId);
+        }
+
+        public void ApplyCategoryTheme(ThemeCategory category, ThemeDefinitionSO theme)
+        {
+            if (theme == null) return;
+            switch (category)
+            {
+                case ThemeCategory.Ball:
+                    ApplyBallTheme(theme.BallTheme);
+                    break;
+                case ThemeCategory.Board:
+                    ApplyBoardTheme(theme.BoardTheme);
+                    break;
+                case ThemeCategory.ClearEffect:
+                    ApplyClearEffect(theme.ClearEffect);
+                    break;
+                case ThemeCategory.Ui:
+                    ApplyUiTheme(theme.UiTheme, theme.ThemeId);
+                    break;
+            }
+        }
+
+        public void ApplyCategoryTheme(ThemeCategory category, string partId)
+        {
+            var catalog = m_UIRouter != null ? m_UIRouter.ThemeCatalog : null;
+            if (catalog == null) return;
+
+            switch (category)
+            {
+                case ThemeCategory.Ball:
+                    if (catalog.TryGetBallTheme(partId, out var bt)) ApplyBallTheme(bt);
+                    break;
+                case ThemeCategory.Board:
+                    if (catalog.TryGetBoardTheme(partId, out var brdt)) ApplyBoardTheme(brdt);
+                    break;
+                case ThemeCategory.ClearEffect:
+                    for (int i = 0; i < catalog.Count; i++)
+                    {
+                        var t = catalog.ThemeAt(i);
+                        if (t != null && t.ClearEffect != null && string.Equals(t.ClearEffect.ThemeId, partId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ApplyClearEffect(t.ClearEffect);
+                            break;
+                        }
+                    }
+                    break;
+                case ThemeCategory.Ui:
+                    for (int i = 0; i < catalog.Count; i++)
+                    {
+                        var t = catalog.ThemeAt(i);
+                        if (t != null && t.UiTheme != null && string.Equals(t.UiTheme.ThemeId, partId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ApplyUiTheme(t.UiTheme, t.ThemeId);
+                            break;
+                        }
+                    }
+                    break;
+            }
+        }
+
         private sealed class CatalogThemeSelector : IThemeSelector
         {
             private readonly ThemeCatalogSO m_Catalog;
             private readonly Action<ThemeDefinitionSO> m_ApplyTheme;
+            private readonly PresentationRoot m_Root;
 
-            public CatalogThemeSelector(ThemeCatalogSO catalog, Action<ThemeDefinitionSO> applyTheme)
+            public CatalogThemeSelector(ThemeCatalogSO catalog, Action<ThemeDefinitionSO> applyTheme, PresentationRoot root = null)
             {
                 m_Catalog = catalog;
                 m_ApplyTheme = applyTheme;
+                m_Root = root;
             }
+
+            public string ActiveBallThemeId => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme.ThemeId : m_Catalog?.DefaultTheme?.BallTheme?.ThemeId ?? "crystal";
+            public string ActiveBoardThemeId => m_Root != null && m_Root.m_BoardTheme != null ? m_Root.m_BoardTheme.ThemeId : m_Catalog?.DefaultTheme?.BoardTheme?.ThemeId ?? "crystal";
+            public string ActiveClearEffectThemeId => m_Catalog?.DefaultTheme?.ClearEffect?.ThemeId ?? "crystal";
 
             public void RequestTheme(string themeId)
             {
                 if (m_Catalog != null && m_Catalog.TryGetTheme(themeId, out ThemeDefinitionSO theme))
+                {
+                    m_ApplyTheme?.Invoke(theme);
+                }
+            }
+
+            public void RequestTheme(ThemeCategory category, string partThemeId)
+            {
+                if (m_Root != null)
+                {
+                    m_Root.ApplyCategoryTheme(category, partThemeId);
+                }
+                else if (m_Catalog != null && m_Catalog.TryGetTheme(partThemeId, out ThemeDefinitionSO theme))
                 {
                     m_ApplyTheme?.Invoke(theme);
                 }

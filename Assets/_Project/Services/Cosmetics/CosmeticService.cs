@@ -55,6 +55,21 @@ namespace Line98.Services
             }
         }
 
+        public string ActiveClearEffectThemeId
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(m_Settings?.ClearEffectOverrideId))
+                {
+                    return m_Settings.ClearEffectOverrideId;
+                }
+                return m_ActiveTheme?.ClearEffect?.ThemeId ?? "crystal";
+            }
+        }
+
+        public string BallOverrideId => m_Settings?.BallOverrideId;
+        public string BoardOverrideId => m_Settings?.BoardOverrideId;
+
         public void SetTheme(string themeId)
         {
             var resolved = ThemeResolver.Resolve(m_Catalog, themeId);
