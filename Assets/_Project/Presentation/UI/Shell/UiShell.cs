@@ -31,6 +31,7 @@ namespace Line98.Presentation
         [SerializeField] private SettingsPopup m_SettingsPopup;
         [SerializeField] private StatisticsPopup m_StatisticsPopup;
         [SerializeField] private CosmeticsPopup m_CosmeticsPopup;
+        [SerializeField] private DailyChallengePopup m_DailyChallengePopup;
         [SerializeField] private UiThemeSO m_UiTheme;
         [SerializeField] private ThemeCatalogSO m_ThemeCatalog;
 
@@ -45,6 +46,8 @@ namespace Line98.Presentation
         private UiServices m_Services;
         private IThemeSelector m_ThemeSelector;
         private bool m_IsInitialized;
+        private Func<DailyPopupPayload> m_DailyPayloadProvider;
+        private Func<ProgressPopupPayload> m_ProgressPayloadProvider;
 
         public Canvas StaticCanvas => m_StaticCanvas;
         public Canvas DynamicCanvas => m_DynamicCanvas;
@@ -54,6 +57,7 @@ namespace Line98.Presentation
         public SettingsPopup SettingsPopup => m_SettingsPopup;
         public StatisticsPopup StatisticsPopup => m_StatisticsPopup;
         public CosmeticsPopup CosmeticsPopup => m_CosmeticsPopup;
+        public DailyChallengePopup DailyChallengePopup => m_DailyChallengePopup;
         public ThemeCatalogSO ThemeCatalog { get => m_ThemeCatalog; set => m_ThemeCatalog = value; }
         public IThemeSelector ThemeSelector { get => m_ThemeSelector; set => m_ThemeSelector = value; }
         public UiPopupRegistry PopupRegistry => m_PopupRegistry;
@@ -64,6 +68,8 @@ namespace Line98.Presentation
         public PopupView TopPopup => m_PopupStack.Count > 0 ? m_PopupStack.Peek() : null;
         public UiServices Services => m_Services;
         public bool IsInitialized => m_IsInitialized;
+        public event Action OnDailyPlayRequested;
+        public event Action OnDailyHowToPlayRequested;
 
         protected virtual void Awake()
         {
@@ -105,7 +111,17 @@ namespace Line98.Presentation
                 m_SettingsPopup.OnCosmeticsClicked -= OpenCosmetics;
                 m_SettingsPopup.OnCosmeticsClicked += OpenCosmetics;
             }
+            BindDailyPopupEvents();
             m_IsInitialized = true;
+        }
+
+        public void ConfigureProductLayer(
+            Func<DailyPopupPayload> dailyPayloadProvider,
+            Func<ProgressPopupPayload> progressPayloadProvider)
+        {
+            m_DailyPayloadProvider = dailyPayloadProvider;
+            m_ProgressPayloadProvider = progressPayloadProvider;
+            BindDailyPopupEvents();
         }
 
         public void SetThemeSelector(IThemeSelector selector)
@@ -144,6 +160,8 @@ namespace Line98.Presentation
 
                 m_SettingsPopup?.ApplyTheme(m_UiTheme);
                 m_CosmeticsPopup?.ApplyTheme(m_UiTheme);
+                m_StatisticsPopup?.ApplyTheme(m_UiTheme);
+                m_DailyChallengePopup?.ApplyTheme(m_UiTheme, m_BallTheme);
 
                 if (m_PopupRegistry != null)
                 {
@@ -154,6 +172,14 @@ namespace Line98.Presentation
                     if (m_PopupRegistry.TryGetRegistered(UiPopupId.Cosmetics, out var cp) && cp is CosmeticsPopup cosmetics)
                     {
                         cosmetics.ApplyTheme(m_UiTheme);
+                    }
+                    if (m_PopupRegistry.TryGetRegistered(UiPopupId.Statistics, out var pp) && pp is StatisticsPopup progress)
+                    {
+                        progress.ApplyTheme(m_UiTheme);
+                    }
+                    if (m_PopupRegistry.TryGetRegistered(UiPopupId.DailyChallenge, out var dp) && dp is DailyChallengePopup daily)
+                    {
+                        daily.ApplyTheme(m_UiTheme, m_BallTheme);
                     }
                 }
             }
@@ -176,12 +202,17 @@ namespace Line98.Presentation
             m_BallTheme = ballTheme;
 
             m_SettingsPopup?.ApplyBallTheme(ballTheme);
+            m_DailyChallengePopup?.ApplyTheme(m_UiTheme, ballTheme);
 
             if (m_PopupRegistry != null)
             {
                 if (m_PopupRegistry.TryGetRegistered(UiPopupId.Settings, out var sp) && sp is SettingsPopup settings)
                 {
                     settings.ApplyBallTheme(ballTheme);
+                }
+                if (m_PopupRegistry.TryGetRegistered(UiPopupId.DailyChallenge, out var dp) && dp is DailyChallengePopup daily)
+                {
+                    daily.ApplyTheme(m_UiTheme, ballTheme);
                 }
             }
         }
@@ -238,6 +269,24 @@ namespace Line98.Presentation
             m_PopupRegistry?.Open(
                 UiPopupId.Statistics,
                 new StatisticsPopupPayload(gamesPlayed, bestScore, totalLines, avgScore));
+        }
+
+        public void OpenStatistics()
+        {
+            ProgressPopupPayload payload = m_ProgressPayloadProvider?.Invoke() ?? new ProgressPopupPayload();
+            if (m_PopupRegistry == null || !m_PopupRegistry.Open(UiPopupId.Statistics, payload))
+            {
+                Debug.LogWarning("[UiShell] Cannot open Your Progress because its popup is not configured.");
+            }
+        }
+
+        public void OpenDailyChallenge()
+        {
+            DailyPopupPayload payload = m_DailyPayloadProvider?.Invoke() ?? new DailyPopupPayload();
+            if (m_PopupRegistry == null || !m_PopupRegistry.Open(UiPopupId.DailyChallenge, payload))
+            {
+                Debug.LogWarning("[UiShell] Cannot open Daily Challenge because its popup is not configured.");
+            }
         }
 
         internal void PrepareConfirm(ConfirmPopup popup, Action onConfirm)
@@ -320,6 +369,17 @@ namespace Line98.Presentation
             {
                 m_CosmeticsPopup = cosmetics;
                 cosmetics.ApplyTheme(theme);
+            }
+            else if (popup is StatisticsPopup progress)
+            {
+                m_StatisticsPopup = progress;
+                progress.ApplyTheme(theme);
+            }
+            else if (popup is DailyChallengePopup daily)
+            {
+                m_DailyChallengePopup = daily;
+                BindDailyPopupEvents();
+                daily.ApplyTheme(theme, m_BallTheme);
             }
         }
 
@@ -423,6 +483,7 @@ namespace Line98.Presentation
             m_SettingsPopup ??= GetComponentInChildren<SettingsPopup>(true);
             m_StatisticsPopup ??= GetComponentInChildren<StatisticsPopup>(true);
             m_CosmeticsPopup ??= GetComponentInChildren<CosmeticsPopup>(true);
+            m_DailyChallengePopup ??= GetComponentInChildren<DailyChallengePopup>(true);
         }
 
         private void EnsureRuntimeComponents()
@@ -454,6 +515,30 @@ namespace Line98.Presentation
             {
                 themeAppliers[i].Apply(m_Services.Theme);
             }
+        }
+
+        private void BindDailyPopupEvents()
+        {
+            if (m_DailyChallengePopup == null) return;
+            m_DailyChallengePopup.OnPlayRequested -= HandleDailyPlayRequested;
+            m_DailyChallengePopup.OnPlayRequested += HandleDailyPlayRequested;
+            m_DailyChallengePopup.OnHowToPlayRequested -= HandleDailyHowToPlayRequested;
+            m_DailyChallengePopup.OnHowToPlayRequested += HandleDailyHowToPlayRequested;
+        }
+
+        private void HandleDailyPlayRequested()
+        {
+            TryClosePopup(UiPopupId.DailyChallenge);
+            OnDailyPlayRequested?.Invoke();
+        }
+
+        private void HandleDailyHowToPlayRequested()
+        {
+            OpenConfirm(
+                "HOW TO PLAY",
+                "MOVE A BALL ALONG A CLEAR PATH. MATCH 5 OR MORE OF THE SAME COLOR. THE DAILY BOARD AND SPAWNS ARE THE SAME FOR EVERY RUN.",
+                () => { });
+            OnDailyHowToPlayRequested?.Invoke();
         }
 
         private static GameSession ResolveSession()

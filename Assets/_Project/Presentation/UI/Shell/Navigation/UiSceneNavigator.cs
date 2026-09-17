@@ -35,6 +35,11 @@ namespace Line98.Presentation
 
         private void OnEnable()
         {
+            if (m_Shell != null)
+            {
+                m_Shell.OnDailyPlayRequested -= HandleDailyPlayRequested;
+                m_Shell.OnDailyPlayRequested += HandleDailyPlayRequested;
+            }
             for (int i = 0; i < m_NavigationButtons.Length; i++)
             {
                 UiNavigationButton button = m_NavigationButtons[i];
@@ -50,6 +55,7 @@ namespace Line98.Presentation
 
         private void OnDisable()
         {
+            if (m_Shell != null) m_Shell.OnDailyPlayRequested -= HandleDailyPlayRequested;
             for (int i = 0; i < m_BoundButtons.Count; i++)
             {
                 if (m_BoundButtons[i] != null)
@@ -81,14 +87,14 @@ namespace Line98.Presentation
 
             if (destination == UiNavigationButton.UiDestination.Statistics)
             {
-                m_Shell?.OpenStatistics(0, 0, 0, 0);
+                m_Shell?.OpenStatistics();
                 return;
             }
 
             if (destination == UiNavigationButton.UiDestination.Daily)
             {
-                PendingModeRequest = GameModeRequest.Daily;
-                destination = UiNavigationButton.UiDestination.Game;
+                m_Shell?.OpenDailyChallenge();
+                return;
             }
             else if (destination == UiNavigationButton.UiDestination.Zen)
             {
@@ -122,6 +128,13 @@ namespace Line98.Presentation
         private void HandleNavigate(UiNavigationButton.UiDestination destination)
         {
             Navigate(destination);
+        }
+
+        private void HandleDailyPlayRequested()
+        {
+            PendingModeRequest = GameModeRequest.Daily;
+            Navigate(UiNavigationButton.UiDestination.Game);
+            PendingModeRequest = GameModeRequest.Daily;
         }
     }
 }

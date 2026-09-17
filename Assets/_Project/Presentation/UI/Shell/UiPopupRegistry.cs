@@ -12,7 +12,8 @@ namespace Line98.Presentation
         Confirm,
         Settings,
         Statistics,
-        Cosmetics
+        Cosmetics,
+        DailyChallenge
     }
 
     public interface IUiPopupPayload
@@ -214,6 +215,14 @@ namespace Line98.Presentation
                     statisticsPayload.TotalLines,
                     statisticsPayload.AverageScore);
             }
+            else if (payload is ProgressPopupPayload progressPayload && popup is StatisticsPopup progressPopup)
+            {
+                progressPopup.Populate(progressPayload);
+            }
+            else if (payload is DailyPopupPayload dailyPayload && popup is DailyChallengePopup dailyPopup)
+            {
+                dailyPopup.Populate(dailyPayload);
+            }
             else if (payload is CosmeticsPopupPayload cosmeticsPayload && popup is CosmeticsPopup cosmeticsPopup)
             {
                 cosmeticsPopup.Populate(cosmeticsPayload.Catalog, cosmeticsPayload.Selector, cosmeticsPayload.InitialTab);
@@ -249,6 +258,12 @@ namespace Line98.Presentation
             if (popup is CosmeticsPopup)
             {
                 id = UiPopupId.Cosmetics;
+                return true;
+            }
+
+            if (popup is DailyChallengePopup)
+            {
+                id = UiPopupId.DailyChallenge;
                 return true;
             }
 

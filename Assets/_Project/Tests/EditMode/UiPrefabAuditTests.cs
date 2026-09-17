@@ -27,6 +27,7 @@ namespace Line98.Tests.EditMode
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Confirm.prefab",
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Settings.prefab",
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Statistics.prefab",
+            "Assets/_Project/Content/Prefabs/UI/Popups/Popup_DailyChallenge.prefab",
             "Assets/_Project/Content/Prefabs/UI/Popups/Popup_Cosmetics.prefab",
             "Assets/_Project/Content/Prefabs/UI/Screens/MainMenu/Screen_MainMenu.prefab"
         };
@@ -72,6 +73,7 @@ namespace Line98.Tests.EditMode
         [TestCase("Assets/_Project/Content/Prefabs/UI/Popups/Popup_Confirm.prefab")]
         [TestCase("Assets/_Project/Content/Prefabs/UI/Popups/Popup_Settings.prefab")]
         [TestCase("Assets/_Project/Content/Prefabs/UI/Popups/Popup_Statistics.prefab")]
+        [TestCase("Assets/_Project/Content/Prefabs/UI/Popups/Popup_DailyChallenge.prefab")]
         [TestCase("Assets/_Project/Content/Prefabs/UI/Popups/Popup_Cosmetics.prefab")]
         public void PopupPrefabs_HaveLifecycleAndResponsiveBehaviours(string prefabPath)
         {

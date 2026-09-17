@@ -409,6 +409,7 @@ namespace Line98.App
 
             m_BoundShell.SetThemeSelector(m_ThemeSelector);
             m_BoundShell.SetThemeCatalog(m_ThemeCatalog);
+            m_BoundShell.ConfigureProductLayer(BuildDailyPopupPayload, BuildProgressPopupPayload);
             if (m_CosmeticService?.ActiveUiTheme != null)
             {
                 m_BoundShell.ApplyTheme(m_CosmeticService.ActiveUiTheme);
@@ -427,6 +428,97 @@ namespace Line98.App
                 m_CosmeticService.ActiveBoardTheme,
                 m_CosmeticService.ActiveUiTheme,
                 m_CosmeticService.ActiveClearEffect);
+        }
+
+        private Presentation.DailyPopupPayload BuildDailyPopupPayload()
+        {
+            DailyReadModel model = m_DailyChallengeService != null
+                ? m_DailyChallengeService.BuildReadModel(m_StatsService?.BestScore ?? 0)
+                : default;
+
+            var payload = new Presentation.DailyPopupPayload
+            {
+                Date = model.Date,
+                CurrentStreak = model.CurrentStreak,
+                BestScore = model.BestScore,
+                PlayedToday = model.PlayedToday,
+                CompletedToday = model.CompletedToday,
+                TodayScore = model.TodayScore,
+                CanPlayToday = model.CanPlayToday,
+                Board = new BallColor[BoardModel.CellCount],
+                Week = new Presentation.DailyDayVisual[model.Week?.Length ?? 0]
+            };
+
+            if (model.Preview.Valid && model.Preview.Board != null)
+            {
+                for (int i = 0; i < BoardModel.CellCount; i++) payload.Board[i] = model.Preview.Board.ColorAt(i);
+            }
+
+            for (int i = 0; i < payload.Week.Length; i++)
+            {
+                DailyDayCell cell = model.Week[i];
+                payload.Week[i] = new Presentation.DailyDayVisual(
+                    cell.Date,
+                    (Presentation.DailyDayVisualState)(byte)cell.State,
+                    cell.IsToday);
+            }
+
+            return payload;
+        }
+
+        private Presentation.ProgressPopupPayload BuildProgressPopupPayload()
+        {
+            var sessionContext = m_Session != null
+                ? new SessionContext(
+                    liveScore: m_Session.Score,
+                    liveMoves: m_Session.MoveCount,
+                    liveLineLength: m_Session.LongestLine,
+                    bestSessionScore: m_Session.Score,
+                    bestSessionLineLength: m_Session.LongestLine,
+                    bestSessionMoves: m_Session.MoveCount)
+                : SessionContext.Empty;
+            int streak = m_DailyChallengeService?.CurrentStreak ?? 0;
+            ProgressMetrics metrics = m_StatsService?.BuildMetrics(in sessionContext, streak) ?? default;
+            StatisticsReadModel stats = m_StatsService?.BuildReadModel(in sessionContext, streak) ?? default;
+            AchievementReadModel achievements = m_AchievementService?.BuildReadModel(in metrics, featuredCount: 10) ?? default;
+            AchievementProgress[] ordered = achievements.Ordered ?? Array.Empty<AchievementProgress>();
+            var rows = new Presentation.AchievementPopupRow[ordered.Length];
+            for (int i = 0; i < ordered.Length; i++)
+            {
+                AchievementProgress item = ordered[i];
+                string displayName = item.Definition != null && !string.IsNullOrWhiteSpace(item.Definition.DisplayName)
+                    ? item.Definition.DisplayName
+                    : HumanizeAchievementId(item.Id);
+                rows[i] = new Presentation.AchievementPopupRow(
+                    item.Id,
+                    displayName,
+                    item.Definition != null ? item.Definition.Icon : null,
+                    item.Unlocked,
+                    item.Current,
+                    item.Threshold,
+                    item.Normalized);
+            }
+
+            return new Presentation.ProgressPopupPayload
+            {
+                BestScore = stats.BestScore,
+                GamesPlayed = stats.GamesPlayed,
+                TotalScore = stats.TotalScore,
+                TotalLinesCleared = stats.TotalLinesCleared,
+                LongestLine = stats.LongestLine,
+                HighestCombo = stats.HighestCombo,
+                CurrentStreak = stats.CurrentStreak,
+                AchievementsUnlocked = achievements.Unlocked,
+                AchievementsTotal = achievements.Total,
+                AchievementRatio = achievements.Ratio,
+                Achievements = rows
+            };
+        }
+
+        private static string HumanizeAchievementId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return "ACHIEVEMENT";
+            return id.Replace('_', ' ').ToUpperInvariant();
         }
 
         /// <summary>
