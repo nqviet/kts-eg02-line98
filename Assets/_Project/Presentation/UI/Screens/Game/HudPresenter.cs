@@ -178,6 +178,7 @@ namespace Line98.Presentation
             m_Session.OnStateRestored += HandleStateRestored;
             m_Session.OnPhaseChanged += HandlePhaseChanged;
             m_Session.OnGameOver += HandleGameOver;
+            m_Session.OnSessionReplaced += HandleSessionReplaced;
         }
 
         private void UnbindSession()
@@ -189,6 +190,7 @@ namespace Line98.Presentation
             m_Session.OnStateRestored -= HandleStateRestored;
             m_Session.OnPhaseChanged -= HandlePhaseChanged;
             m_Session.OnGameOver -= HandleGameOver;
+            m_Session.OnSessionReplaced -= HandleSessionReplaced;
         }
 
         public void RefreshAllViews()
@@ -265,6 +267,19 @@ namespace Line98.Presentation
             UpdateActionButtonsState();
         }
 
+        private void HandleSessionReplaced(SessionReplaceReason reason)
+        {
+            // Undo keeps its animated score roll from HandleStateRestored
+            if (reason == SessionReplaceReason.Undo) return;
+
+            if (reason == SessionReplaceReason.NewGame)
+            {
+                m_HasPoppedCrownThisSession = false;
+            }
+
+            RefreshAllViews();
+        }
+
         private void HandlePhaseChanged(GamePhase phase)
         {
             UpdateActionButtonsState();
@@ -300,7 +315,8 @@ namespace Line98.Presentation
 
             if (m_UndoButtonView != null)
             {
-                bool canUndo = isPlaying && m_Session.MoveCount > 0;
+                // The snapshot stack is not persisted, so a resumed session cannot undo until a move is made
+                bool canUndo = isPlaying && m_Session.HasSnapshotStack;
                 m_UndoButtonView.SetUndoState(
                     m_Session.FreeUndosRemaining,
                     canUndo,
@@ -388,18 +404,11 @@ namespace Line98.Presentation
                 m_UIRouter.OpenConfirm(
                     "New Game?",
                     "Are you sure you want to restart? Current progress will be lost.",
-                    () =>
-                    {
-                        m_HasPoppedCrownThisSession = false;
-                        m_Session.StartNewGame();
-                        RefreshAllViews();
-                    });
+                    () => m_Session.StartNewGame());
             }
             else
             {
-                m_HasPoppedCrownThisSession = false;
                 m_Session.StartNewGame();
-                RefreshAllViews();
             }
         }
 

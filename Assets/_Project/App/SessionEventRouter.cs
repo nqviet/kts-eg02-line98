@@ -42,8 +42,8 @@ namespace Line98.App
             m_Analytics = analytics;
             m_Mode = mode ?? session.Mode;
 
+            // Game-start bookkeeping is explicit (RecordSessionStart) so resuming never counts as a new game
             Subscribe();
-            OnSessionStarted();
         }
 
         public SessionEventRouter(GameSession session, ServiceRegistry services, IGameModeStrategy mode = null)
@@ -68,6 +68,7 @@ namespace Line98.App
             m_Session.OnPhaseChanged += HandlePhaseChanged;
             m_Session.OnHintRequested += HandleHintRequested;
             m_Session.OnContinueApplied += HandleContinueApplied;
+            m_Session.OnSessionReplaced += HandleSessionReplaced;
         }
 
         private void Unsubscribe()
@@ -79,9 +80,11 @@ namespace Line98.App
             m_Session.OnPhaseChanged -= HandlePhaseChanged;
             m_Session.OnHintRequested -= HandleHintRequested;
             m_Session.OnContinueApplied -= HandleContinueApplied;
+            m_Session.OnSessionReplaced -= HandleSessionReplaced;
         }
 
-        private void OnSessionStarted()
+        /// <summary>Records statistics/analytics for a genuinely new game. Never call on resume.</summary>
+        public void RecordSessionStart()
         {
             if (m_Mode != null && m_Mode.RecordsStatistics)
             {
@@ -208,6 +211,20 @@ namespace Line98.App
         private void HandleHintRequested(HintSuggestion suggestion)
         {
             m_Analytics?.Track(AnalyticsEvents.HintUsed);
+        }
+
+        private void HandleSessionReplaced(SessionReplaceReason reason)
+        {
+            // Undo is already persisted by HandleStateRestored
+            if (reason == SessionReplaceReason.Undo) return;
+
+            if (reason == SessionReplaceReason.NewGame)
+            {
+                RecordSessionStart();
+            }
+
+            m_Save?.TrySaveSession(m_Session.CaptureState());
+            m_Menu?.NotifyChanged();
         }
 
         private void HandleContinueApplied(ContinueResult result)

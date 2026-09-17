@@ -136,6 +136,18 @@ namespace Line98.Presentation.Animation
             m_InputRouter?.UnlockInput();
         }
 
+        /// <summary>
+        /// Aborts pacing without committing, releasing input and resetting speed multipliers.
+        /// Used when the session state is replaced wholesale mid-flight.
+        /// </summary>
+        public void CancelPacing()
+        {
+            if (!m_IsPacing) return;
+
+            // Never commit a plan whose visuals were discarded
+            FinishPacing();
+        }
+
         private void HandleFastForwardRequested()
         {
             if (m_IsPacing)

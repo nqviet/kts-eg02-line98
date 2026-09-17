@@ -60,6 +60,7 @@ namespace Line98.App
         private SettingsPresenter m_SettingsPresenter;
         private bool m_IsThemeChangeBound;
         private bool m_IsLoadingMainMenuFromBoot;
+        private SessionSave m_PendingResume;
 
         public ConfigService Config => m_ConfigService;
         public GameSession Session => m_Session;
@@ -103,8 +104,8 @@ namespace Line98.App
 
         private void Start()
         {
-            m_GameManager.StartClassicGame();
-
+            // No session is started here: the session stays in Boot until a mode is chosen,
+            // so autosave cannot overwrite a pending resume with an idle board.
             StartCoroutine(PlayBootMusic());
 
             LoadMainMenuFromBoot(SceneManager.GetActiveScene());
@@ -166,6 +167,7 @@ namespace Line98.App
             m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
             m_SaveService = new SaveService(CreateSaveBackend());
             SaveData loadedSave = m_SaveService.LoadGame();
+            m_PendingResume = loadedSave?.Session;
 
             m_StatsService = new StatisticsService();
             if (loadedSave != null)
@@ -260,8 +262,7 @@ namespace Line98.App
                 switch (Presentation.UiSceneNavigator.PendingModeRequest)
                 {
                     case Presentation.UiSceneNavigator.GameModeRequest.Daily:
-                        m_GameManager?.StartDailyChallenge();
-                        AttachSessionRouter();
+                        ResumeOrStartSession("daily", () => m_GameManager?.StartDailyChallenge(m_DailyChallengeService?.Today));
                         m_AudioService?.StopAmbience();
                         if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
                         {
@@ -269,15 +270,13 @@ namespace Line98.App
                         }
                         break;
                     case Presentation.UiSceneNavigator.GameModeRequest.Zen:
-                        m_GameManager?.StartZenMode();
-                        AttachSessionRouter();
+                        ResumeOrStartSession("zen", () => m_GameManager?.StartZenMode());
                         m_AudioService?.StopMusic(1.0f);
                         m_AudioService?.PlayAmbience("bgm_zen_ambience");
                         break;
                     case Presentation.UiSceneNavigator.GameModeRequest.Classic:
                     default:
-                        m_GameManager?.StartClassicGame();
-                        AttachSessionRouter();
+                        ResumeOrStartSession("classic", () => m_GameManager?.StartClassicGame());
                         m_AudioService?.StopAmbience();
                         if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
                         {
@@ -289,6 +288,7 @@ namespace Line98.App
             }
             else if (scene.name == "MainMenu")
             {
+                RefreshResumeDecision();
                 m_AudioService?.StopAmbience();
                 if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
                 {
@@ -372,6 +372,10 @@ namespace Line98.App
                 int best = m_StatsService?.BestScore ?? 0;
                 int streak = m_DailyChallengeService != null ? m_DailyChallengeService.CurrentStreak : (m_StatsService?.CurrentStreak ?? 0);
                 m_BoundMenuPresenter.SetStats(best, streak, m_CosmeticService?.ActiveUiTheme);
+
+                MenuSnapshot menu = m_MenuService != null ? m_MenuService.GetSnapshot() : default;
+                bool offerClassic = menu.HasResumableGame && menu.ResumeModeId == "classic";
+                m_BoundMenuPresenter.SetResumeOffer(offerClassic, menu.ResumeScore, menu.ResumeMoveCount);
             }
 
             BindShell();
@@ -585,8 +589,7 @@ namespace Line98.App
             m_Registry.Register<GameSession>(m_Session);
             m_Registry.Register<GameManager>(m_GameManager);
 
-            AttachSessionRouter();
-
+            // The session router is attached when a Game scene starts or resumes a session
             BindPresentationRoot();
         }
 
@@ -602,6 +605,76 @@ namespace Line98.App
                 m_MenuService,
                 m_AnalyticsService,
                 m_Session.Mode);
+        }
+
+        /// <summary>
+        /// Enters the Game scene: continues the live or persisted session when it matches the
+        /// requested mode, otherwise starts a fresh one. Only fresh sessions count as a game start.
+        /// </summary>
+        private void ResumeOrStartSession(string modeId, Action startFresh)
+        {
+            // Detach first so the outgoing router does not observe the replacement
+            m_SessionEventRouter?.Dispose();
+            m_SessionEventRouter = null;
+
+            if (TryResumeSession(modeId))
+            {
+                AttachSessionRouter();
+            }
+            else
+            {
+                startFresh?.Invoke();
+                AttachSessionRouter();
+                m_SessionEventRouter.RecordSessionStart();
+                m_SaveService?.TrySaveSession(m_Session.CaptureState());
+            }
+
+            m_PendingResume = null;
+            m_MenuService?.NotifyChanged();
+        }
+
+        private bool TryResumeSession(string modeId)
+        {
+            if (m_Session == null || m_GameManager == null) return false;
+
+            SessionSave candidate = CurrentSessionSave();
+            ResumeDecision decision = EvaluateResume(candidate);
+            if (decision.Kind != ResumeDecisionKind.Offer || !string.Equals(decision.ModeId, modeId, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // A live, settled session already holds the authoritative state (including its undo stack)
+            if (m_Session.Phase == GamePhase.Playing)
+            {
+                return true;
+            }
+
+            // Cold start or a move interrupted mid-flight: restore through the save mapper,
+            // which normalises the phase to Playing and drops the uncommitted move.
+            return SessionSaveMapper.ToState(candidate, out SessionState state) && m_GameManager.TryResumeGame(in state);
+        }
+
+        /// <summary>The live session once one exists, otherwise the session loaded from disk at boot.</summary>
+        private SessionSave CurrentSessionSave()
+        {
+            if (m_Session != null && m_Session.Phase != GamePhase.Boot && m_Session.Phase != GamePhase.Menu)
+            {
+                return SessionSaveMapper.ToSave(m_Session.CaptureState(), DateTime.UtcNow.Ticks);
+            }
+
+            return m_PendingResume;
+        }
+
+        private ResumeDecision EvaluateResume(SessionSave session)
+        {
+            string today = m_DailyChallengeService != null ? m_DailyChallengeService.Today : DateTime.UtcNow.ToString("yyyy-MM-dd");
+            return ResumeEvaluator.Evaluate(new SaveData { Session = session }, today);
+        }
+
+        private void RefreshResumeDecision()
+        {
+            m_MenuService?.SetResumeDecision(EvaluateResume(CurrentSessionSave()));
         }
 
         private void Update()
@@ -732,7 +805,15 @@ namespace Line98.App
                 Daily = m_DailyChallengeService?.SaveState() ?? new DailySave()
             };
 
-            data.Session = SessionSaveMapper.ToSave(m_Session.CaptureState(), DateTime.UtcNow.Ticks);
+            if (m_Session.Phase == GamePhase.Boot || m_Session.Phase == GamePhase.Menu)
+            {
+                // Preserve an unconsumed resume offer instead of overwriting it with an idle board
+                data.Session = m_SaveService.LoadGame()?.Session;
+            }
+            else
+            {
+                data.Session = SessionSaveMapper.ToSave(m_Session.CaptureState(), DateTime.UtcNow.Ticks);
+            }
             m_SaveService.SaveGame(data);
         }
     }

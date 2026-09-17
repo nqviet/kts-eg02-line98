@@ -5,6 +5,13 @@ using Line98.Data;
 
 namespace Line98.Gameplay
 {
+    public enum SessionReplaceReason : byte
+    {
+        NewGame,
+        Undo,
+        Restore
+    }
+
     /// <summary>
     /// Authoritative game session controller.
     /// Drives simulation, undo snapshots, and communicates with presentation via events.
@@ -50,6 +57,12 @@ namespace Line98.Gameplay
         public event Action<HintSuggestion> OnHintRequested;
         public event Action<ContinueResult> OnContinueApplied;
         public event Action<SessionState> OnSessionRestored;
+
+        /// <summary>
+        /// Raised when the authoritative session state is replaced wholesale.
+        /// Presentation must discard in-flight work and re-sync from the model.
+        /// </summary>
+        public event Action<SessionReplaceReason> OnSessionReplaced;
 
         public BoardModel Board => m_Board;
         public PreviewQueue PreviewQueue => m_PreviewQueue;
@@ -130,8 +143,10 @@ namespace Line98.Gameplay
             SpawnRules spawnRules = m_Mode.GetSpawnRules(0);
             InitialLayoutBuilder.Build(ref m_Rng, in spawnRules, m_Board, m_PreviewQueue, 3);
 
+            m_PendingPlan = null;
             SetPhase(GamePhase.Playing);
             OnScoreChanged?.Invoke(m_Score);
+            OnSessionReplaced?.Invoke(SessionReplaceReason.NewGame);
         }
 
         public bool TrySelect(GridPos pos)
@@ -343,6 +358,7 @@ namespace Line98.Gameplay
 
             OnScoreChanged?.Invoke(m_Score);
             OnStateRestored?.Invoke(snapshot);
+            OnSessionReplaced?.Invoke(SessionReplaceReason.Undo);
             return true;
         }
 
@@ -507,6 +523,7 @@ namespace Line98.Gameplay
             SetPhase(state.Phase);
             OnScoreChanged?.Invoke(m_Score);
             OnSessionRestored?.Invoke(state);
+            OnSessionReplaced?.Invoke(SessionReplaceReason.Restore);
             return true;
         }
 

@@ -20,12 +20,23 @@ namespace Line98.Presentation
         [SerializeField] private StreakDotsView m_StreakDotsView;
         [SerializeField] private UnityEngine.UI.Image[] m_ShowcaseGems = Array.Empty<UnityEngine.UI.Image>();
 
+        [Header("Resume")]
+        [Tooltip("PLAY button label; switches to CONTINUE when a Classic game can be resumed. Resolved at runtime when empty.")]
+        [SerializeField] private TMP_Text m_PlayLabel;
+
         [Header("Theme")]
         [SerializeField] private UiThemeSO m_Theme;
         private BallThemeSO m_BallTheme;
 
         private int m_BestScore;
         private int m_CurrentStreak;
+        private bool m_HasResumeOffer;
+        private int m_ResumeScore;
+        private int m_ResumeMoveCount;
+        private string m_PlayLabelDefaultText;
+        private bool m_PlayLabelDefaultAutoSize;
+        private float m_PlayLabelDefaultFontSize;
+        private bool m_HasCapturedPlayLabel;
 
         public UiValueCard BestCard => m_BestCard;
         public TMP_Text StreakText => m_StreakText;
@@ -34,6 +45,8 @@ namespace Line98.Presentation
         public BallThemeSO BallTheme => m_BallTheme;
         public int BestScore => m_BestScore;
         public int CurrentStreak => m_CurrentStreak;
+        public bool HasResumeOffer => m_HasResumeOffer;
+        public TMP_Text PlayLabel => m_PlayLabel;
 
         public void Configure(UiValueCard bestCard, TMP_Text streakText, StreakDotsView dotsView)
         {
@@ -57,6 +70,15 @@ namespace Line98.Presentation
             }
 
             Refresh();
+        }
+
+        /// <summary>Makes PLAY context-sensitive: it reads CONTINUE with progress while a Classic game is resumable.</summary>
+        public void SetResumeOffer(bool available, int score, int moveCount)
+        {
+            m_HasResumeOffer = available;
+            m_ResumeScore = Mathf.Max(0, score);
+            m_ResumeMoveCount = Mathf.Max(0, moveCount);
+            RefreshPlayLabel();
         }
 
         public void ApplyTheme(UiThemeSO theme)
@@ -91,6 +113,54 @@ namespace Line98.Presentation
             }
 
             RefreshShowcaseGems();
+            RefreshPlayLabel();
+        }
+
+        private void RefreshPlayLabel()
+        {
+            if (!TryCapturePlayLabel()) return;
+
+            if (m_HasResumeOffer)
+            {
+                string moves = m_ResumeMoveCount == 1 ? "MOVE" : "MOVES";
+                m_PlayLabel.enableAutoSizing = true;
+                m_PlayLabel.fontSizeMin = 24f;
+                m_PlayLabel.fontSizeMax = m_PlayLabelDefaultFontSize;
+                m_PlayLabel.text = $"CONTINUE\n<size=45%>{m_ResumeScore:N0} PTS - {m_ResumeMoveCount} {moves}</size>";
+            }
+            else
+            {
+                m_PlayLabel.enableAutoSizing = m_PlayLabelDefaultAutoSize;
+                m_PlayLabel.fontSize = m_PlayLabelDefaultFontSize;
+                m_PlayLabel.text = m_PlayLabelDefaultText;
+            }
+        }
+
+        private bool TryCapturePlayLabel()
+        {
+            if (m_PlayLabel == null)
+            {
+                UiNavigationButton[] buttons = GetComponentsInChildren<UiNavigationButton>(true);
+                for (int i = 0; i < buttons.Length && m_PlayLabel == null; i++)
+                {
+                    if (buttons[i].Destination != UiNavigationButton.UiDestination.Game) continue;
+
+                    Transform label = buttons[i].transform.Find("Content/Label");
+                    m_PlayLabel = label != null ? label.GetComponent<TMP_Text>() : buttons[i].GetComponentInChildren<TMP_Text>(true);
+                }
+            }
+
+            if (m_PlayLabel == null) return false;
+
+            if (!m_HasCapturedPlayLabel)
+            {
+                m_PlayLabelDefaultText = m_PlayLabel.text;
+                m_PlayLabelDefaultAutoSize = m_PlayLabel.enableAutoSizing;
+                m_PlayLabelDefaultFontSize = m_PlayLabel.fontSize;
+                m_HasCapturedPlayLabel = true;
+            }
+
+            return true;
         }
 
         private void RefreshShowcaseGems()

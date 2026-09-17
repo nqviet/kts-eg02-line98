@@ -51,7 +51,8 @@ namespace Line98.Gameplay
                         spec.DailyDate ?? System.DateTime.UtcNow.ToString("yyyy-MM-dd"),
                         spec.DailySeed != 0 ? spec.DailySeed : (uint?)null,
                         spec.ScoreRules,
-                        spec.SpawnRules);
+                        spec.SpawnRules,
+                        spec.DailySeedVersion > 0 ? spec.DailySeedVersion : 1);
 
                 case "zen":
                     return new ZenMode(spec.SpawnRules);

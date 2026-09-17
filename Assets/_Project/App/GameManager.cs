@@ -46,6 +46,33 @@ namespace Line98.App
             OnModeChanged?.Invoke(mode);
         }
 
+        /// <summary>
+        /// Rebuilds the mode from persisted state and restores the session. Returns false if the
+        /// state is unknown or invalid, leaving the caller to start a fresh game.
+        /// </summary>
+        public bool TryResumeGame(in SessionState state)
+        {
+            if (!GameModeFactory.IsKnownMode(state.ModeId)) return false;
+
+            var mode = GameModeFactory.Create(state.ModeId, new ModeSpec(
+                dailyDate: state.DailySeedDate,
+                dailySeedVersion: state.DailySeedVersion,
+                scoreRules: m_ConfigService?.GetScoreRules(),
+                spawnRules: m_ConfigService?.GetSpawnRules()));
+
+            IGameModeStrategy previousMode = m_ActiveSession.Mode;
+            m_ActiveSession.SetMode(mode);
+
+            if (!m_ActiveSession.TryRestore(in state))
+            {
+                m_ActiveSession.SetMode(previousMode);
+                return false;
+            }
+
+            OnModeChanged?.Invoke(mode);
+            return true;
+        }
+
         public void StartZenMode()
         {
             var mode = new ZenMode(m_ConfigService?.GetSpawnRules());

@@ -256,6 +256,7 @@ namespace Line98.Presentation
                 m_Session.OnBallDeselected += HandleBallDeselected;
                 m_Session.OnMoveCommitted += HandleMoveCommitted;
                 m_Session.OnGameOver += HandleGameOver;
+                m_Session.OnSessionReplaced += HandleSessionReplaced;
 
                 // Sync initial board state (e.g. 5 initial balls)
                 m_BallManager.SyncFromBoard(m_Session.Board, m_BoardView);
@@ -455,6 +456,40 @@ namespace Line98.Presentation
             // Visual commit sync if not handled by pacer
         }
 
+        private void HandleSessionReplaced(SessionReplaceReason reason)
+        {
+            ResyncBoardFromModel();
+        }
+
+        /// <summary>
+        /// Discards selection and in-flight visuals, then rebuilds ball views from the authoritative board.
+        /// </summary>
+        private void ResyncBoardFromModel()
+        {
+            // Kill in-flight visual work first: its callbacks would otherwise re-apply
+            // the pre-replacement board after the rebuild below.
+            m_MovePacer?.CancelPacing();
+            m_MoveAnimator?.Cancel();
+            m_BoardAnimator?.Cancel();
+            m_PathPreviewView?.Hide();
+
+            m_HasSelectedBall = false;
+            m_LastSelectedPos = default;
+
+            if (m_BallManager == null || m_BoardView == null || m_Session == null) return;
+
+            m_BallManager.ClearAll();
+            m_BallManager.SyncFromBoard(m_Session.Board, m_BoardView);
+
+            // Restored sessions may carry a selection; reflect it on the fresh views
+            if (m_Session.HasSelection)
+            {
+                m_LastSelectedPos = m_Session.SelectedPos;
+                m_HasSelectedBall = true;
+                m_BallManager.GetBallAt(m_LastSelectedPos)?.SetSelected(true);
+            }
+        }
+
         private void HandleGameOver(SessionSummary summary)
         {
             Vector3 center = m_BoardView != null ? m_BoardView.transform.position : Vector3.zero;
@@ -509,6 +544,7 @@ namespace Line98.Presentation
                 m_Session.OnBallDeselected -= HandleBallDeselected;
                 m_Session.OnMoveCommitted -= HandleMoveCommitted;
                 m_Session.OnGameOver -= HandleGameOver;
+                m_Session.OnSessionReplaced -= HandleSessionReplaced;
             }
             if (m_OwnsAudioService)
             {

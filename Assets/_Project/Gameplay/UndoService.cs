@@ -158,13 +158,15 @@ namespace Line98.Gameplay
 
             if (m_FreeUndosRemaining > 0)
             {
+                // Charge before restore so OnStateRestored observers read the post-undo count
+                m_FreeUndosRemaining--;
                 GameSnapshot snapshot = executeRestore?.Invoke();
                 if (snapshot == null)
                 {
+                    m_FreeUndosRemaining++;
                     return EmitResult(UndoResult.Denied(UndoDenialReason.NothingToUndo, m_FreeUndosRemaining, m_RewardedUndosRemaining));
                 }
 
-                m_FreeUndosRemaining--;
                 return EmitResult(new UndoResult(true, UndoDenialReason.None, true, false, m_FreeUndosRemaining, m_RewardedUndosRemaining, snapshot));
             }
 
@@ -183,13 +185,14 @@ namespace Line98.Gameplay
 
             if (granted)
             {
+                m_RewardedUndosRemaining--;
                 GameSnapshot snapshot = executeRestore?.Invoke();
                 if (snapshot == null)
                 {
+                    m_RewardedUndosRemaining++;
                     return EmitResult(UndoResult.Denied(UndoDenialReason.NothingToUndo, m_FreeUndosRemaining, m_RewardedUndosRemaining));
                 }
 
-                m_RewardedUndosRemaining--;
                 return EmitResult(new UndoResult(true, UndoDenialReason.None, false, true, m_FreeUndosRemaining, m_RewardedUndosRemaining, snapshot));
             }
 
@@ -240,16 +243,17 @@ namespace Line98.Gameplay
 
             if (m_FreeUndosRemaining > 0)
             {
+                m_FreeUndosRemaining--;
                 GameSnapshot snapshot = executeRestore?.Invoke();
                 if (snapshot != null)
                 {
-                    m_FreeUndosRemaining--;
                     var res = new UndoResult(true, UndoDenialReason.None, true, false, m_FreeUndosRemaining, m_RewardedUndosRemaining, snapshot);
                     EmitResult(res);
                     onComplete?.Invoke(res);
                 }
                 else
                 {
+                    m_FreeUndosRemaining++;
                     var res = UndoResult.Denied(UndoDenialReason.NothingToUndo, m_FreeUndosRemaining, m_RewardedUndosRemaining);
                     EmitResult(res);
                     onComplete?.Invoke(res);
@@ -277,16 +281,17 @@ namespace Line98.Gameplay
             {
                 if (success)
                 {
+                    m_RewardedUndosRemaining--;
                     GameSnapshot snapshot = executeRestore?.Invoke();
                     if (snapshot != null)
                     {
-                        m_RewardedUndosRemaining--;
                         var res = new UndoResult(true, UndoDenialReason.None, false, true, m_FreeUndosRemaining, m_RewardedUndosRemaining, snapshot);
                         EmitResult(res);
                         onComplete?.Invoke(res);
                     }
                     else
                     {
+                        m_RewardedUndosRemaining++;
                         var res = UndoResult.Denied(UndoDenialReason.NothingToUndo, m_FreeUndosRemaining, m_RewardedUndosRemaining);
                         EmitResult(res);
                         onComplete?.Invoke(res);
