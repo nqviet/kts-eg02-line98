@@ -59,6 +59,9 @@ namespace Line98.Presentation
         public Line98.Data.BallThemeSO BallTheme => m_BallTheme;
         public override bool UsesFullLayoutHeight => true;
 
+        // The 980x1680 settings page scales as one unit so rows never spill past the screen.
+        protected override Vector2 ReferenceLayoutSize => new Vector2(980f, 1680f);
+
         private Line98.Data.UiThemeSO m_UiTheme;
         private Line98.Data.BallThemeSO m_BallTheme;
 

@@ -2037,6 +2037,7 @@ GameObject:
   - component: {fileID: 7005929010326391912}
   - component: {fileID: 8565999669013278937}
   - component: {fileID: 8637336434221964335}
+  - component: {fileID: 8502191891729395021}
   m_Layer: 0
   m_Name: Screen_MainMenu
   m_TagString: Untagged
@@ -2184,6 +2185,27 @@ MonoBehaviour:
   m_ButtonsStartMs: 260
   m_ButtonStaggerMs: 60
   m_ButtonDurationMs: 240
+--- !u!114 &8502191891729395021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3503101085028746901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56a935982f38b044d9852eeea4ac0fd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Line98.Presentation::Line98.Presentation.MainMenuLayoutFitter
+  m_Column: {fileID: 7806885439653765806}
+  m_ReferenceSize: {x: 1080, y: 1920}
+  m_MaxScale: 1
+  m_BoardSlot:
+    serializedVersion: 2
+    x: 226.8
+    y: 528
+    width: 626.4
+    height: 564.5
 --- !u!1 &3555799713760643421
 GameObject:
   m_ObjectHideFlags: 0

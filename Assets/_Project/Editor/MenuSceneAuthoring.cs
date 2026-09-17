@@ -227,6 +227,7 @@ namespace Line98.Editor
             GameObject colGo = CreateRect("LayoutColumn", root.transform,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(1080f, 1920f));
+            SetObjectReference(root.AddComponent<MainMenuLayoutFitter>(), "m_Column", colGo.GetComponent<RectTransform>());
 
             // 1. BRAND WORDMARK
             GameObject wordmarkGroup = CreateRect("Brand_WordmarkGroup", colGo.transform,

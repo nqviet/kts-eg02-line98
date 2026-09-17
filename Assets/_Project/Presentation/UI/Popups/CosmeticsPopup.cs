@@ -106,89 +106,11 @@ namespace Line98.Presentation
             base.OnDestroy();
         }
 
-        /// <summary>
-        /// The Themes surface occupies the complete popup canvas while its 960 x 1620 authored
-        /// composition scales uniformly inside the safe layout. This preserves the mockup's
-        /// proportions on phones, tablets, and short landscape/editor views.
-        /// </summary>
-        public override void ApplyResponsiveLayout(float layoutWidth, float layoutHeight)
-        {
-            EnsureFullscreenPresentation();
-
-            if (m_ContentRoot == null)
-            {
-                return;
-            }
-
-            // UiResponsiveModal can run once before the canvas has reported its safe layout.
-            // Falling back to the actual popup parent avoids caching a near-zero rest scale.
-            RectTransform host = m_ContentRoot.parent as RectTransform;
-            Canvas canvas = GetComponentInParent<Canvas>();
-            RectTransform canvasRect = canvas != null ? canvas.rootCanvas.transform as RectTransform : null;
-            UnityEngine.UI.CanvasScaler canvasScaler = canvas != null
-                ? canvas.rootCanvas.GetComponent<UnityEngine.UI.CanvasScaler>()
-                : null;
-            if (canvasScaler != null &&
-                canvasScaler.uiScaleMode == UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize)
-            {
-                layoutWidth = Mathf.Max(layoutWidth, canvasScaler.referenceResolution.x);
-                layoutHeight = Mathf.Max(layoutHeight, canvasScaler.referenceResolution.y);
-            }
-
-            if (canvasRect != null && canvasRect.rect.width > 1f && canvasRect.rect.height > 1f)
-            {
-                // CanvasScaler already converts physical pixels into this reference-space rect.
-                // The responsive host can pass physical Game View pixels, so always author the
-                // composition against the root canvas to avoid applying the scale twice.
-                layoutWidth = Mathf.Max(layoutWidth, canvasRect.rect.width);
-                layoutHeight = Mathf.Max(layoutHeight, canvasRect.rect.height);
-            }
-            else if (host != null && host.rect.width > 1f && host.rect.height > 1f)
-            {
-                layoutWidth = host.rect.width;
-                layoutHeight = host.rect.height;
-            }
-
-            if (layoutWidth <= 1f || layoutHeight <= 1f)
-            {
-                if (host != null && host.rect.width > 1f && host.rect.height > 1f)
-                {
-                    layoutWidth = host.rect.width;
-                    layoutHeight = host.rect.height;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            float availableWidth = Mathf.Max(1f, layoutWidth - m_HorizontalSafePadding * 2f);
-            float availableHeight = Mathf.Max(1f, layoutHeight - m_VerticalSafePadding * 2f);
-            float contentScale = Mathf.Min(
-                1f,
-                availableWidth / s_ReferenceContentSize.x,
-                availableHeight / s_ReferenceContentSize.y);
-
-            m_ContentRoot.anchorMin = new Vector2(0.5f, 1f);
-            m_ContentRoot.anchorMax = new Vector2(0.5f, 1f);
-            m_ContentRoot.pivot = new Vector2(0.5f, 1f);
-            m_ContentRoot.anchoredPosition = new Vector2(0f, -m_VerticalSafePadding);
-            m_ContentRoot.sizeDelta = s_ReferenceContentSize;
-            SetModalRestScale(new Vector3(contentScale, contentScale, 1f));
-        }
-
-        public override void Show(Action onComplete = null)
-        {
-            // Re-evaluate after CanvasScaler has established its reference-space rect. The
-            // initial responsive callback can occur one frame earlier at physical resolution.
-            RectTransform host = m_ContentRoot != null ? m_ContentRoot.parent as RectTransform : null;
-            if (host != null)
-            {
-                ApplyResponsiveLayout(host.rect.width, host.rect.height);
-            }
-
-            base.Show(onComplete);
-        }
+        // The 960x1760 themes page (ContentRoot) is fitted uniformly into the padded safe area,
+        // so short, wide, and notched screens never clip the tabs, preview, or item list.
+        protected override Vector2 ReferenceLayoutSize => s_ReferenceContentSize;
+        protected override float ReferenceMaxScale => 1f;
+        protected override Vector2 ReferenceFitPadding => new Vector2(m_HorizontalSafePadding, m_VerticalSafePadding);
 
         public void Populate(
             ThemeCatalogSO catalog,

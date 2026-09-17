@@ -40,6 +40,8 @@ namespace Line98.Presentation
         private Vector2 m_ClosePosition;
         private Vector2 m_CloseSize;
         private Vector3 m_ModalRestScale = Vector3.one;
+        private Vector2 m_LastFitHostSize;
+        private Rect m_LastFitSafeArea;
 
         public bool IsOpen => m_IsOpen;
         public CanvasGroup CanvasGroup => m_CanvasGroup;
@@ -49,6 +51,17 @@ namespace Line98.Presentation
         public Button CloseButton => m_CloseButton;
         public virtual bool UsesFullLayoutHeight => false;
         public virtual bool UsesDimScrim => true;
+
+        /// <summary>
+        /// Full-page compositions return their authored size; the modal container is then fitted
+        /// uniformly into the popup host's safe area instead of using the column-based resize.
+        /// </summary>
+        protected virtual Vector2 ReferenceLayoutSize => Vector2.zero;
+        protected virtual float ReferenceMaxScale => 1.5f;
+        /// <summary>Breathing room (host units per side) kept between the safe area and the composition.</summary>
+        protected virtual Vector2 ReferenceFitPadding => Vector2.zero;
+
+        private bool UsesReferenceFit => ReferenceLayoutSize.x > 0f && ReferenceLayoutSize.y > 0f;
         public event Action<PopupView> OnCloseRequested;
         public void Close() => HandleCloseRequested();
 
@@ -90,6 +103,13 @@ namespace Line98.Presentation
         /// </summary>
         public virtual void ApplyResponsiveLayout(float layoutWidth, float middleHeight)
         {
+            if (UsesReferenceFit)
+            {
+                // The HUD column is irrelevant to a full-page popup; fit against the real host rect.
+                RefreshReferenceFit();
+                return;
+            }
+
             CacheResponsiveBaseline();
             if (!m_HasResponsiveBaseline || m_ModalContainer == null)
             {
@@ -135,6 +155,59 @@ namespace Line98.Presentation
                 m_BodyText.fontSizeMax = Mathf.Max(m_BodyText.fontSizeMin, m_BodyFontSize * scale);
                 m_BodyText.fontSize = m_BodyFontSize * scale;
             }
+        }
+
+        /// <summary>
+        /// Canvas sizes settle after the CanvasScaler runs, so resolution and safe-area changes are
+        /// detected here rather than trusting the frame the screen change was first observed.
+        /// </summary>
+        protected virtual void LateUpdate()
+        {
+            if (!UsesReferenceFit || m_ModalContainer == null)
+            {
+                return;
+            }
+
+            RectTransform host = m_ModalContainer.parent as RectTransform;
+            if (host != null && (host.rect.size != m_LastFitHostSize || Screen.safeArea != m_LastFitSafeArea))
+            {
+                RefreshReferenceFit();
+            }
+        }
+
+        private void RefreshReferenceFit()
+        {
+            if (m_ModalContainer == null) m_ModalContainer = transform as RectTransform;
+            RectTransform host = m_ModalContainer != null ? m_ModalContainer.parent as RectTransform : null;
+            if (host == null)
+            {
+                return;
+            }
+
+            Vector2 hostSize = host.rect.size;
+            Rect safeArea = Screen.safeArea;
+            RectOffsetF safeInsets = ReferenceFitSolver.GetSafeInsets(hostSize, safeArea, Screen.width, Screen.height);
+            Vector2 padding = ReferenceFitPadding;
+            RectOffsetF insets = new RectOffsetF(
+                safeInsets.Left + padding.x,
+                safeInsets.Right + padding.x,
+                safeInsets.Top + padding.y,
+                safeInsets.Bottom + padding.y);
+            ReferenceFitSolver.FitResult fit = ReferenceFitSolver.Solve(hostSize, insets, ReferenceLayoutSize, 0.05f, ReferenceMaxScale);
+            if (!fit.IsValid)
+            {
+                return;
+            }
+
+            m_LastFitHostSize = hostSize;
+            m_LastFitSafeArea = safeArea;
+
+            m_ModalContainer.anchorMin = new Vector2(0.5f, 0.5f);
+            m_ModalContainer.anchorMax = new Vector2(0.5f, 0.5f);
+            m_ModalContainer.pivot = new Vector2(0.5f, 0.5f);
+            m_ModalContainer.sizeDelta = ReferenceLayoutSize;
+            m_ModalContainer.anchoredPosition = fit.Offset;
+            SetModalRestScale(Vector3.one * fit.Scale);
         }
 
         private void CacheResponsiveBaseline()
@@ -238,6 +311,9 @@ namespace Line98.Presentation
         {
             gameObject.SetActive(true);
             m_IsOpen = true;
+
+            // A registration-time fit can run before the canvas has a size; re-fit against the real rect.
+            if (UsesReferenceFit) RefreshReferenceFit();
 
             if (m_CanvasGroup != null)
             {

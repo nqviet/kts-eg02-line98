@@ -80,31 +80,8 @@ namespace Line98.Presentation
 
         private bool IsCrystal => m_Theme != null && m_Theme.CardBackgroundSprite != null;
 
-        public override void ApplyResponsiveLayout(float layoutWidth, float middleHeight)
-        {
-            if (ModalContainer == null) return;
-            const float referenceWidth = 940f;
-            const float referenceHeight = 1670f;
-
-            // Screens without HUD slots report an empty layout; fall back to the popup's own rect.
-            RectTransform host = transform as RectTransform;
-            if ((layoutWidth <= 1f || middleHeight <= 1f) && host != null && host.rect.width > 1f && host.rect.height > 1f)
-            {
-                layoutWidth = host.rect.width;
-                middleHeight = host.rect.height;
-            }
-            if (layoutWidth <= 1f || middleHeight <= 1f) return;
-
-            float scale = Mathf.Clamp(Mathf.Min(
-                layoutWidth / referenceWidth,
-                middleHeight / referenceHeight), 0.45f, 1.5f);
-            ModalContainer.anchorMin = new Vector2(0.5f, 0.5f);
-            ModalContainer.anchorMax = new Vector2(0.5f, 0.5f);
-            ModalContainer.pivot = new Vector2(0.5f, 0.5f);
-            ModalContainer.sizeDelta = new Vector2(referenceWidth, referenceHeight);
-            ModalContainer.anchoredPosition = Vector2.zero;
-            SetModalRestScale(Vector3.one * scale);
-        }
+        // The 940x1670 composition is a full page fitted into the safe area.
+        protected override Vector2 ReferenceLayoutSize => new Vector2(940f, 1670f);
 
         protected override void Awake()
         {
@@ -120,13 +97,6 @@ namespace Line98.Presentation
             if (m_AchievementsTabButton != null) m_AchievementsTabButton.onClick.RemoveListener(ShowAchievements);
             if (m_ViewAllButton != null) m_ViewAllButton.onClick.RemoveListener(ShowAchievements);
             base.OnDestroy();
-        }
-
-        public override void Show(Action onComplete = null)
-        {
-            // The responsive callback can run before the canvas has a size; re-fit against the real rect.
-            ApplyResponsiveLayout(0f, 0f);
-            base.Show(onComplete);
         }
 
         public void Populate(int gamesPlayed, int bestScore, int totalLines, int avgScore)

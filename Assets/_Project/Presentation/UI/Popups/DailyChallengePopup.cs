@@ -51,33 +51,8 @@ namespace Line98.Presentation
         public event Action OnPlayRequested;
         public event Action OnHowToPlayRequested;
 
-        public override void ApplyResponsiveLayout(float layoutWidth, float middleHeight)
-        {
-            if (ModalContainer == null) return;
-            const float referenceWidth = 940f;
-            const float referenceHeight = 1670f;
-
-            // The safe-area fitter reports an empty layout on screens without HUD slots (main menu).
-            // Fall back to the popup's own full-screen rect instead of collapsing to the minimum scale.
-            RectTransform host = transform as RectTransform;
-            if ((layoutWidth <= 1f || middleHeight <= 1f) && host != null && host.rect.width > 1f && host.rect.height > 1f)
-            {
-                layoutWidth = host.rect.width;
-                middleHeight = host.rect.height;
-            }
-            if (layoutWidth <= 1f || middleHeight <= 1f) return;
-
-            // The 940x1670 composition is a full page, so it fills the available layout.
-            float scale = Mathf.Clamp(Mathf.Min(
-                layoutWidth / referenceWidth,
-                middleHeight / referenceHeight), 0.45f, 1.5f);
-            ModalContainer.anchorMin = new Vector2(0.5f, 0.5f);
-            ModalContainer.anchorMax = new Vector2(0.5f, 0.5f);
-            ModalContainer.pivot = new Vector2(0.5f, 0.5f);
-            ModalContainer.sizeDelta = new Vector2(referenceWidth, referenceHeight);
-            ModalContainer.anchoredPosition = Vector2.zero;
-            SetModalRestScale(Vector3.one * scale);
-        }
+        // The 940x1670 composition is a full page fitted into the safe area.
+        protected override Vector2 ReferenceLayoutSize => new Vector2(940f, 1670f);
 
         protected override void Awake()
         {
@@ -127,13 +102,6 @@ namespace Line98.Presentation
             PopulateWeek();
             PopulateBoard();
             PopulateMissionBalls();
-        }
-
-        public override void Show(Action onComplete = null)
-        {
-            // The responsive callback can run before the canvas has a size; re-fit against the real rect.
-            ApplyResponsiveLayout(0f, 0f);
-            base.Show(onComplete);
         }
 
         private void ApplySurfaceStyle()
