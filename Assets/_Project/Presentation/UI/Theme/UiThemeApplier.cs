@@ -38,7 +38,12 @@ namespace Line98.Presentation
             SurfaceTertiaryZen,
             InkButtonPrimary,
             StreakDotOn,
-            StreakDotOff
+            StreakDotOff,
+            SelectedBadgeFill,
+            SelectedBadgeInk,
+            ActiveCardBorder,
+            LightScrim,
+            PanelCell
         }
 
         public enum SpriteToken
@@ -103,10 +108,33 @@ namespace Line98.Presentation
             m_SpriteTargets = spriteTargets ?? System.Array.Empty<UnityEngine.UI.Image>();
         }
 
+        public ColorToken CurrentColorToken => m_ColorToken;
+        public SpriteToken CurrentSpriteToken => m_SpriteToken;
+        public MaterialToken CurrentMaterialToken => m_MaterialToken;
+        public Graphic[] ColorTargets => m_ColorTargets ?? System.Array.Empty<Graphic>();
+        public UnityEngine.UI.Image[] SpriteTargets => m_SpriteTargets ?? System.Array.Empty<UnityEngine.UI.Image>();
+        public Graphic[] MaterialTargets => m_MaterialTargets ?? System.Array.Empty<Graphic>();
+
         public void ConfigureMaterial(MaterialToken materialToken, Graphic[] materialTargets)
         {
             m_MaterialToken = materialToken;
             m_MaterialTargets = materialTargets ?? System.Array.Empty<Graphic>();
+        }
+
+        public static bool IsSurfaceToken(SpriteToken token)
+        {
+            return token switch
+            {
+                SpriteToken.CardBackground or
+                SpriteToken.CardGold or
+                SpriteToken.ButtonCapsule or
+                SpriteToken.ButtonCapsulePrimary or
+                SpriteToken.ButtonCircle or
+                SpriteToken.ToggleTrackOn or
+                SpriteToken.ToggleTrackOff or
+                SpriteToken.ToggleThumb => true,
+                _ => false
+            };
         }
 
         public void Apply(UiThemeSO theme)
@@ -138,17 +166,34 @@ namespace Line98.Presentation
 
             Sprite sprite = ResolveSprite(theme, m_SpriteToken);
             Material material = ResolveMaterial(theme, m_MaterialToken);
+            bool isSurface = IsSurfaceToken(m_SpriteToken);
 
             if (m_SpriteToken != SpriteToken.None)
             {
                 for (int i = 0; i < m_SpriteTargets.Length; i++)
                 {
-                    if (m_SpriteTargets[i] != null)
+                    var img = m_SpriteTargets[i];
+                    if (img == null) continue;
+
+                    if (isSurface)
                     {
                         if (sprite != null)
                         {
-                            m_SpriteTargets[i].sprite = sprite;
-                            m_SpriteTargets[i].material = null; // D18: Sprite xor Material
+                            img.sprite = sprite;
+                            img.material = null; // D18: Sprite xor Material
+                        }
+                        else
+                        {
+                            img.sprite = null;
+                            img.material = material;
+                        }
+                    }
+                    else
+                    {
+                        if (sprite != null)
+                        {
+                            img.sprite = sprite;
+                            img.material = null;
                         }
                     }
                 }
@@ -158,19 +203,31 @@ namespace Line98.Presentation
             {
                 for (int i = 0; i < m_MaterialTargets.Length; i++)
                 {
-                    if (m_MaterialTargets[i] != null)
+                    var matTarget = m_MaterialTargets[i];
+                    if (matTarget == null) continue;
+
+                    if (sprite != null && isSurface)
                     {
-                        if (material != null)
+                        matTarget.material = null;
+                        if (matTarget is UnityEngine.UI.Image img)
                         {
-                            m_MaterialTargets[i].material = material;
-                            if (m_MaterialTargets[i] is UnityEngine.UI.Image img)
-                            {
-                                img.sprite = null; // D18: Material xor Sprite
-                            }
+                            img.sprite = sprite;
                         }
-                        else if (sprite != null)
+                    }
+                    else if (material != null)
+                    {
+                        matTarget.material = material;
+                        if (matTarget is UnityEngine.UI.Image img && (isSurface || sprite == null))
                         {
-                            m_MaterialTargets[i].material = null;
+                            img.sprite = null; // D18: Material xor Sprite
+                        }
+                    }
+                    else
+                    {
+                        matTarget.material = null;
+                        if (matTarget is UnityEngine.UI.Image img && isSurface)
+                        {
+                            img.sprite = null;
                         }
                     }
                 }
@@ -208,6 +265,11 @@ namespace Line98.Presentation
                 ColorToken.InkButtonPrimary => theme.InkButtonPrimary,
                 ColorToken.StreakDotOn => theme.StreakDotOn,
                 ColorToken.StreakDotOff => theme.StreakDotOff,
+                ColorToken.SelectedBadgeFill => theme.SelectedBadgeFill,
+                ColorToken.SelectedBadgeInk => theme.SelectedBadgeInk,
+                ColorToken.ActiveCardBorder => theme.ActiveCardBorder,
+                ColorToken.LightScrim => theme.LightScrim,
+                ColorToken.PanelCell => theme.PanelCell,
                 _ => theme.PanelCard
             };
         }

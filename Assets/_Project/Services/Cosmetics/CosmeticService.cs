@@ -27,7 +27,7 @@ namespace Line98.Services
             LoadAndInitialize();
         }
 
-        public string ActiveThemeId => m_ActiveTheme != null ? m_ActiveTheme.ThemeId : (m_Settings?.ThemeId ?? "crystal");
+        public string ActiveThemeId => m_ActiveTheme != null ? m_ActiveTheme.ThemeId : (m_Settings?.ThemeId ?? ThemeIds.Classic);
 
         public ThemeDefinitionSO ActiveTheme => m_ActiveTheme;
 
@@ -39,7 +39,7 @@ namespace Line98.Services
                 {
                     return m_Settings.BallOverrideId;
                 }
-                return m_ActiveTheme?.BallTheme?.ThemeId ?? "crystal";
+                return m_ActiveTheme?.BallTheme?.ThemeId ?? ThemeIds.Classic;
             }
         }
 
@@ -51,7 +51,7 @@ namespace Line98.Services
                 {
                     return m_Settings.BoardOverrideId;
                 }
-                return m_ActiveTheme?.BoardTheme?.ThemeId ?? "crystal";
+                return m_ActiveTheme?.BoardTheme?.ThemeId ?? ThemeIds.Classic;
             }
         }
 
@@ -63,7 +63,7 @@ namespace Line98.Services
                 {
                     return m_Settings.ClearEffectOverrideId;
                 }
-                return m_ActiveTheme?.ClearEffect?.ThemeId ?? "crystal";
+                return m_ActiveTheme?.ClearEffect?.ThemeId ?? ThemeIds.Classic;
             }
         }
 
@@ -162,7 +162,7 @@ namespace Line98.Services
 
         public void ResetToDefault()
         {
-            string defaultId = m_Catalog != null ? m_Catalog.DefaultThemeId : "crystal";
+            string defaultId = m_Catalog != null ? m_Catalog.DefaultThemeId : ThemeIds.Classic;
             SetTheme(defaultId);
         }
 

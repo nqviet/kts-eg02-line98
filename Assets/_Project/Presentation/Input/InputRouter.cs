@@ -138,6 +138,8 @@ namespace Line98.Presentation
         {
             if (m_Session == null) return;
 
+            SynchronizeSelectionFromSession();
+
             bool cellOccupied = !m_Session.Board.IsEmpty(tappedPos);
 
             if (m_State == InputState.Idle)
@@ -180,6 +182,19 @@ namespace Line98.Presentation
                     }
                 }
             }
+        }
+
+        private void SynchronizeSelectionFromSession()
+        {
+            if (m_State != InputState.Idle || !m_Session.HasSelection)
+            {
+                return;
+            }
+
+            // Hint selection is initiated by the HUD directly on the authoritative session.
+            // Mirror it before routing the next board tap so any legal destination remains valid.
+            m_SelectedPos = m_Session.SelectedPos;
+            m_State = InputState.BallSelected;
         }
 
         public void SelectBall(GridPos pos)

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Line98.Data::Line98.Data.ThemeDefinitionSO
   m_ThemeId: crystal
   m_DisplayName: Crystal Garden
-  m_Thumbnail: {fileID: 21300000, guid: b04e333050d79f64aa3012f881597f13, type: 3}
+  m_Thumbnail: {fileID: -4095754298707592765, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
   m_UnlockedByDefault: 1
   m_InheritsFrom: {fileID: 11400000, guid: fc60eb4eb54cd4c47b2d2347f1dbd89d, type: 2}
   m_BallTheme: {fileID: 11400000, guid: aa4735cf058775748b4a43e99f9fbfe4, type: 2}

@@ -1,3 +1,4 @@
+using Line98.Data;
 using Line98.Presentation;
 using Line98.Services;
 
@@ -16,9 +17,9 @@ namespace Line98.App
             m_CosmeticService = cosmeticService;
         }
 
-        public string ActiveBallThemeId => m_CosmeticService?.ActiveBallThemeId ?? "crystal";
-        public string ActiveBoardThemeId => m_CosmeticService?.ActiveBoardThemeId ?? "crystal";
-        public string ActiveClearEffectThemeId => m_CosmeticService?.ActiveClearEffectThemeId ?? "crystal";
+        public string ActiveBallThemeId => m_CosmeticService?.ActiveBallThemeId ?? ThemeIds.Classic;
+        public string ActiveBoardThemeId => m_CosmeticService?.ActiveBoardThemeId ?? ThemeIds.Classic;
+        public string ActiveClearEffectThemeId => m_CosmeticService?.ActiveClearEffectThemeId ?? ThemeIds.Classic;
 
         public void RequestTheme(string themeId)
         {

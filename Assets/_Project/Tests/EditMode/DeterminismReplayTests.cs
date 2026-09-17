@@ -43,6 +43,34 @@ namespace Line98.Tests.EditMode
             }
         }
 
+        [Test]
+        public void RequestHint_DoesNotAdvanceSessionRng()
+        {
+            const uint seed = 0x1234ABCD;
+            var hintedSession = new GameSession();
+            hintedSession.StartNewGame(seed);
+            var controlSession = new GameSession();
+            controlSession.StartNewGame(seed);
+
+            XorShift128 rngBefore = hintedSession.Rng;
+            Assert.IsTrue(hintedSession.RequestHint(out GridPos hintedFrom, out GridPos hintedTo));
+            Assert.AreEqual(rngBefore.S0, hintedSession.Rng.S0);
+            Assert.AreEqual(rngBefore.S1, hintedSession.Rng.S1);
+
+            Assert.IsTrue(FindLegalMove(controlSession.Board, out GridPos from, out GridPos to));
+            Assert.IsTrue(hintedSession.TrySelect(from));
+            Assert.IsTrue(hintedSession.ExecuteMove(to));
+            Assert.IsTrue(controlSession.TrySelect(from));
+            Assert.IsTrue(controlSession.ExecuteMove(to));
+
+            Assert.AreEqual(controlSession.Rng.S0, hintedSession.Rng.S0);
+            Assert.AreEqual(controlSession.Rng.S1, hintedSession.Rng.S1);
+            CollectionAssert.AreEqual(controlSession.Board.ExportCells(), hintedSession.Board.ExportCells());
+
+            Assert.IsTrue(hintedFrom.IsValid);
+            Assert.IsTrue(hintedTo.IsValid);
+        }
+
         private static bool FindLegalMove(BoardModel board, out GridPos from, out GridPos to)
         {
             from = default;

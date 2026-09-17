@@ -15,4 +15,4 @@ MonoBehaviour:
   m_Themes:
   - {fileID: 11400000, guid: fc60eb4eb54cd4c47b2d2347f1dbd89d, type: 2}
   - {fileID: 11400000, guid: 3a2a36885bc55954da502dcd08caa9dd, type: 2}
-  m_DefaultThemeId: crystal
+  m_DefaultThemeId: classic

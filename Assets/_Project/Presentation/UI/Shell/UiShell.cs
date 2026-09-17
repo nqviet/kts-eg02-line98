@@ -118,7 +118,7 @@ namespace Line98.Presentation
             m_ThemeCatalog = catalog;
         }
 
-        private string m_ActiveBundleThemeId = "crystal";
+        private string m_ActiveBundleThemeId = ThemeIds.Classic;
 
         public void ApplyTheme(UiThemeSO theme, string bundleThemeId = null)
         {
@@ -148,6 +148,19 @@ namespace Line98.Presentation
                 }
 
                 m_SettingsPopup?.ApplyTheme(m_UiTheme);
+                m_CosmeticsPopup?.ApplyTheme(m_UiTheme);
+
+                if (m_PopupRegistry != null)
+                {
+                    if (m_PopupRegistry.TryGetRegistered(UiPopupId.Settings, out var sp) && sp is SettingsPopup settings)
+                    {
+                        settings.ApplyTheme(m_UiTheme);
+                    }
+                    if (m_PopupRegistry.TryGetRegistered(UiPopupId.Cosmetics, out var cp) && cp is CosmeticsPopup cosmetics)
+                    {
+                        cosmetics.ApplyTheme(m_UiTheme);
+                    }
+                }
             }
 
             if (m_CosmeticsPopup != null && m_CosmeticsPopup.IsOpen)
@@ -155,6 +168,8 @@ namespace Line98.Presentation
                 m_CosmeticsPopup.SetActiveTheme(m_ActiveBundleThemeId);
             }
         }
+
+        public UiThemeSO UiTheme => m_UiTheme;
 
         public void EnsureCanvasSortingOrders()
         {
@@ -186,7 +201,7 @@ namespace Line98.Presentation
 
         public void OpenCosmetics()
         {
-            string activeId = !string.IsNullOrEmpty(m_ActiveBundleThemeId) ? m_ActiveBundleThemeId : "crystal";
+            string activeId = !string.IsNullOrEmpty(m_ActiveBundleThemeId) ? m_ActiveBundleThemeId : ThemeIds.Classic;
             if (m_ThemeCatalog == null)
             {
                 Debug.LogWarning("[UiShell] Cannot populate themes because no ThemeCatalogSO is configured.");
@@ -250,10 +265,42 @@ namespace Line98.Presentation
             popup.Initialize(m_TweenRunner);
             popup.OnCloseRequested -= HandlePopupCloseRequested;
             popup.OnCloseRequested += HandlePopupCloseRequested;
+            if (m_UiTheme != null)
+            {
+                ApplyThemeToPopup(popup, m_UiTheme);
+            }
             m_PopupStack.Push(popup);
             popup.transform.SetAsLastSibling();
             m_CanvasStack?.SetModalVisible(true, popup.UsesDimScrim);
             popup.Show();
+        }
+
+        public void ApplyThemeToPopup(PopupView popup, UiThemeSO theme)
+        {
+            if (popup == null || theme == null) return;
+
+            UiThemeApplier[] appliers = popup.GetComponentsInChildren<UiThemeApplier>(true);
+            for (int i = 0; i < appliers.Length; i++)
+            {
+                appliers[i].Apply(theme);
+            }
+
+            UiToggle[] toggles = popup.GetComponentsInChildren<UiToggle>(true);
+            for (int i = 0; i < toggles.Length; i++)
+            {
+                toggles[i].ApplyTheme(theme);
+            }
+
+            if (popup is SettingsPopup settings)
+            {
+                m_SettingsPopup = settings;
+                settings.ApplyTheme(theme);
+            }
+            else if (popup is CosmeticsPopup cosmetics)
+            {
+                m_CosmeticsPopup = cosmetics;
+                cosmetics.ApplyTheme(theme);
+            }
         }
 
         public void PopPopup()

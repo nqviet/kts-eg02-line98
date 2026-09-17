@@ -192,6 +192,10 @@ namespace Line98.Presentation
                 instance.name = entry.Prefab.name;
                 instance.gameObject.SetActive(false);
                 Register(id, instance);
+                if (m_Shell.UiTheme != null)
+                {
+                    m_Shell.ApplyThemeToPopup(instance, m_Shell.UiTheme);
+                }
                 return instance;
             }
 

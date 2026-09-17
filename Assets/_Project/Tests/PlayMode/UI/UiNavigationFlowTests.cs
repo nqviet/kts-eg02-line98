@@ -22,7 +22,8 @@ namespace Line98.Tests.PlayMode.UI
             playButtonObject.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return WaitForScene("Game");
 
-            GameObject menuButtonObject = GameObject.Find("UI_Root/Canvas_StaticHUD/Button_Menu");
+            GameObject menuButtonObject = GameObject.Find("UI_Root/Canvas_StaticHUD/ActionBar/Button_Menu")
+                ?? GameObject.Find("UI_Root/Canvas_StaticHUD/Button_Menu");
             Assert.IsNotNull(menuButtonObject, "Game shell must expose a Menu navigation button.");
             menuButtonObject.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return WaitForScene("MainMenu");

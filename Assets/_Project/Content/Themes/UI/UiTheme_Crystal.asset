@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: UiTheme_Crystal
   m_EditorClassIdentifier: Line98.Data::Line98.Data.UiThemeSO
   m_ThemeId: crystal
-  m_DisplayName: Crystal
-  m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_DisplayName: Crystal Garden
+  m_Thumbnail: {fileID: -4095754298707592765, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
   m_UnlockedByDefault: 1
   m_PreviewSpriteSet: {fileID: 11400000, guid: 82c79ad658fdb074ea5068b2cfa6e272, type: 2}
   m_PanelCard: {r: 0.96862745, g: 0.9607843, b: 0.93333334, a: 1}
@@ -62,6 +62,10 @@ MonoBehaviour:
   m_InkButtonPrimary: {r: 1, g: 1, b: 1, a: 1}
   m_StreakDotOn: {r: 0.145, g: 0.722, b: 0.365, a: 1}
   m_StreakDotOff: {r: 0.812, g: 0.839, b: 0.863, a: 1}
+  m_SelectedBadgeFill: {r: 0.875, g: 0.965, b: 0.898, a: 1}
+  m_SelectedBadgeInk: {r: 0.118, g: 0.478, b: 0.239, a: 1}
+  m_ActiveCardBorder: {r: 0.184, g: 0.733, b: 0.38, a: 1}
+  m_LightScrim: {r: 0.96, g: 0.97, b: 0.98, a: 0.75}
   m_CardBackgroundSprite: {fileID: 7325034561425969003, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
   m_CardGoldSprite: {fileID: -3034189918421958063, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
   m_ButtonCapsuleSprite: {fileID: 966437194272367757, guid: 25ab638f4fac9694780512b9099bb012, type: 3}

@@ -22,6 +22,11 @@ namespace Line98.Presentation
         [SerializeField] private float m_ThumbTravelDistance = 44f;
         [SerializeField] private float m_TransitionDuration = 0.22f;
 
+        [Header("Colors")]
+        [SerializeField] private Color m_TrackActiveColor = new Color(0.153f, 0.722f, 0.373f, 1f);
+        [SerializeField] private Color m_TrackInactiveColor = new Color(0.816f, 0.808f, 0.780f, 1f);
+        [SerializeField] private Color m_ThumbColor = Color.white;
+
         [Header("State")]
         [SerializeField] private bool m_IsOn = true;
 
@@ -50,9 +55,14 @@ namespace Line98.Presentation
         {
             if (theme == null) return;
 
-            if (theme.ToggleTrackOnSprite != null) m_TrackOnSprite = theme.ToggleTrackOnSprite;
-            if (theme.ToggleTrackOffSprite != null) m_TrackOffSprite = theme.ToggleTrackOffSprite;
-            if (theme.ToggleThumbSprite != null) m_ThumbSprite = theme.ToggleThumbSprite;
+            m_TrackOnSprite = theme.ToggleTrackOnSprite;
+            m_TrackOffSprite = theme.ToggleTrackOffSprite;
+            m_ThumbSprite = theme.ToggleThumbSprite;
+
+            m_TrackActiveColor = theme.ToggleTrackActive;
+            m_TrackInactiveColor = theme.ToggleTrackInactive;
+            m_ThumbColor = theme.ToggleThumb;
+
             UpdateVisuals(animate: false);
         }
 
@@ -65,12 +75,29 @@ namespace Line98.Presentation
         {
             if (m_TrackImage != null)
             {
-                m_TrackImage.sprite = m_IsOn ? m_TrackOnSprite : m_TrackOffSprite;
+                Sprite trackSprite = m_IsOn ? m_TrackOnSprite : m_TrackOffSprite;
+                m_TrackImage.sprite = trackSprite;
+                if (trackSprite != null)
+                {
+                    m_TrackImage.color = Color.white;
+                }
+                else
+                {
+                    m_TrackImage.color = m_IsOn ? m_TrackActiveColor : m_TrackInactiveColor;
+                }
             }
 
-            if (m_ThumbImage != null && m_ThumbSprite != null)
+            if (m_ThumbImage != null)
             {
                 m_ThumbImage.sprite = m_ThumbSprite;
+                if (m_TrackOnSprite != null)
+                {
+                    m_ThumbImage.color = new Color(1f, 1f, 1f, 0f);
+                }
+                else
+                {
+                    m_ThumbImage.color = m_ThumbColor;
+                }
             }
 
             if (m_ThumbTransform == null) return;

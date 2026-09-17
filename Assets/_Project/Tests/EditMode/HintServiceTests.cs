@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Collections.Generic;
 using Line98.Core;
 using Line98.Data;
@@ -24,6 +25,229 @@ namespace Line98.Tests.EditMode
             m_Queue = new PreviewQueue();
             m_Rules = ScoreRules.Default;
             m_PathOut = new List<GridPos>(BoardModel.CellCount);
+        }
+
+        [Test]
+        public void NonClearingBoard_ExtendsSameColorRun()
+        {
+            m_Board.Set(new GridPos(2, 4), BallColor.Red);
+            m_Board.Set(new GridPos(3, 4), BallColor.Red);
+            m_Board.Set(new GridPos(4, 4), BallColor.Red);
+            m_Board.Set(new GridPos(0, 0), BallColor.Red);
+            SetQueue(BallColor.Red);
+
+            HintSuggestion suggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules, m_PathOut);
+
+            Assert.AreEqual(HintTier.Setup, suggestion.Tier);
+            Assert.Greater(suggestion.PotentialGain, 0);
+            Assert.AreEqual(new GridPos(0, 0), suggestion.From);
+            Assert.IsTrue(
+                suggestion.To == new GridPos(1, 4) || suggestion.To == new GridPos(5, 4),
+                $"Expected the loose Red ball to extend the run, got {suggestion.From}->{suggestion.To}.");
+        }
+
+        [Test]
+        public void NonClearingBoard_DoesNotBreakFourRun()
+        {
+            for (int x = 2; x <= 5; x++)
+            {
+                m_Board.Set(new GridPos(x, 4), BallColor.Red);
+            }
+
+            m_Board.Set(new GridPos(2, 7), BallColor.Blue);
+            m_Board.Set(new GridPos(3, 7), BallColor.Blue);
+            m_Board.Set(new GridPos(4, 7), BallColor.Blue);
+            m_Board.Set(new GridPos(0, 0), BallColor.Blue);
+            SetQueue(BallColor.Blue);
+
+            HintSuggestion suggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+
+            Assert.AreEqual(HintTier.Setup, suggestion.Tier);
+            Assert.AreEqual(new GridPos(0, 0), suggestion.From,
+                "The hint should build the Blue line instead of dismantling the Red four-run.");
+        }
+
+        [Test]
+        public void ClearCase_Wins_AndReportsTier()
+        {
+            for (int y = 0; y < 4; y++)
+            {
+                m_Board.Set(new GridPos(0, y), BallColor.Red);
+            }
+            m_Board.Set(new GridPos(2, 4), BallColor.Red);
+
+            HintSuggestion suggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules, m_PathOut);
+
+            Assert.AreEqual(HintTier.Clear, suggestion.Tier);
+            Assert.AreEqual(100, suggestion.ExpectedScore);
+            Assert.AreEqual(new GridPos(2, 4), suggestion.From);
+            Assert.AreEqual(new GridPos(0, 4), suggestion.To);
+        }
+
+        [Test]
+        public void PrefersHigherScoringClear()
+        {
+            m_Board.Set(new GridPos(0, 0), BallColor.Red);
+            m_Board.Set(new GridPos(1, 0), BallColor.Red);
+            m_Board.Set(new GridPos(2, 0), BallColor.Red);
+            m_Board.Set(new GridPos(3, 0), BallColor.Red);
+            m_Board.Set(new GridPos(5, 0), BallColor.Red);
+            m_Board.Set(new GridPos(8, 8), BallColor.Red);
+
+            m_Board.Set(new GridPos(0, 2), BallColor.Blue);
+            m_Board.Set(new GridPos(1, 2), BallColor.Blue);
+            m_Board.Set(new GridPos(2, 2), BallColor.Blue);
+            m_Board.Set(new GridPos(3, 2), BallColor.Blue);
+            m_Board.Set(new GridPos(7, 8), BallColor.Blue);
+
+            HintSuggestion suggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+
+            Assert.AreEqual(HintTier.Clear, suggestion.Tier);
+            Assert.AreEqual(180, suggestion.ExpectedScore);
+            Assert.AreEqual(new GridPos(8, 8), suggestion.From);
+            Assert.AreEqual(new GridPos(4, 0), suggestion.To);
+        }
+
+        [Test]
+        public void PreviewQueueChangesSuggestion()
+        {
+            m_Board.Set(new GridPos(2, 2), BallColor.Red);
+            m_Board.Set(new GridPos(3, 2), BallColor.Red);
+            m_Board.Set(new GridPos(4, 2), BallColor.Red);
+            m_Board.Set(new GridPos(0, 0), BallColor.Red);
+
+            m_Board.Set(new GridPos(2, 6), BallColor.Blue);
+            m_Board.Set(new GridPos(3, 6), BallColor.Blue);
+            m_Board.Set(new GridPos(4, 6), BallColor.Blue);
+            m_Board.Set(new GridPos(8, 8), BallColor.Blue);
+
+            SetQueue(BallColor.Red);
+            HintSuggestion redSuggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+
+            SetQueue(BallColor.Blue);
+            HintSuggestion blueSuggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+
+            Assert.AreEqual(HintTier.Setup, redSuggestion.Tier);
+            Assert.AreEqual(HintTier.Setup, blueSuggestion.Tier);
+            Assert.AreEqual(BallColor.Red, m_Board.ColorAt(redSuggestion.From));
+            Assert.AreEqual(BallColor.Blue, m_Board.ColorAt(blueSuggestion.From));
+            Assert.AreNotEqual(redSuggestion.From, blueSuggestion.From);
+        }
+
+        [Test]
+        public void SeededFuzz_AlwaysLegal_OrReportsNoMove()
+        {
+            var random = new System.Random(0x5EED);
+            var freshPath = new List<GridPos>(BoardModel.CellCount);
+
+            for (int sample = 0; sample < 64; sample++)
+            {
+                m_Board.Reset();
+
+                for (int index = 0; index < BoardModel.CellCount; index++)
+                {
+                    bool occupied = sample == 1 ||
+                        (sample > 1 && random.Next(100) < 10 + sample);
+                    if (occupied)
+                    {
+                        m_Board.Set(index, (BallColor)(random.Next(7) + 1));
+                    }
+                }
+
+                for (int i = 0; i < m_Queue.Count; i++)
+                {
+                    m_Queue[i] = (BallColor)(random.Next(7) + 1);
+                }
+
+                bool hasLegalMove = MoveResolver.CheckAnyLegalMove(m_Board);
+                HintSuggestion suggestion = HintService.FindBestMove(m_Board, m_Queue, m_Rules, m_PathOut);
+                bool found = suggestion.Tier != HintTier.None;
+
+                Assert.AreEqual(hasLegalMove, found, $"Mismatch on seeded board {sample}.");
+                if (!found)
+                {
+                    Assert.AreEqual(0, m_PathOut.Count);
+                    continue;
+                }
+
+                Assert.IsFalse(m_Board.IsEmpty(suggestion.From), $"Source was empty on board {sample}.");
+                Assert.IsTrue(m_Board.IsEmpty(suggestion.To), $"Destination was occupied on board {sample}.");
+                Assert.IsTrue(Pathfinder.TryFindPath(m_Board, suggestion.From, suggestion.To, freshPath));
+                CollectionAssert.AreEqual(freshPath, m_PathOut, $"Path mismatch on board {sample}.");
+            }
+        }
+
+        [Test]
+        public void Hint_IsRepeatableAndRngFree()
+        {
+            m_Board.Set(new GridPos(2, 4), BallColor.Green);
+            m_Board.Set(new GridPos(3, 4), BallColor.Green);
+            m_Board.Set(new GridPos(4, 4), BallColor.Green);
+            m_Board.Set(new GridPos(0, 0), BallColor.Green);
+            SetQueue(BallColor.Green);
+
+            HintSuggestion expected = HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+
+            for (int i = 0; i < 10; i++)
+            {
+                HintSuggestion actual = HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+                Assert.AreEqual(expected.From, actual.From);
+                Assert.AreEqual(expected.To, actual.To);
+                Assert.AreEqual(expected.Tier, actual.Tier);
+                Assert.AreEqual(expected.ExpectedScore, actual.ExpectedScore);
+                Assert.AreEqual(expected.PotentialGain, actual.PotentialGain);
+            }
+        }
+
+        [Test]
+        public void Hint_StaysWithinBudget()
+        {
+            for (int i = 0; i < 25; i++)
+            {
+                int index = i * 17 % BoardModel.CellCount;
+                m_Board.Set(index, (BallColor)(i % 7 + 1));
+            }
+            SetQueue(BallColor.Cyan);
+
+            for (int i = 0; i < 3; i++)
+            {
+                HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+            }
+
+            var stopwatch = new Stopwatch();
+            double worstMilliseconds = 0d;
+            for (int i = 0; i < 5; i++)
+            {
+                stopwatch.Restart();
+                HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+                stopwatch.Stop();
+                worstMilliseconds = System.Math.Max(worstMilliseconds, stopwatch.Elapsed.TotalMilliseconds);
+            }
+
+            Assert.Less(worstMilliseconds, 15d,
+                $"Hint evaluation took {worstMilliseconds:F2} ms on the 25-ball smoke board.");
+        }
+
+        [Test]
+        public void Hint_AfterWarmup_AllocatesZeroBytes()
+        {
+            m_Board.Set(new GridPos(2, 4), BallColor.Red);
+            m_Board.Set(new GridPos(3, 4), BallColor.Red);
+            m_Board.Set(new GridPos(4, 4), BallColor.Red);
+            m_Board.Set(new GridPos(0, 0), BallColor.Red);
+            SetQueue(BallColor.Red);
+
+            HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+
+            long beforeBytes = System.GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 20; i++)
+            {
+                HintService.FindBestMove(m_Board, m_Queue, m_Rules);
+            }
+            long allocatedBytes = System.GC.GetAllocatedBytesForCurrentThread() - beforeBytes;
+
+            Assert.AreEqual(0, allocatedBytes,
+                $"Hint evaluation allocated {allocatedBytes} bytes after warmup.");
         }
 
         [Test]
@@ -140,6 +364,14 @@ namespace Line98.Tests.EditMode
             Assert.IsFalse(preview.DestRingObject.activeSelf);
 
             Object.DestroyImmediate(rootGo);
+        }
+
+        private void SetQueue(BallColor color)
+        {
+            for (int i = 0; i < m_Queue.Count; i++)
+            {
+                m_Queue[i] = color;
+            }
         }
     }
 }

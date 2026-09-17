@@ -20,6 +20,6 @@ MonoBehaviour:
   m_BoardFrameMaterial: {fileID: 2100000, guid: 4b1caf24bf86ba34c81f1ae0e6e580b2, type: 2}
   m_RowPitchScale: 1.1791784
   m_ThemeId: crystal
-  m_DisplayName: Crystal
-  m_Thumbnail: {fileID: 630858239, guid: 5ed0044372495484180e295794e96e6b, type: 3}
+  m_DisplayName: Crystal Garden
+  m_Thumbnail: {fileID: -4095754298707592765, guid: 25ab638f4fac9694780512b9099bb012, type: 3}
   m_UnlockedByDefault: 1

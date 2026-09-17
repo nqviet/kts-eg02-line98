@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Line98.Data;
 using Line98.Presentation.Animation;
 
 namespace Line98.Presentation
@@ -102,9 +103,55 @@ namespace Line98.Presentation
             }
         }
 
+        private UiThemeSO m_CurrentTheme;
+
         public void Initialize(TweenRunner tweenRunner)
         {
             m_TweenRunner = tweenRunner;
+        }
+
+        public void ApplyTheme(UiThemeSO theme)
+        {
+            if (theme == null) return;
+            m_CurrentTheme = theme;
+
+            m_AppliedBadgeSprite = theme.ButtonCapsulePrimary;
+            m_SelectBadgeSprite = theme.ButtonCapsuleSprite;
+
+            if (m_AppliedBadgeSprite != null)
+            {
+                m_DefaultBgColor = Color.white;
+                m_DefaultTextColor = Color.white;
+            }
+            else
+            {
+                m_DefaultBgColor = theme.SelectedBadgeFill;
+                m_DefaultTextColor = theme.SelectedBadgeInk;
+            }
+
+            m_SelectBgColor = m_SelectBadgeSprite != null ? Color.white : theme.PanelButton;
+            m_SelectTextColor = theme.BrandNavy;
+            m_SelectBorderColor = theme.ActiveCardBorder;
+
+            if (m_ActiveBorder != null)
+            {
+                m_ActiveBorder.color = theme.ActiveCardBorder;
+                m_ActiveBorder.sprite = theme.CardBackgroundSprite;
+                m_ActiveBorder.material = theme.CardBackgroundSprite == null ? theme.SurfaceMaterialCard : null;
+            }
+
+            if (m_ItemNameLabel != null)
+            {
+                m_ItemNameLabel.color = theme.BrandNavy;
+            }
+
+            var appliers = GetComponentsInChildren<UiThemeApplier>(true);
+            for (int i = 0; i < appliers.Length; i++)
+            {
+                appliers[i].Apply(theme);
+            }
+
+            SetIsApplied(m_IsApplied, punch: false);
         }
 
         public void Bind(
@@ -174,10 +221,8 @@ namespace Line98.Presentation
             if (m_StatusBadgeBg != null)
             {
                 Sprite badgeSprite = isApplied ? m_AppliedBadgeSprite : m_SelectBadgeSprite;
-                if (badgeSprite != null)
-                {
-                    m_StatusBadgeBg.sprite = badgeSprite;
-                }
+                m_StatusBadgeBg.sprite = badgeSprite;
+                m_StatusBadgeBg.material = badgeSprite == null ? (m_CurrentTheme != null ? m_CurrentTheme.SurfaceMaterialButton : null) : null;
                 m_StatusBadgeBg.color = isApplied ? m_DefaultBgColor : m_SelectBgColor;
             }
 

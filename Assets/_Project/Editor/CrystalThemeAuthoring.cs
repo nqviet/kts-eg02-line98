@@ -19,6 +19,7 @@ namespace Line98.Editor
         private const string BoardThemePath = "Assets/_Project/Content/Definitions/BoardTheme_Crystal.asset";
         private const string ClearEffectPath = "Assets/_Project/Content/Definitions/ClearEffect_Crystal.asset";
         private const string CrystalThemePath = "Assets/_Project/Content/Definitions/Theme_Crystal.asset";
+        private const string DefaultUiThemePath = "Assets/_Project/Content/Themes/UI/UiTheme_Default.asset";
 
         private static readonly Color SurfaceCard = ParseHex("#F7F5EE");
         private static readonly Color SurfaceGold = ParseHex("#FFF8E7");
@@ -88,7 +89,7 @@ namespace Line98.Editor
         {
             string[] required =
             {
-                "sp_ui_card_cream", "sp_ui_card_gold", "sp_btn_capsule_cream", "sp_btn_circle_cream", "sp_btn_view_gold",
+                "sp_ui_card_cream", "sp_ui_card_gold", "sp_btn_capsule_cream", "sp_btn_capsule_green", "sp_btn_circle_cream", "sp_btn_view_gold",
                 "sp_toggle_track_on", "sp_toggle_track_off", "sp_toggle_knob", "sp_icon_back_arrow",
                 "sp_icon_music", "sp_icon_sfx", "sp_icon_vibrate", "sp_icon_sparkle_fx", "sp_icon_globe",
                 "sp_icon_no_ads", "sp_icon_restore", "sp_icon_shield", "sp_icon_mail", "sp_icon_external_link",
@@ -141,6 +142,10 @@ namespace Line98.Editor
             SetColor(serializedTheme, "m_InkSublabel", InkMuted);
             SetColor(serializedTheme, "m_DividerHairline", Divider);
             SetColor(serializedTheme, "m_ButtonGold", ParseHex("#F5C74E"));
+            SetColor(serializedTheme, "m_SelectedBadgeFill", new Color(0.875f, 0.965f, 0.898f, 1f));
+            SetColor(serializedTheme, "m_SelectedBadgeInk", new Color(0.118f, 0.478f, 0.239f, 1f));
+            SetColor(serializedTheme, "m_ActiveCardBorder", new Color(0.184f, 0.733f, 0.380f, 1f));
+            SetColor(serializedTheme, "m_LightScrim", new Color(0.96f, 0.97f, 0.98f, 0.75f));
 
             SetFloat(serializedTheme, "m_LabelFontSize", 22f);
             SetFloat(serializedTheme, "m_ButtonFontSize", 24f);
@@ -150,6 +155,10 @@ namespace Line98.Editor
             SetObject(serializedTheme, "m_CardBackgroundSprite", sprites["sp_ui_card_cream"]);
             SetObject(serializedTheme, "m_CardGoldSprite", sprites["sp_ui_card_gold"]);
             SetObject(serializedTheme, "m_ButtonCapsuleSprite", sprites["sp_btn_capsule_cream"]);
+            if (sprites.TryGetValue("sp_btn_capsule_green", out Sprite capPrimary))
+            {
+                SetObject(serializedTheme, "m_ButtonCapsulePrimary", capPrimary);
+            }
             SetObject(serializedTheme, "m_ButtonCircleSprite", sprites["sp_btn_circle_cream"]);
             SetObject(serializedTheme, "m_ToggleTrackOnSprite", sprites["sp_toggle_track_on"]);
             SetObject(serializedTheme, "m_ToggleTrackOffSprite", sprites["sp_toggle_track_off"]);
@@ -252,6 +261,7 @@ namespace Line98.Editor
 
         private static void BuildSettingsPopup(Dictionary<string, Sprite> sprites)
         {
+            UiThemeSO defaultTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>(DefaultUiThemePath);
             GameObject popup = PrefabUtility.LoadPrefabContents(PopupPath);
             try
             {
@@ -275,9 +285,10 @@ namespace Line98.Editor
                 UiResponsiveModal responsiveModal = GetOrAdd<UiResponsiveModal>(popup);
 
                 // A soft full-screen wash lets the studio backdrop read through while hiding the menu underneath.
-                GameObject background = CreateImage("BackgroundDecor", popup.transform, null, BackdropWash);
+                GameObject background = CreateImage("BackgroundDecor", popup.transform, null, defaultTheme != null ? defaultTheme.LightScrim : BackdropWash);
                 Stretch(background.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, new Vector2(-1200f, -1200f), new Vector2(1200f, 1200f));
                 background.GetComponent<Image>().raycastTarget = false;
+                AddApplier(background, colorToken: UiThemeApplier.ColorToken.LightScrim);
 
                 GameObject safeArea = CreateObject("SafeArea", popup.transform);
                 Stretch(safeArea.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -319,20 +330,21 @@ namespace Line98.Editor
                 scrollRect.viewport = viewport.GetComponent<RectTransform>();
                 scrollRect.content = contentRect;
 
-                Button backButton = CreateHeader(content.transform, sprites);
+                Button backButton = CreateHeader(content.transform, sprites, defaultTheme);
                 UiToggle musicToggle = null;
                 UiToggle sfxToggle = null;
                 UiToggle vibrationToggle = null;
                 UiToggle reduceEffectsToggle = null;
-                CreateAudioGroup(content.transform, sprites, out musicToggle, out sfxToggle, out vibrationToggle, out reduceEffectsToggle);
-                UiSettingRow languageRow = CreateLanguageGroup(content.transform, sprites);
+                CreateAudioGroup(content.transform, sprites, defaultTheme, out musicToggle, out sfxToggle, out vibrationToggle, out reduceEffectsToggle);
+                UiSettingRow languageRow = CreateLanguageGroup(content.transform, sprites, defaultTheme);
                 Button removeAdsButton = null;
                 UiSettingRow restoreRow = null;
-                CreatePurchaseGroup(content.transform, sprites, out removeAdsButton, out restoreRow);
+                CreatePurchaseGroup(content.transform, sprites, defaultTheme, out removeAdsButton, out restoreRow);
                 UiSettingRow privacyRow = null;
                 UiSettingRow contactRow = null;
-                CreateSupportGroup(content.transform, sprites, out privacyRow, out contactRow);
-                TMP_Text versionText = CreateFooter(content.transform, sprites);
+                CreateSupportGroup(content.transform, sprites, defaultTheme, out privacyRow, out contactRow);
+                Image[] gemSlots = null;
+                TMP_Text versionText = CreateFooter(content.transform, sprites, defaultTheme, out gemSlots);
 
                 GameObject legacyThemesBridge = CreateObject("LegacyThemesBridge", popup.transform, typeof(Image), typeof(Button));
                 legacyThemesBridge.SetActive(false);
@@ -358,6 +370,17 @@ namespace Line98.Editor
                 SetObject(popupSerialized, "m_PrimaryButton", null);
                 SetObject(popupSerialized, "m_SecondaryButton", null);
                 SetObject(popupSerialized, "m_CloseButton", null);
+
+                if (gemSlots != null)
+                {
+                    SerializedProperty gemProp = popupSerialized.FindProperty("m_GemSlots");
+                    gemProp.arraySize = gemSlots.Length;
+                    for (int i = 0; i < gemSlots.Length; i++)
+                    {
+                        gemProp.GetArrayElementAtIndex(i).objectReferenceValue = gemSlots[i];
+                    }
+                }
+
                 popupSerialized.ApplyModifiedPropertiesWithoutUndo();
 
                 SerializedObject modalSerialized = new SerializedObject(responsiveModal);
@@ -372,20 +395,32 @@ namespace Line98.Editor
             }
         }
 
-        private static Button CreateHeader(Transform parent, Dictionary<string, Sprite> sprites)
+        private static Button CreateHeader(Transform parent, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme)
         {
             GameObject header = CreateObject("HeaderBar", parent, typeof(LayoutElement));
             header.GetComponent<LayoutElement>().preferredHeight = 112f;
 
-            Button back = CreateIconButton("BtnBack", header.transform, sprites["sp_btn_circle_cream"], sprites["sp_icon_back_arrow"], 104f, 0.40f);
+            Button back = CreateIconButton("BtnBack", header.transform, null, sprites["sp_icon_back_arrow"], 104f, 0.40f);
+            Image backBg = back.GetComponent<Image>();
+            backBg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
+            backBg.color = defaultTheme != null ? defaultTheme.PanelButton : Color.white;
+            AddApplier(back.gameObject,
+                colorToken: UiThemeApplier.ColorToken.PanelButton,
+                spriteToken: UiThemeApplier.SpriteToken.ButtonCircle,
+                materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
+
+            Image backIcon = back.transform.Find("Icon").GetComponent<Image>();
+            backIcon.color = defaultTheme != null ? defaultTheme.BrandNavy : InkNavy;
+            AddApplier(backIcon.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
+
             RectTransform backRect = back.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(0f, 0.5f);
             backRect.anchorMax = new Vector2(0f, 0.5f);
             backRect.pivot = new Vector2(0f, 0.5f);
             backRect.anchoredPosition = new Vector2(-18f, 0f);
             backRect.sizeDelta = new Vector2(104f, 104f);
-            RectTransform backIcon = back.transform.Find("Icon").GetComponent<RectTransform>();
-            backIcon.anchoredPosition = new Vector2(-3f, 0f);
+            RectTransform backIconRect = backIcon.GetComponent<RectTransform>();
+            backIconRect.anchoredPosition = new Vector2(-3f, 0f);
 
             GameObject titleGroup = CreateObject("TitleGroup", header.transform, typeof(HorizontalLayoutGroup));
             RectTransform titleGroupRect = titleGroup.GetComponent<RectTransform>();
@@ -402,36 +437,47 @@ namespace Line98.Editor
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            CreateLayoutSpacer("RuleLeft", titleGroup.transform, 72f, 4f, RuleNavy);
-            TMP_Text title = CreateText("TitleText", titleGroup.transform, "SETTINGS", 80f, InkTitle, TextAlignmentOptions.Center, FontStyles.Bold);
+            GameObject ruleLeft = CreateLayoutSpacer("RuleLeft", titleGroup.transform, 72f, 4f, defaultTheme != null ? defaultTheme.DividerHairline : RuleNavy);
+            AddApplier(ruleLeft, colorToken: UiThemeApplier.ColorToken.DividerHairline);
+
+            TMP_Text title = CreateText("TitleText", titleGroup.transform, "SETTINGS", 80f, defaultTheme != null ? defaultTheme.BrandNavy : InkTitle, TextAlignmentOptions.Center, FontStyles.Bold);
             AddLayoutElement(title.gameObject, -1f, 100f);
-            CreateLayoutSpacer("RuleRight", titleGroup.transform, 72f, 4f, RuleNavy);
+            AddApplier(title.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
+
+            GameObject ruleRight = CreateLayoutSpacer("RuleRight", titleGroup.transform, 72f, 4f, defaultTheme != null ? defaultTheme.DividerHairline : RuleNavy);
+            AddApplier(ruleRight, colorToken: UiThemeApplier.ColorToken.DividerHairline);
+
             return back;
         }
 
-        private static void CreateAudioGroup(Transform parent, Dictionary<string, Sprite> sprites, out UiToggle music, out UiToggle sfx, out UiToggle vibration, out UiToggle reduceEffects)
+        private static void CreateAudioGroup(Transform parent, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme, out UiToggle music, out UiToggle sfx, out UiToggle vibration, out UiToggle reduceEffects)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_AudioFeedback", "AUDIO & FEEDBACK", sprites["sp_ui_card_cream"]);
-            music = CreateToggleRow(body.transform, "Row_Music", sprites["sp_icon_music"], "MUSIC", true, sprites);
-            sfx = CreateToggleRow(body.transform, "Row_Sfx", sprites["sp_icon_sfx"], "SOUND EFFECTS", true, sprites);
-            vibration = CreateToggleRow(body.transform, "Row_Vibration", sprites["sp_icon_vibrate"], "VIBRATION", true, sprites);
-            reduceEffects = CreateToggleRow(body.transform, "Row_ReduceEffects", sprites["sp_icon_sparkle_fx"], "REDUCE EFFECTS", false, sprites);
+            GameObject body = CreateGroup(parent, "GroupCard_AudioFeedback", "AUDIO & FEEDBACK", defaultTheme);
+            music = CreateToggleRow(body.transform, "Row_Music", sprites["sp_icon_music"], "MUSIC", true, sprites, defaultTheme);
+            sfx = CreateToggleRow(body.transform, "Row_Sfx", sprites["sp_icon_sfx"], "SOUND EFFECTS", true, sprites, defaultTheme);
+            vibration = CreateToggleRow(body.transform, "Row_Vibration", sprites["sp_icon_vibrate"], "VIBRATION", true, sprites, defaultTheme);
+            reduceEffects = CreateToggleRow(body.transform, "Row_ReduceEffects", sprites["sp_icon_sparkle_fx"], "REDUCE EFFECTS", false, sprites, defaultTheme);
         }
 
-        private static UiSettingRow CreateLanguageGroup(Transform parent, Dictionary<string, Sprite> sprites)
+        private static UiSettingRow CreateLanguageGroup(Transform parent, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_Language", "LANGUAGE", sprites["sp_ui_card_cream"]);
-            return CreateActionRow(body.transform, "Row_Language", sprites["sp_icon_globe"], "ENGLISH", "TIẾNG VIỆT AVAILABLE", sprites["sp_icon_back_arrow"], sprites, true);
+            GameObject body = CreateGroup(parent, "GroupCard_Language", "LANGUAGE", defaultTheme);
+            return CreateActionRow(body.transform, "Row_Language", sprites["sp_icon_globe"], "ENGLISH", "TIẾNG VIỆT AVAILABLE", sprites["sp_icon_back_arrow"], sprites, true, defaultTheme);
         }
 
-        private static void CreatePurchaseGroup(Transform parent, Dictionary<string, Sprite> sprites, out Button removeAds, out UiSettingRow restore)
+        private static void CreatePurchaseGroup(Transform parent, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme, out Button removeAds, out UiSettingRow restore)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_Purchases", "PURCHASES", sprites["sp_ui_card_cream"]);
-            GameObject featured = CreateImage("FeaturedCard_RemoveAds", body.transform, sprites["sp_ui_card_gold"], Color.white, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            GameObject body = CreateGroup(parent, "GroupCard_Purchases", "PURCHASES", defaultTheme);
+            GameObject featured = CreateImage("FeaturedCard_RemoveAds", body.transform, null, defaultTheme != null ? defaultTheme.SurfaceCardGold : Color.white, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             Image featuredImage = featured.GetComponent<Image>();
             featuredImage.type = Image.Type.Sliced;
+            featuredImage.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
             featuredImage.raycastTarget = false;
-            AddThemeSpriteTarget(featured, UiThemeApplier.SpriteToken.CardGold, featuredImage);
+            AddApplier(featured,
+                colorToken: UiThemeApplier.ColorToken.SurfaceCardGold,
+                spriteToken: UiThemeApplier.SpriteToken.CardGold,
+                materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
+
             LayoutElement featuredLayout = featured.GetComponent<LayoutElement>();
             featuredLayout.preferredHeight = 136f;
             HorizontalLayoutGroup layout = featured.GetComponent<HorizontalLayoutGroup>();
@@ -454,21 +500,23 @@ namespace Line98.Editor
             textGroup.childControlHeight = true;
             textGroup.childForceExpandWidth = true;
             textGroup.childForceExpandHeight = false;
-            CreateTextWithLayout("Title", textBlock.transform, "REMOVE ADS", 38f, InkTitle, FontStyles.Bold, 46f);
-            CreateTextWithLayout("Subtitle", textBlock.transform, "PLAY WITHOUT INTERRUPTIONS", 21f, InkSubtitle, FontStyles.Bold, 28f);
-            removeAds = CreateOutlinedButton("BtnView", featured.transform, sprites["sp_btn_view_gold"], "VIEW", 196f, 82f);
+            TMP_Text title = CreateTextWithLayout("Title", textBlock.transform, "REMOVE ADS", 38f, defaultTheme != null ? defaultTheme.BrandNavy : InkTitle, FontStyles.Bold, 46f);
+            AddApplier(title.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
+            TMP_Text subtitle = CreateTextWithLayout("Subtitle", textBlock.transform, "PLAY WITHOUT INTERRUPTIONS", 21f, defaultTheme != null ? defaultTheme.InkSublabel : InkSubtitle, FontStyles.Bold, 28f);
+            AddApplier(subtitle.gameObject, colorToken: UiThemeApplier.ColorToken.InkSublabel);
+            removeAds = CreateOutlinedButton("BtnView", featured.transform, sprites["sp_btn_view_gold"], "VIEW", 196f, 82f, defaultTheme);
 
-            restore = CreateActionRow(body.transform, "Row_Restore", sprites["sp_icon_restore"], "RESTORE PURCHASES", null, sprites["sp_icon_back_arrow"], sprites, true);
+            restore = CreateActionRow(body.transform, "Row_Restore", sprites["sp_icon_restore"], "RESTORE PURCHASES", null, sprites["sp_icon_back_arrow"], sprites, true, defaultTheme);
         }
 
-        private static void CreateSupportGroup(Transform parent, Dictionary<string, Sprite> sprites, out UiSettingRow privacy, out UiSettingRow contact)
+        private static void CreateSupportGroup(Transform parent, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme, out UiSettingRow privacy, out UiSettingRow contact)
         {
-            GameObject body = CreateGroup(parent, "GroupCard_Support", "SUPPORT", sprites["sp_ui_card_cream"]);
-            privacy = CreateActionRow(body.transform, "Row_Privacy", sprites["sp_icon_shield"], "PRIVACY POLICY", null, sprites["sp_icon_external_link"], sprites, false);
-            contact = CreateActionRow(body.transform, "Row_Contact", sprites["sp_icon_mail"], "CONTACT SUPPORT", null, sprites["sp_icon_external_link"], sprites, false);
+            GameObject body = CreateGroup(parent, "GroupCard_Support", "SUPPORT", defaultTheme);
+            privacy = CreateActionRow(body.transform, "Row_Privacy", sprites["sp_icon_shield"], "PRIVACY POLICY", null, sprites["sp_icon_external_link"], sprites, false, defaultTheme);
+            contact = CreateActionRow(body.transform, "Row_Contact", sprites["sp_icon_mail"], "CONTACT SUPPORT", null, sprites["sp_icon_external_link"], sprites, false, defaultTheme);
         }
 
-        private static TMP_Text CreateFooter(Transform parent, Dictionary<string, Sprite> sprites)
+        private static TMP_Text CreateFooter(Transform parent, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme, out Image[] gemSlots)
         {
             GameObject footer = CreateObject("FooterSection", parent, typeof(VerticalLayoutGroup));
             VerticalLayoutGroup layout = footer.GetComponent<VerticalLayoutGroup>();
@@ -489,10 +537,16 @@ namespace Line98.Editor
             versionLayout.childControlHeight = true;
             versionLayout.childForceExpandWidth = false;
             versionLayout.childForceExpandHeight = false;
-            CreateLayoutSpacer("RuleLeft", versionRow.transform, 124f, 3f, RuleNavy);
-            TMP_Text version = CreateText("VersionText", versionRow.transform, "VERSION 1.0.0", 26f, InkSubtitle, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            GameObject ruleLeft = CreateLayoutSpacer("RuleLeft", versionRow.transform, 124f, 3f, defaultTheme != null ? defaultTheme.DividerHairline : RuleNavy);
+            AddApplier(ruleLeft, colorToken: UiThemeApplier.ColorToken.DividerHairline);
+
+            TMP_Text version = CreateText("VersionText", versionRow.transform, "VERSION 1.0.0", 26f, defaultTheme != null ? defaultTheme.InkSublabel : InkSubtitle, TextAlignmentOptions.Center, FontStyles.Bold);
             AddLayoutElement(version.gameObject, -1f, 34f);
-            CreateLayoutSpacer("RuleRight", versionRow.transform, 124f, 3f, RuleNavy);
+            AddApplier(version.gameObject, colorToken: UiThemeApplier.ColorToken.InkSublabel);
+
+            GameObject ruleRight = CreateLayoutSpacer("RuleRight", versionRow.transform, 124f, 3f, defaultTheme != null ? defaultTheme.DividerHairline : RuleNavy);
+            AddApplier(ruleRight, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
             GameObject gems = CreateObject("GemColorBar", footer.transform, typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             gems.GetComponent<LayoutElement>().preferredHeight = 60f;
@@ -503,23 +557,40 @@ namespace Line98.Editor
             gemLayout.childControlHeight = true;
             gemLayout.childForceExpandWidth = false;
             gemLayout.childForceExpandHeight = false;
-            string[] gemNames = { "sp_gem_red", "sp_gem_orange", "sp_gem_yellow", "sp_gem_green", "sp_gem_cyan", "sp_gem_purple", "sp_gem_magenta" };
-            for (int i = 0; i < gemNames.Length; i++)
+
+            gemSlots = new Image[7];
+            var colors = new[]
             {
-                CreateImageWithLayout(gemNames[i], gems.transform, sprites[gemNames[i]], Color.white, 60f, 60f);
+                Line98.Core.BallColor.Red,
+                Line98.Core.BallColor.Orange,
+                Line98.Core.BallColor.Yellow,
+                Line98.Core.BallColor.Green,
+                Line98.Core.BallColor.Cyan,
+                Line98.Core.BallColor.Purple,
+                Line98.Core.BallColor.Blue
+            };
+            for (int i = 0; i < 7; i++)
+            {
+                Sprite initialSprite = defaultTheme?.PreviewSpriteSet != null ? defaultTheme.PreviewSpriteSet.GetSprite(colors[i]) : null;
+                gemSlots[i] = CreateImageWithLayout($"Slot_{colors[i]}", gems.transform, initialSprite, Color.white, 60f, 60f);
             }
 
             return version;
         }
 
-        /// <summary>Creates a frosted section card whose header (title + hairline) sits inside the card, returning the card as the row parent.</summary>
-        private static GameObject CreateGroup(Transform parent, string name, string header, Sprite cardSprite)
+        /// <summary>Creates a section card whose header (title + hairline) sits inside the card, returning the card as the row parent.</summary>
+        private static GameObject CreateGroup(Transform parent, string name, string header, UiThemeSO defaultTheme)
         {
-            GameObject group = CreateImage(name, parent, cardSprite, SectionCardTint, typeof(VerticalLayoutGroup), typeof(UiCardGroup));
+            GameObject group = CreateImage(name, parent, null, defaultTheme != null ? defaultTheme.PanelCard : SectionCardTint, typeof(VerticalLayoutGroup), typeof(UiCardGroup));
             Image cardImage = group.GetComponent<Image>();
             cardImage.type = Image.Type.Sliced;
+            cardImage.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
             cardImage.raycastTarget = false;
-            AddThemeSpriteTarget(group, UiThemeApplier.SpriteToken.CardBackground, cardImage);
+            AddApplier(group,
+                colorToken: UiThemeApplier.ColorToken.PanelCard,
+                spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
+
             VerticalLayoutGroup groupLayout = group.GetComponent<VerticalLayoutGroup>();
             groupLayout.padding = new RectOffset(26, 26, 10, 22);
             groupLayout.spacing = 10f;
@@ -539,10 +610,14 @@ namespace Line98.Editor
             headerLayout.childControlHeight = true;
             headerLayout.childForceExpandWidth = false;
             headerLayout.childForceExpandHeight = false;
-            TMP_Text headerText = CreateText("HeaderText", headerRow.transform, header, 38f, InkTitle, TextAlignmentOptions.Left, FontStyles.Bold);
+
+            TMP_Text headerText = CreateText("HeaderText", headerRow.transform, header, 38f, defaultTheme != null ? defaultTheme.BrandNavy : InkTitle, TextAlignmentOptions.Left, FontStyles.Bold);
             AddLayoutElement(headerText.gameObject, -1f, 50f);
-            GameObject rule = CreateLayoutSpacer("Rule", headerRow.transform, 0f, 3f, RuleNavy);
+            AddApplier(headerText.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
+
+            GameObject rule = CreateLayoutSpacer("Rule", headerRow.transform, 0f, 3f, defaultTheme != null ? defaultTheme.DividerHairline : RuleNavy);
             rule.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            AddApplier(rule, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
             UiCardGroup cardGroup = group.GetComponent<UiCardGroup>();
             SerializedObject cardSerialized = new SerializedObject(cardGroup);
@@ -552,21 +627,20 @@ namespace Line98.Editor
             return group;
         }
 
-        private static UiToggle CreateToggleRow(Transform parent, string name, Sprite icon, string title, bool isOn, Dictionary<string, Sprite> sprites)
+        private static UiToggle CreateToggleRow(Transform parent, string name, Sprite icon, string title, bool isOn, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme)
         {
-            UiSettingRow row = CreateRow(parent, name, icon, title, null, sprites, out Transform actionSlot);
-            UiToggle toggle = CreateToggle(actionSlot, sprites, isOn);
+            UiSettingRow row = CreateRow(parent, name, icon, title, null, sprites, defaultTheme, out Transform actionSlot);
+            UiToggle toggle = CreateToggle(actionSlot, sprites, isOn, defaultTheme);
             SerializedObject rowSerialized = new SerializedObject(row);
             SetObject(rowSerialized, "m_Toggle", toggle);
             rowSerialized.ApplyModifiedPropertiesWithoutUndo();
             return toggle;
         }
 
-        private static UiSettingRow CreateActionRow(Transform parent, string name, Sprite icon, string title, string subtitle, Sprite actionIcon, Dictionary<string, Sprite> sprites, bool rotateChevron)
+        private static UiSettingRow CreateActionRow(Transform parent, string name, Sprite icon, string title, string subtitle, Sprite actionIcon, Dictionary<string, Sprite> sprites, bool rotateChevron, UiThemeSO defaultTheme)
         {
-            UiSettingRow row = CreateRow(parent, name, icon, title, subtitle, sprites, out Transform actionSlot);
+            UiSettingRow row = CreateRow(parent, name, icon, title, subtitle, sprites, defaultTheme, out Transform actionSlot);
             Button button = CreateIconButton("ActionButton", actionSlot, null, actionIcon, 72f, rotateChevron ? 0.56f : 0.66f);
-            // Transparent hit area: the chevron/link glyph is the only visible part of the action.
             button.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
             RectTransform buttonRect = button.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(1f, 0.5f);
@@ -575,6 +649,8 @@ namespace Line98.Editor
             buttonRect.anchoredPosition = Vector2.zero;
             buttonRect.sizeDelta = new Vector2(72f, 72f);
             Image iconImage = button.transform.Find("Icon").GetComponent<Image>();
+            iconImage.color = defaultTheme != null ? defaultTheme.BrandNavy : Color.white;
+            AddApplier(iconImage.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
             if (rotateChevron) iconImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 180f);
             SerializedObject rowSerialized = new SerializedObject(row);
             SetObject(rowSerialized, "m_ActionButton", button);
@@ -583,14 +659,19 @@ namespace Line98.Editor
             return row;
         }
 
-        private static UiSettingRow CreateRow(Transform parent, string name, Sprite icon, string title, string subtitle, Dictionary<string, Sprite> sprites, out Transform actionSlot)
+        private static UiSettingRow CreateRow(Transform parent, string name, Sprite icon, string title, string subtitle, Dictionary<string, Sprite> sprites, UiThemeSO defaultTheme, out Transform actionSlot)
         {
             bool hasSubtitle = !string.IsNullOrEmpty(subtitle);
-            GameObject rowObject = CreateImage(name, parent, sprites["sp_ui_card_cream"], Color.white, typeof(HorizontalLayoutGroup), typeof(LayoutElement), typeof(UiSettingRow));
+            GameObject rowObject = CreateImage(name, parent, null, defaultTheme != null ? defaultTheme.PanelCard : Color.white, typeof(HorizontalLayoutGroup), typeof(LayoutElement), typeof(UiSettingRow));
             Image rowImage = rowObject.GetComponent<Image>();
             rowImage.type = Image.Type.Sliced;
+            rowImage.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
             rowImage.raycastTarget = false;
-            AddThemeSpriteTarget(rowObject, UiThemeApplier.SpriteToken.CardBackground, rowImage);
+            AddApplier(rowObject,
+                colorToken: UiThemeApplier.ColorToken.PanelCard,
+                spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
+
             LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
             rowLayout.preferredHeight = hasSubtitle ? 110f : 86f;
             HorizontalLayoutGroup layout = rowObject.GetComponent<HorizontalLayoutGroup>();
@@ -613,8 +694,10 @@ namespace Line98.Editor
             textLayoutGroup.childControlHeight = true;
             textLayoutGroup.childForceExpandWidth = true;
             textLayoutGroup.childForceExpandHeight = false;
-            TMP_Text titleText = CreateTextWithLayout("Title", textBlock.transform, title, hasSubtitle ? 38f : 32f, InkTitle, FontStyles.Bold, hasSubtitle ? 48f : 42f);
-            TMP_Text subtitleText = CreateTextWithLayout("Subtitle", textBlock.transform, subtitle ?? string.Empty, 22f, InkSubtitle, FontStyles.Bold, 30f);
+            TMP_Text titleText = CreateTextWithLayout("Title", textBlock.transform, title, hasSubtitle ? 38f : 32f, defaultTheme != null ? defaultTheme.InkRowTitle : InkTitle, FontStyles.Bold, hasSubtitle ? 48f : 42f);
+            AddApplier(titleText.gameObject, colorToken: UiThemeApplier.ColorToken.InkRowTitle);
+            TMP_Text subtitleText = CreateTextWithLayout("Subtitle", textBlock.transform, subtitle ?? string.Empty, 22f, defaultTheme != null ? defaultTheme.InkSublabel : InkSubtitle, FontStyles.Bold, 30f);
+            AddApplier(subtitleText.gameObject, colorToken: UiThemeApplier.ColorToken.InkSublabel);
             subtitleText.gameObject.SetActive(hasSubtitle);
 
             GameObject action = CreateObject("ActionSlot", rowObject.transform, typeof(LayoutElement));
@@ -632,11 +715,16 @@ namespace Line98.Editor
             return row;
         }
 
-        private static UiToggle CreateToggle(Transform parent, Dictionary<string, Sprite> sprites, bool isOn)
+        private static UiToggle CreateToggle(Transform parent, Dictionary<string, Sprite> sprites, bool isOn, UiThemeSO defaultTheme)
         {
-            GameObject toggleObject = CreateImage("Toggle", parent, isOn ? sprites["sp_toggle_track_on"] : sprites["sp_toggle_track_off"], Color.white, typeof(UiToggle));
+            Color trackActiveColor = defaultTheme != null ? defaultTheme.ToggleTrackActive : ParseHex("#27B85F");
+            Color trackInactiveColor = defaultTheme != null ? defaultTheme.ToggleTrackInactive : ParseHex("#D0CEC7");
+            Color thumbColor = defaultTheme != null ? defaultTheme.ToggleThumb : Color.white;
+
+            GameObject toggleObject = CreateImage("Toggle", parent, null, isOn ? trackActiveColor : trackInactiveColor, typeof(UiToggle));
             Image track = toggleObject.GetComponent<Image>();
             track.type = Image.Type.Simple;
+            track.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
             track.preserveAspect = true;
             track.raycastTarget = true;
             RectTransform trackRect = toggleObject.GetComponent<RectTransform>();
@@ -646,10 +734,9 @@ namespace Line98.Editor
             trackRect.anchoredPosition = Vector2.zero;
             trackRect.sizeDelta = new Vector2(128f, 61f);
 
-            // The Crystal track sprites already paint their knob, so the animated thumb stays as an
-            // invisible transform to keep UiToggle's contract without drawing a second knob.
-            GameObject thumbObject = CreateImage("Thumb", toggleObject.transform, sprites["sp_toggle_knob"], new Color(1f, 1f, 1f, 0f));
+            GameObject thumbObject = CreateImage("Thumb", toggleObject.transform, null, thumbColor);
             Image thumb = thumbObject.GetComponent<Image>();
+            thumb.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
             thumb.raycastTarget = false;
             RectTransform thumbRect = thumbObject.GetComponent<RectTransform>();
             thumbRect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -663,9 +750,12 @@ namespace Line98.Editor
             SetObject(toggleSerialized, "m_TrackImage", track);
             SetObject(toggleSerialized, "m_ThumbImage", thumb);
             SetObject(toggleSerialized, "m_ThumbTransform", thumbRect);
-            SetObject(toggleSerialized, "m_TrackOnSprite", sprites["sp_toggle_track_on"]);
-            SetObject(toggleSerialized, "m_TrackOffSprite", sprites["sp_toggle_track_off"]);
-            SetObject(toggleSerialized, "m_ThumbSprite", sprites["sp_toggle_knob"]);
+            SetObject(toggleSerialized, "m_TrackOnSprite", null);
+            SetObject(toggleSerialized, "m_TrackOffSprite", null);
+            SetObject(toggleSerialized, "m_ThumbSprite", null);
+            SetColor(toggleSerialized, "m_TrackActiveColor", trackActiveColor);
+            SetColor(toggleSerialized, "m_TrackInactiveColor", trackInactiveColor);
+            SetColor(toggleSerialized, "m_ThumbColor", thumbColor);
             SetFloat(toggleSerialized, "m_ThumbTravelDistance", 66f);
             SetFloat(toggleSerialized, "m_TransitionDuration", 0.22f);
             SetBool(toggleSerialized, "m_IsOn", isOn);
@@ -674,27 +764,69 @@ namespace Line98.Editor
         }
 
         /// <summary>Gold-rimmed capsule: a tinted rim capsule with an inset cream capsule and label.</summary>
-        private static Button CreateOutlinedButton(string name, Transform parent, Sprite capsule, string label, float width, float height)
+        private static Button CreateOutlinedButton(string name, Transform parent, Sprite capsule, string label, float width, float height, UiThemeSO defaultTheme)
         {
-            GameObject buttonObject = CreateImage(name, parent, capsule, ViewButtonRim, typeof(Button), typeof(LayoutElement), typeof(UiButtonFx));
+            GameObject buttonObject = CreateImage(name, parent, null, defaultTheme != null ? defaultTheme.ButtonGold : ViewButtonRim, typeof(Button), typeof(LayoutElement), typeof(UiButtonFx));
             Image rim = buttonObject.GetComponent<Image>();
             rim.type = Image.Type.Sliced;
+            rim.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
             Button button = buttonObject.GetComponent<Button>();
             button.targetGraphic = rim;
             LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
             layout.preferredWidth = width;
             layout.preferredHeight = height;
             layout.flexibleWidth = 0f;
+            AddApplier(buttonObject,
+                colorToken: UiThemeApplier.ColorToken.ButtonGold,
+                spriteToken: UiThemeApplier.SpriteToken.ButtonCapsule,
+                materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
 
-            GameObject fill = CreateImage("Fill", buttonObject.transform, capsule, ViewButtonFill);
+            GameObject fill = CreateImage("Fill", buttonObject.transform, null, Color.clear);
             Image fillImage = fill.GetComponent<Image>();
             fillImage.type = Image.Type.Sliced;
             fillImage.raycastTarget = false;
             Stretch(fillImage.rectTransform, Vector2.zero, Vector2.one, new Vector2(5f, 5f), new Vector2(-5f, -5f));
 
-            TMP_Text text = CreateText("Label", buttonObject.transform, label, 38f, ViewButtonInk, TextAlignmentOptions.Center, FontStyles.Bold);
+            TMP_Text text = CreateText("Label", buttonObject.transform, label, 38f, defaultTheme != null ? defaultTheme.BrandNavy : ViewButtonInk, TextAlignmentOptions.Center, FontStyles.Bold);
+            AddApplier(text.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
             Stretch(text.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             return button;
+        }
+
+        private static UiThemeApplier AddApplier(
+            GameObject go,
+            UiThemeApplier.ColorToken? colorToken = null,
+            UiThemeApplier.FontSizeToken fontToken = UiThemeApplier.FontSizeToken.None,
+            UiThemeApplier.SpriteToken spriteToken = UiThemeApplier.SpriteToken.None,
+            UiThemeApplier.MaterialToken materialToken = UiThemeApplier.MaterialToken.None)
+        {
+            var applier = go.GetComponent<UiThemeApplier>() ?? go.AddComponent<UiThemeApplier>();
+            var graphic = go.GetComponent<Graphic>();
+            var tmp = go.GetComponent<TMP_Text>();
+            var img = go.GetComponent<Image>();
+
+            if (colorToken.HasValue)
+            {
+                var colorTargets = graphic != null ? new Graphic[] { graphic } : System.Array.Empty<Graphic>();
+                var fontTargets = tmp != null ? new TMP_Text[] { tmp } : System.Array.Empty<TMP_Text>();
+                applier.Configure(colorToken.Value, colorTargets, fontToken, fontTargets);
+            }
+            else if (fontToken != UiThemeApplier.FontSizeToken.None && tmp != null)
+            {
+                applier.Configure(UiThemeApplier.ColorToken.PanelCard, System.Array.Empty<Graphic>(), fontToken, new TMP_Text[] { tmp });
+            }
+
+            if (spriteToken != UiThemeApplier.SpriteToken.None && img != null)
+            {
+                applier.ConfigureSprite(spriteToken, new Image[] { img });
+            }
+
+            if (materialToken != UiThemeApplier.MaterialToken.None && graphic != null)
+            {
+                applier.ConfigureMaterial(materialToken, new Graphic[] { graphic });
+            }
+
+            return applier;
         }
 
         private static Button CreateIconButton(string name, Transform parent, Sprite backgroundSprite, Sprite iconSprite, float size, float iconScale = 0.56f)

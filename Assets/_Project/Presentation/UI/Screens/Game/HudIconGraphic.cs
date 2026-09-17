@@ -6,7 +6,7 @@ namespace Line98.Presentation
     [RequireComponent(typeof(CanvasRenderer))]
     public sealed class HudIconGraphic : UnityEngine.UI.MaskableGraphic
     {
-        public enum IconKind { Undo, Restart, Directions, Statistics, Settings }
+        public enum IconKind { Undo, Restart, Directions, Statistics, Settings, Palette, Menu }
         [SerializeField] private IconKind m_Kind;
         public IconKind Kind { get => m_Kind; set { m_Kind = value; SetVerticesDirty(); } }
 
@@ -41,6 +41,56 @@ namespace Line98.Presentation
                     float top = i == 1 ? .46f : i == 2 ? .2f : .03f;
                     Quad(vh,new Vector2(x-.10f,-.43f),new Vector2(x+.10f,-.43f),new Vector2(x+.10f,top),new Vector2(x-.10f,top));
                 }
+            }
+            else if (m_Kind == IconKind.Palette)
+            {
+                Vector2 center = new Vector2(-0.02f, -0.07f);
+                float rx = 0.45f, ry = 0.33f;
+                int segments = 40;
+                for (int i = 0; i < segments; i++)
+                {
+                    float a0 = i * Mathf.PI * 2f / segments;
+                    float a1 = (i + 1) * Mathf.PI * 2f / segments;
+
+                    Vector2 PointOnRim(float a)
+                    {
+                        float deg = a * Mathf.Rad2Deg;
+                        float dAngle = Mathf.Abs(Mathf.DeltaAngle(deg, 45f));
+                        float rScale = 1f;
+                        if (dAngle < 24f)
+                        {
+                            rScale = Mathf.Lerp(0.50f, 1f, dAngle / 24f);
+                        }
+                        return center + new Vector2(Mathf.Cos(a) * rx, Mathf.Sin(a) * ry) * rScale;
+                    }
+
+                    Triangle(vh, center, PointOnRim(a0), PointOnRim(a1));
+                }
+
+                Vector2[] dots =
+                {
+                    new Vector2(-0.25f, 0.35f),
+                    new Vector2(-0.05f, 0.39f),
+                    new Vector2(0.15f, 0.34f)
+                };
+                float dotR = 0.045f;
+                for (int d = 0; d < dots.Length; d++)
+                {
+                    Vector2 dc = dots[d];
+                    for (int i = 0; i < 8; i++)
+                    {
+                        float a0 = i * Mathf.PI * 2f / 8f;
+                        float a1 = (i + 1) * Mathf.PI * 2f / 8f;
+                        Triangle(vh, dc, dc + Polar(a0, dotR), dc + Polar(a1, dotR));
+                    }
+                }
+            }
+            else if (m_Kind == IconKind.Menu)
+            {
+                float h = 0.11f;
+                Quad(vh, new Vector2(-0.38f, 0.20f), new Vector2(0.38f, 0.20f), new Vector2(0.38f, 0.20f + h), new Vector2(-0.38f, 0.20f + h));
+                Quad(vh, new Vector2(-0.38f, -0.055f), new Vector2(0.20f, -0.055f), new Vector2(0.20f, -0.055f + h), new Vector2(-0.38f, -0.055f + h));
+                Quad(vh, new Vector2(-0.38f, -0.31f), new Vector2(0.32f, -0.31f), new Vector2(0.32f, -0.31f + h), new Vector2(-0.38f, -0.31f + h));
             }
             else
             {

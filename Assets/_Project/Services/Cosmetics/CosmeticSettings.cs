@@ -1,4 +1,5 @@
 using System;
+using Line98.Data;
 
 namespace Line98.Services
 {
@@ -9,7 +10,7 @@ namespace Line98.Services
     public sealed class CosmeticSettings
     {
         public int Version = 1;
-        public string ThemeId = "crystal";
+        public string ThemeId = ThemeIds.Classic;
         public string BallOverrideId;
         public string BoardOverrideId;
         public string UiOverrideId;

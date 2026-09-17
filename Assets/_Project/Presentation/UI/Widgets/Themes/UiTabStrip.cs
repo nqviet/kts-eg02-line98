@@ -60,6 +60,30 @@ namespace Line98.Presentation
             RefreshVisuals(animate: false);
         }
 
+        public void ApplyTheme(UiThemeSO theme)
+        {
+            if (theme == null) return;
+
+            m_ActivePillColor = theme.ButtonCapsulePrimary != null ? Color.white : theme.SurfacePrimary;
+            m_InactivePillColor = Color.clear;
+            m_ActiveTextColor = theme.InkButtonPrimary;
+            m_InactiveTextColor = theme.BrandNavy;
+            m_ActiveIconColor = theme.InkButtonPrimary;
+            m_InactiveIconColor = theme.BrandNavy;
+
+            for (int i = 0; i < m_Segments.Length; i++)
+            {
+                var seg = m_Segments[i];
+                if (seg.BackgroundPill != null)
+                {
+                    seg.BackgroundPill.sprite = theme.ButtonCapsulePrimary;
+                    seg.BackgroundPill.material = theme.ButtonCapsulePrimary == null ? theme.SurfaceMaterialButton : null;
+                }
+            }
+
+            RefreshVisuals(animate: false);
+        }
+
         public void SetActive(ThemeCategory category, bool notify = false)
         {
             if (m_ActiveCategory == category && notify == false)

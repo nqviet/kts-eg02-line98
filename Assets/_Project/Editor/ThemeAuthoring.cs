@@ -318,7 +318,7 @@ namespace Line98.Editor
 
             {
                 var so = new SerializedObject(catalog);
-                so.FindProperty("m_DefaultThemeId").stringValue = "crystal";
+                so.FindProperty("m_DefaultThemeId").stringValue = ThemeIds.Classic;
                 var themesProp = so.FindProperty("m_Themes");
                 themesProp.arraySize = 2;
                 themesProp.GetArrayElementAtIndex(0).objectReferenceValue = themeClassic;
@@ -596,8 +596,45 @@ namespace Line98.Editor
             return row;
         }
 
+        private static UiThemeApplier AddApplier(
+            GameObject go,
+            UiThemeApplier.ColorToken? colorToken = null,
+            UiThemeApplier.FontSizeToken fontToken = UiThemeApplier.FontSizeToken.None,
+            UiThemeApplier.SpriteToken spriteToken = UiThemeApplier.SpriteToken.None,
+            UiThemeApplier.MaterialToken materialToken = UiThemeApplier.MaterialToken.None)
+        {
+            var applier = go.GetComponent<UiThemeApplier>() ?? go.AddComponent<UiThemeApplier>();
+            var graphic = go.GetComponent<Graphic>();
+            var tmp = go.GetComponent<TMP_Text>();
+            var img = go.GetComponent<Image>();
+
+            if (colorToken.HasValue)
+            {
+                var colorTargets = graphic != null ? new Graphic[] { graphic } : Array.Empty<Graphic>();
+                var fontTargets = tmp != null ? new TMP_Text[] { tmp } : Array.Empty<TMP_Text>();
+                applier.Configure(colorToken.Value, colorTargets, fontToken, fontTargets);
+            }
+            else if (fontToken != UiThemeApplier.FontSizeToken.None && tmp != null)
+            {
+                applier.Configure(UiThemeApplier.ColorToken.PanelCard, Array.Empty<Graphic>(), fontToken, new TMP_Text[] { tmp });
+            }
+
+            if (spriteToken != UiThemeApplier.SpriteToken.None && img != null)
+            {
+                applier.ConfigureSprite(spriteToken, new Image[] { img });
+            }
+
+            if (materialToken != UiThemeApplier.MaterialToken.None && graphic != null)
+            {
+                applier.ConfigureMaterial(materialToken, new Graphic[] { graphic });
+            }
+
+            return applier;
+        }
+
         private static GameObject BuildItemThemePrefab(string prefabPath, Dictionary<string, Sprite> sprites, TMP_FontAsset font)
         {
+            var defaultTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Themes/UI/UiTheme_Default.asset");
             // Geometry is measured from themes_selection_UI_crystal.png at 941 px wide and
             // converted to the 1080-wide canvas reference (x 1.148).
             GameObject root;
@@ -625,7 +662,12 @@ namespace Line98.Editor
                 rootRt.sizeDelta = cardSize;
 
                 var rootImg = root.GetComponent<Image>() ?? root.AddComponent<Image>();
-                ConfigureImage(rootImg, sprites.GetValueOrDefault("sp_ui_card_cream"), Color.white, sliced: true, raycast: true);
+                ConfigureImage(rootImg, null, defaultTheme != null ? defaultTheme.PanelCard : Color.white, sliced: true, raycast: true);
+                rootImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
+                AddApplier(root,
+                    colorToken: UiThemeApplier.ColorToken.PanelCard,
+                    spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
 
                 var cardButton = root.GetComponent<Button>() ?? root.AddComponent<Button>();
                 cardButton.targetGraphic = rootImg;
@@ -641,24 +683,37 @@ namespace Line98.Editor
                 // ActiveBorder: bright green rim; the inset surface leaves ~5 px of it visible.
                 RectTransform borderRt = CreateUi("ActiveBorder", root.transform, typeof(CanvasRenderer), typeof(Image));
                 Stretch(borderRt, Vector2.zero, Vector2.zero);
-                Image borderImg = ConfigureImage(borderRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_green"), ParseHex("#4DBA4F"), sliced: true);
+                Image borderImg = ConfigureImage(borderRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.ActiveCardBorder : ParseHex("#4DBA4F"), sliced: true);
+                borderImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
                 borderImg.enabled = false;
 
                 RectTransform surfaceRt = CreateUi("CardSurface", root.transform, typeof(CanvasRenderer), typeof(Image));
                 Stretch(surfaceRt, new Vector2(5f, 5f), new Vector2(-5f, -5f));
-                ConfigureImage(surfaceRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_cream"), ParseHex("#FCFBF7"), sliced: true);
+                Image surfaceImg = ConfigureImage(surfaceRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.SurfaceSecondary : ParseHex("#FCFBF7"), sliced: true);
+                surfaceImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
+                AddApplier(surfaceRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.SurfaceSecondary,
+                    spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
 
                 // Label_ItemName
                 RectTransform nameRt = CreateUi("Label_ItemName", root.transform, typeof(TextMeshProUGUI));
                 Place(nameRt, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(55f, -36f), new Vector2(520f, 64f));
-                TextMeshProUGUI nameText = ConfigureLabel(nameRt.GetComponent<TextMeshProUGUI>(), font, "THEME NAME", 44f, s_ThemesNavy, TextAlignmentOptions.MidlineLeft);
+                TextMeshProUGUI nameText = ConfigureLabel(nameRt.GetComponent<TextMeshProUGUI>(), font, "THEME NAME", 44f, defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, TextAlignmentOptions.MidlineLeft);
+                AddApplier(nameRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
                 // StatusBadge: DEFAULT = glossy green capsule + bare white check; SELECT = white capsule + sky rim.
                 RectTransform badgeRt = CreateUi("StatusBadge", root.transform, typeof(CanvasRenderer), typeof(Image), typeof(Outline), typeof(Button), typeof(UiButtonFx));
                 Place(badgeRt, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-44f, -30f), new Vector2(282f, 82f));
-                Image badgeImg = ConfigureImage(badgeRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_btn_capsule_green"), Color.white, sliced: true, raycast: true);
+                Image badgeImg = ConfigureImage(badgeRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.SelectedBadgeFill : Color.white, sliced: true, raycast: true);
+                badgeImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
+                AddApplier(badgeRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.SelectedBadgeFill,
+                    spriteToken: UiThemeApplier.SpriteToken.ButtonCapsulePrimary,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
+
                 var badgeOutline = badgeRt.GetComponent<Outline>();
-                badgeOutline.effectColor = ParseHex("#3F95D8");
+                badgeOutline.effectColor = defaultTheme != null ? defaultTheme.ActiveCardBorder : ParseHex("#3F95D8");
                 badgeOutline.effectDistance = new Vector2(3f, -3f);
                 badgeOutline.useGraphicAlpha = true;
                 badgeOutline.enabled = false;
@@ -670,12 +725,13 @@ namespace Line98.Editor
                 RectTransform checkRt = CreateUi("CheckIcon", badgeRow.transform, typeof(CanvasRenderer), typeof(UiCheckGraphic));
                 SetPreferredSize(checkRt, new Vector2(46f, 46f));
                 var checkGraphic = checkRt.GetComponent<UiCheckGraphic>();
-                checkGraphic.color = Color.white;
+                checkGraphic.color = defaultTheme != null ? defaultTheme.SelectedBadgeInk : Color.white;
                 checkGraphic.Thickness = 7f;
                 checkGraphic.raycastTarget = false;
 
                 RectTransform labelRt = CreateUi("StatusLabel", badgeRow.transform, typeof(TextMeshProUGUI));
-                TextMeshProUGUI labelText = ConfigureLabel(labelRt.GetComponent<TextMeshProUGUI>(), font, "DEFAULT", 31f, Color.white, TextAlignmentOptions.Center);
+                TextMeshProUGUI labelText = ConfigureLabel(labelRt.GetComponent<TextMeshProUGUI>(), font, "DEFAULT", 31f, defaultTheme != null ? defaultTheme.SelectedBadgeInk : Color.white, TextAlignmentOptions.Center);
+                AddApplier(labelRt.gameObject, colorToken: UiThemeApplier.ColorToken.SelectedBadgeInk);
 
                 // ThumbRow: 3 ball swatches + effect glyph on light recessed tiles.
                 RectTransform rowRt = CreateUi("ThumbRow", root.transform, typeof(HorizontalLayoutGroup));
@@ -696,7 +752,12 @@ namespace Line98.Editor
                 {
                     RectTransform slotRt = CreateUi($"Slot_{i}", rowRt, typeof(CanvasRenderer), typeof(Image));
                     slotRt.sizeDelta = new Vector2(176f, 164f);
-                    ConfigureImage(slotRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_small_cream"), ParseHex("#F7F6F2"), sliced: true);
+                    Image slotImg = ConfigureImage(slotRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelTray : ParseHex("#F7F6F2"), sliced: true);
+                    slotImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
+                    AddApplier(slotRt.gameObject,
+                        colorToken: UiThemeApplier.ColorToken.PanelTray,
+                        spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                        materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
 
                     RectTransform iconRt = CreateUi("Icon", slotRt, typeof(CanvasRenderer), typeof(Image));
                     Place(iconRt, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(136f, 136f));
@@ -713,13 +774,13 @@ namespace Line98.Editor
                 itemSo.FindProperty("m_StatusBadgeOutline").objectReferenceValue = badgeOutline;
                 itemSo.FindProperty("m_StatusCheckIcon").objectReferenceValue = checkRt.gameObject;
                 itemSo.FindProperty("m_StatusLabel").objectReferenceValue = labelText;
-                itemSo.FindProperty("m_AppliedBadgeSprite").objectReferenceValue = sprites.GetValueOrDefault("sp_btn_capsule_green");
-                itemSo.FindProperty("m_SelectBadgeSprite").objectReferenceValue = sprites.GetValueOrDefault("sp_btn_capsule_cream");
-                itemSo.FindProperty("m_DefaultBgColor").colorValue = Color.white;
-                itemSo.FindProperty("m_DefaultTextColor").colorValue = Color.white;
-                itemSo.FindProperty("m_SelectBgColor").colorValue = ParseHex("#F3F9FD");
-                itemSo.FindProperty("m_SelectTextColor").colorValue = s_ThemesNavy;
-                itemSo.FindProperty("m_SelectBorderColor").colorValue = ParseHex("#3F95D8");
+                itemSo.FindProperty("m_AppliedBadgeSprite").objectReferenceValue = null;
+                itemSo.FindProperty("m_SelectBadgeSprite").objectReferenceValue = null;
+                itemSo.FindProperty("m_DefaultBgColor").colorValue = defaultTheme != null ? defaultTheme.SelectedBadgeFill : Color.white;
+                itemSo.FindProperty("m_DefaultTextColor").colorValue = defaultTheme != null ? defaultTheme.SelectedBadgeInk : Color.white;
+                itemSo.FindProperty("m_SelectBgColor").colorValue = defaultTheme != null ? defaultTheme.PanelButton : ParseHex("#F3F9FD");
+                itemSo.FindProperty("m_SelectTextColor").colorValue = defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy;
+                itemSo.FindProperty("m_SelectBorderColor").colorValue = defaultTheme != null ? defaultTheme.ActiveCardBorder : ParseHex("#3F95D8");
 
                 var swatchProp = itemSo.FindProperty("m_SwatchSlots");
                 swatchProp.arraySize = 4;
@@ -753,6 +814,7 @@ namespace Line98.Editor
             TMP_FontAsset font,
             Texture2D crystalBackdrop)
         {
+            var defaultTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Themes/UI/UiTheme_Default.asset");
             // All positions are in the 960 x 1760 ContentRoot space (top-anchored), measured from
             // themes_selection_UI_crystal.png at 941 x 1671 (1 mockup px = 1.148 reference units).
             GameObject popup;
@@ -775,7 +837,7 @@ namespace Line98.Editor
                 var top = new Vector2(0.5f, 1f);
                 var middle = new Vector2(0.5f, 0.5f);
                 var bottom = new Vector2(0.5f, 0f);
-                var ruleColor = new Color(s_ThemesNavy.r, s_ThemesNavy.g, s_ThemesNavy.b, 0.45f);
+                var ruleColor = defaultTheme != null ? defaultTheme.DividerHairline : new Color(s_ThemesNavy.r, s_ThemesNavy.g, s_ThemesNavy.b, 0.45f);
 
                 var rootRt = popup.GetComponent<RectTransform>();
                 Stretch(rootRt, Vector2.zero, Vector2.zero);
@@ -792,13 +854,14 @@ namespace Line98.Editor
                 RectTransform backdropRt = CreateUi("FullscreenBackdrop", popup.transform, typeof(CanvasRenderer), typeof(RawImage));
                 Stretch(backdropRt, Vector2.zero, Vector2.zero);
                 var backdropImage = backdropRt.GetComponent<RawImage>();
-                backdropImage.texture = crystalBackdrop;
-                backdropImage.color = Color.white;
+                backdropImage.texture = null; // Baseline is Default
+                backdropImage.color = defaultTheme != null ? defaultTheme.LightScrim : Color.white;
                 backdropImage.raycastTarget = true;
 
                 RectTransform washRt = CreateUi("BackdropWash", popup.transform, typeof(CanvasRenderer), typeof(Image));
                 Stretch(washRt, Vector2.zero, Vector2.zero);
-                ConfigureImage(washRt.GetComponent<Image>(), null, new Color(0.98f, 0.975f, 0.95f, 0.42f), sliced: false);
+                ConfigureImage(washRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.LightScrim : new Color(0.98f, 0.975f, 0.95f, 0.42f), sliced: false);
+                AddApplier(washRt.gameObject, colorToken: UiThemeApplier.ColorToken.LightScrim);
 
                 RectTransform contentRt = CreateUi("ContentRoot", popup.transform, typeof(CanvasRenderer), typeof(Image), typeof(UiLayoutScaleExempt));
                 Place(contentRt, top, top, new Vector2(0f, -24f), new Vector2(960f, 1760f));
@@ -814,13 +877,19 @@ namespace Line98.Editor
 
                 RectTransform btnBackRt = CreateUi("BtnBack", headerRt, typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(UiButtonFx));
                 Place(btnBackRt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(-14f, 0f), new Vector2(118f, 118f));
-                Image btnBackImg = ConfigureImage(btnBackRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_btn_circle_cream"), Color.white, sliced: false, raycast: true);
+                Image btnBackImg = ConfigureImage(btnBackRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelButton : Color.white, sliced: false, raycast: true);
+                btnBackImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
+                AddApplier(btnBackRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.PanelButton,
+                    spriteToken: UiThemeApplier.SpriteToken.ButtonCircle,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
                 var backBtn = btnBackRt.GetComponent<Button>();
                 backBtn.targetGraphic = btnBackImg;
 
                 RectTransform backIconRt = CreateUi("Icon", btnBackRt, typeof(CanvasRenderer), typeof(Image));
                 Place(backIconRt, middle, middle, new Vector2(-3f, 0f), new Vector2(44f, 58f));
-                ConfigureImage(backIconRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_icon_back_arrow"), s_ThemesNavy, sliced: false);
+                Image backIconImg = ConfigureImage(backIconRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_icon_back_arrow"), defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, sliced: false);
+                AddApplier(backIconRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
                 RectTransform titleGroupRt = CreateUi("TitleGroup", headerRt, typeof(HorizontalLayoutGroup));
                 Place(titleGroupRt, middle, middle, Vector2.zero, new Vector2(660f, 108f));
@@ -835,27 +904,36 @@ namespace Line98.Editor
                 RectTransform ruleLeftRt = CreateUi("RuleLeft", titleGroupRt, typeof(CanvasRenderer), typeof(Image));
                 ruleLeftRt.sizeDelta = new Vector2(98f, 3f);
                 ConfigureImage(ruleLeftRt.GetComponent<Image>(), null, ruleColor, sliced: false);
+                AddApplier(ruleLeftRt.gameObject, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
                 RectTransform titleTextRt = CreateUi("Label_Title", titleGroupRt, typeof(TextMeshProUGUI));
                 titleTextRt.sizeDelta = new Vector2(380f, 100f);
-                TextMeshProUGUI titleText = ConfigureLabel(titleTextRt.GetComponent<TextMeshProUGUI>(), font, "THEMES", 88f, Color.white, TextAlignmentOptions.Center);
+                TextMeshProUGUI titleText = ConfigureLabel(titleTextRt.GetComponent<TextMeshProUGUI>(), font, "THEMES", 88f, defaultTheme != null ? defaultTheme.BrandNavy : Color.white, TextAlignmentOptions.Center);
                 titleText.characterSpacing = -2f;
-                titleText.enableVertexGradient = true;
-                titleText.colorGradient = new VertexGradient(ParseHex("#1E4A8C"), ParseHex("#1E4A8C"), ParseHex("#0A1C44"), ParseHex("#0A1C44"));
+                titleText.enableVertexGradient = false;
+                AddApplier(titleTextRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
                 UiGlyphGraphic leaf = CreateGlyph("LeafDecor", titleTextRt, UiGlyphGraphic.GlyphShape.Leaf, new Vector2(30f, 54f), Color.white);
                 Place((RectTransform)leaf.transform, middle, new Vector2(0.5f, 0f), new Vector2(22f, 30f), new Vector2(30f, 54f));
                 leaf.transform.localRotation = Quaternion.Euler(0f, 0f, -38f);
                 leaf.SetGradient(UiGlyphGraphic.GradientMode.Vertical, ParseHex("#6FD058"), ParseHex("#23933A"));
+                leaf.gameObject.SetActive(false); // Baseline is Default
 
                 RectTransform ruleRightRt = CreateUi("RuleRight", titleGroupRt, typeof(CanvasRenderer), typeof(Image));
                 ruleRightRt.sizeDelta = new Vector2(98f, 3f);
                 ConfigureImage(ruleRightRt.GetComponent<Image>(), null, ruleColor, sliced: false);
+                AddApplier(ruleRightRt.gameObject, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
                 // ---------- TabStrip (y 169, 889 x 92) ----------
                 RectTransform tabStripRt = CreateUi("TabStrip", contentRt, typeof(CanvasRenderer), typeof(Image), typeof(HorizontalLayoutGroup), typeof(UiTabStrip));
                 Place(tabStripRt, top, top, new Vector2(0f, -163f), new Vector2(902f, 104f));
-                ConfigureImage(tabStripRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_pill_long_cream"), Color.white, sliced: true);
+                Image tabStripImg = ConfigureImage(tabStripRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelButton : Color.white, sliced: true);
+                tabStripImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
+                AddApplier(tabStripRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.PanelButton,
+                    spriteToken: UiThemeApplier.SpriteToken.ButtonCapsule,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
+
                 var tabHlg = tabStripRt.GetComponent<HorizontalLayoutGroup>();
                 tabHlg.padding = new RectOffset(0, 0, 0, 0);
                 tabHlg.spacing = 0f;
@@ -869,7 +947,8 @@ namespace Line98.Editor
                 RectTransform dividerRt = CreateUi("Divider", tabStripRt, typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
                 dividerRt.GetComponent<LayoutElement>().ignoreLayout = true;
                 Place(dividerRt, new Vector2(2f / 3f, 0.5f), middle, Vector2.zero, new Vector2(2f, 60f));
-                ConfigureImage(dividerRt.GetComponent<Image>(), null, new Color(s_ThemesNavy.r, s_ThemesNavy.g, s_ThemesNavy.b, 0.1f), sliced: false);
+                ConfigureImage(dividerRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.DividerHairline : new Color(s_ThemesNavy.r, s_ThemesNavy.g, s_ThemesNavy.b, 0.1f), sliced: false);
+                AddApplier(dividerRt.gameObject, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
                 var tabStripComp = tabStripRt.GetComponent<UiTabStrip>();
                 var tabSegments = new UiTabStrip.TabSegment[3];
@@ -884,10 +963,11 @@ namespace Line98.Editor
                 {
                     var (tName, tCat, tLabel, tIconSize) = tabConfigs[i];
                     bool tActive = i == 0;
-                    Color inkColor = tActive ? Color.white : s_ThemesNavy;
+                    Color inkColor = tActive ? (defaultTheme != null ? defaultTheme.SelectedBadgeInk : Color.white) : (defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy);
 
                     RectTransform tRt = CreateUi(tName, tabStripRt, typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(UiButtonFx));
-                    Image tPillImg = ConfigureImage(tRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_btn_capsule_green"), tActive ? Color.white : Color.clear, sliced: true, raycast: true);
+                    Image tPillImg = ConfigureImage(tRt.GetComponent<Image>(), null, tActive ? (defaultTheme != null ? defaultTheme.SelectedBadgeFill : Color.white) : Color.clear, sliced: true, raycast: true);
+                    tPillImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
                     var tBtn = tRt.GetComponent<Button>();
                     tBtn.targetGraphic = tPillImg;
 
@@ -931,25 +1011,36 @@ namespace Line98.Editor
                     elem.FindPropertyRelative("Label").objectReferenceValue = tabSegments[i].Label;
                     elem.FindPropertyRelative("Icon").objectReferenceValue = tabSegments[i].Icon;
                 }
-                tabSo.FindProperty("m_ActivePillColor").colorValue = Color.white;
-                tabSo.FindProperty("m_InactiveTextColor").colorValue = s_ThemesNavy;
-                tabSo.FindProperty("m_InactiveIconColor").colorValue = s_ThemesNavy;
+                tabSo.FindProperty("m_ActivePillColor").colorValue = defaultTheme != null ? defaultTheme.SelectedBadgeFill : Color.white;
+                tabSo.FindProperty("m_InactiveTextColor").colorValue = defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy;
+                tabSo.FindProperty("m_InactiveIconColor").colorValue = defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy;
                 tabSo.ApplyModifiedProperties();
 
                 // ---------- PreviewCard (y 288, 720 x 770) ----------
                 RectTransform previewRt = CreateUi("PreviewCard", contentRt, typeof(CanvasRenderer), typeof(Image), typeof(UiThemePreviewPanel));
                 Place(previewRt, top, top, new Vector2(0f, -288f), new Vector2(720f, 770f));
-                ConfigureImage(previewRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_cream"), ParseHex("#FCFBF7"), sliced: true);
+                Image previewImg = ConfigureImage(previewRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelCard : ParseHex("#FCFBF7"), sliced: true);
+                previewImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
+                AddApplier(previewRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.PanelCard,
+                    spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
                 var previewPanel = previewRt.GetComponent<UiThemePreviewPanel>();
 
                 RectTransform pNameRt = CreateUi("Label_ThemeName", previewRt, typeof(TextMeshProUGUI));
                 Place(pNameRt, top, middle, new Vector2(0f, -53f), new Vector2(660f, 60f));
-                TextMeshProUGUI pNameText = ConfigureLabel(pNameRt.GetComponent<TextMeshProUGUI>(), font, "CRYSTAL GARDEN", 46f, s_ThemesNavy, TextAlignmentOptions.Center);
+                TextMeshProUGUI pNameText = ConfigureLabel(pNameRt.GetComponent<TextMeshProUGUI>(), font, "CRYSTAL GARDEN", 46f, defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, TextAlignmentOptions.Center);
+                AddApplier(pNameRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
                 // BoardMockRoot: 5 x 6 recessed cells
                 RectTransform boardMockRt = CreateUi("BoardMockRoot", previewRt, typeof(CanvasRenderer), typeof(Image));
                 Place(boardMockRt, middle, middle, new Vector2(0f, 19f), new Vector2(526f, 552f));
-                ConfigureImage(boardMockRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_small_cream"), ParseHex("#FBFAF6"), sliced: true);
+                Image boardMockImg = ConfigureImage(boardMockRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelTray : ParseHex("#FBFAF6"), sliced: true);
+                boardMockImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
+                AddApplier(boardMockRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.PanelTray,
+                    spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
 
                 RectTransform gridRt = CreateUi("Grid", boardMockRt, typeof(GridLayoutGroup));
                 Stretch(gridRt, Vector2.zero, Vector2.zero);
@@ -964,7 +1055,12 @@ namespace Line98.Editor
                 for (int i = 0; i < 30; i++)
                 {
                     RectTransform cellRt = CreateUi($"Cell_{i}", gridRt, typeof(CanvasRenderer), typeof(Image));
-                    ConfigureImage(cellRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_small_cream"), ParseHex("#F3F2EE"), sliced: true);
+                    Image cellImg = ConfigureImage(cellRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelCell : ParseHex("#F3F2EE"), sliced: true);
+                    cellImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
+                    AddApplier(cellRt.gameObject,
+                        colorToken: UiThemeApplier.ColorToken.PanelCell,
+                        spriteToken: UiThemeApplier.SpriteToken.CardBackground,
+                        materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
                 }
 
                 RectTransform slotsRootRt = CreateUi("SlotsRoot", boardMockRt);
@@ -1012,13 +1108,23 @@ namespace Line98.Editor
                 // SelectedBadge (bottom 20, 460 x 86)
                 RectTransform selRt = CreateUi("SelectedBadge", previewRt, typeof(CanvasRenderer), typeof(Image));
                 Place(selRt, bottom, bottom, new Vector2(0f, 20f), new Vector2(460f, 86f));
-                ConfigureImage(selRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_ui_card_green"), Color.white, sliced: true);
+                Image selImg = ConfigureImage(selRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.SelectedBadgeFill : Color.white, sliced: true);
+                selImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
+                AddApplier(selRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.SelectedBadgeFill,
+                    spriteToken: UiThemeApplier.SpriteToken.ButtonCapsulePrimary,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
                 selRt.GetComponent<Image>().pixelsPerUnitMultiplier = 0.75f;
 
                 HorizontalLayoutGroup selRow = CreateCenteredRow("Content", selRt, 26f);
                 RectTransform selCheckRt = CreateUi("CheckIcon", selRow.transform, typeof(CanvasRenderer), typeof(Image));
                 SetPreferredSize(selCheckRt, new Vector2(70f, 70f));
-                ConfigureImage(selCheckRt.GetComponent<Image>(), sprites.GetValueOrDefault("sp_btn_circle_cream"), ParseHex("#2BA84A"), sliced: false);
+                Image selCheckImg = ConfigureImage(selCheckRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.SelectedBadgeInk : ParseHex("#2BA84A"), sliced: false);
+                selCheckImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialButton : null;
+                AddApplier(selCheckRt.gameObject,
+                    colorToken: UiThemeApplier.ColorToken.SelectedBadgeInk,
+                    spriteToken: UiThemeApplier.SpriteToken.ButtonCircle,
+                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialButton);
 
                 RectTransform selCheckMarkRt = CreateUi("Mark", selCheckRt, typeof(CanvasRenderer), typeof(UiCheckGraphic));
                 Place(selCheckMarkRt, middle, middle, Vector2.zero, new Vector2(40f, 40f));
@@ -1028,7 +1134,8 @@ namespace Line98.Editor
                 selCheckGraphic.raycastTarget = false;
 
                 RectTransform selTextRt = CreateUi("Label", selRow.transform, typeof(TextMeshProUGUI));
-                ConfigureLabel(selTextRt.GetComponent<TextMeshProUGUI>(), font, "SELECTED", 40f, ParseHex("#17662D"), TextAlignmentOptions.Center);
+                ConfigureLabel(selTextRt.GetComponent<TextMeshProUGUI>(), font, "SELECTED", 40f, defaultTheme != null ? defaultTheme.SelectedBadgeInk : ParseHex("#17662D"), TextAlignmentOptions.Center);
+                AddApplier(selTextRt.gameObject, colorToken: UiThemeApplier.ColorToken.SelectedBadgeInk);
 
                 // EmptyStateRoot (BOARD / EFFECTS tabs)
                 RectTransform emptyRt = CreateUi("EmptyStateRoot", previewRt);
@@ -1082,21 +1189,25 @@ namespace Line98.Editor
                 RectTransform footerRuleLeftRt = CreateUi("RuleLeft", footerGroupRt, typeof(CanvasRenderer), typeof(Image));
                 SetPreferredSize(footerRuleLeftRt, new Vector2(67f, 2.5f));
                 ConfigureImage(footerRuleLeftRt.GetComponent<Image>(), null, ruleColor, sliced: false);
+                AddApplier(footerRuleLeftRt.gameObject, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
                 RectTransform footerRt = CreateUi("FooterNote", footerGroupRt, typeof(TextMeshProUGUI));
-                TextMeshProUGUI footerText = ConfigureLabel(footerRt.GetComponent<TextMeshProUGUI>(), font, "THEMES CHANGE VISUALS ONLY", 25f, s_ThemesNavy, TextAlignmentOptions.Center);
+                TextMeshProUGUI footerText = ConfigureLabel(footerRt.GetComponent<TextMeshProUGUI>(), font, "THEMES CHANGE VISUALS ONLY", 25f, defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, TextAlignmentOptions.Center);
                 footerText.fontStyle = FontStyles.Normal;
                 footerText.characterSpacing = 5f;
+                AddApplier(footerRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
                 RectTransform footerRuleRightRt = CreateUi("RuleRight", footerGroupRt, typeof(CanvasRenderer), typeof(Image));
                 SetPreferredSize(footerRuleRightRt, new Vector2(67f, 2.5f));
                 ConfigureImage(footerRuleRightRt.GetComponent<Image>(), null, ruleColor, sliced: false);
+                AddApplier(footerRuleRightRt.gameObject, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
                 // Wire CosmeticsPopup & PopupView
                 var popupSo = new SerializedObject(cosmeticsPopup);
                 popupSo.FindProperty("m_ModalContainer").objectReferenceValue = contentRt;
                 popupSo.FindProperty("m_ContentRoot").objectReferenceValue = contentRt;
                 popupSo.FindProperty("m_FullscreenBackdrop").objectReferenceValue = backdropImage;
+                popupSo.FindProperty("m_CrystalBackdropTexture").objectReferenceValue = crystalBackdrop;
                 popupSo.FindProperty("m_CanvasGroup").objectReferenceValue = canvasGroup;
                 popupSo.FindProperty("m_BackButton").objectReferenceValue = backBtn;
                 popupSo.FindProperty("m_CloseButton").objectReferenceValue = backBtn;
@@ -1107,7 +1218,7 @@ namespace Line98.Editor
                 popupSo.FindProperty("m_ItemsContainer").objectReferenceValue = itemsRt;
                 popupSo.FindProperty("m_ItemPrefab").objectReferenceValue = itemPrefab;
                 popupSo.FindProperty("m_FooterNote").objectReferenceValue = footerText;
-                popupSo.FindProperty("m_BrandNavy").colorValue = s_ThemesNavy;
+                popupSo.FindProperty("m_BrandNavy").colorValue = defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy;
                 popupSo.ApplyModifiedProperties();
 
                 var modalSo = new SerializedObject(responsiveModal);
@@ -1153,7 +1264,7 @@ namespace Line98.Editor
             var iconGraphic = inst.GetComponentInChildren<HudIconGraphic>();
             if (iconGraphic != null)
             {
-                iconGraphic.Kind = HudIconGraphic.IconKind.Directions;
+                iconGraphic.Kind = HudIconGraphic.IconKind.Palette;
             }
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(inst, prefabPath);
@@ -1207,7 +1318,7 @@ namespace Line98.Editor
                     var icon = btnThemesObj.GetComponentInChildren<HudIconGraphic>();
                     if (icon != null)
                     {
-                        icon.Kind = HudIconGraphic.IconKind.Directions;
+                        icon.Kind = HudIconGraphic.IconKind.Palette;
                     }
                 }
 

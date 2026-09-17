@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "unity": {
-      "command": "C:\\Users\\nqv\\.unity\\relay\\relay_win.exe",
-      "args": ["--mcp"]
-    }
-  }
-}

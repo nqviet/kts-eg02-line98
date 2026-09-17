@@ -37,7 +37,9 @@ namespace Line98.Presentation
         [SerializeField, Min(0f)] private float m_VerticalSafePadding = 24f;
 
         [SerializeField] private UnityEngine.UI.Graphic m_FullscreenBackdrop;
+        [SerializeField] private Texture2D m_CrystalBackdropTexture;
 
+        private UiThemeSO m_CurrentTheme;
         private ThemeCatalogSO m_Catalog;
         private IThemeSelector m_Selector;
         private ThemeCategory m_ActiveTab = ThemeCategory.Ball;
@@ -52,7 +54,7 @@ namespace Line98.Presentation
 
         public RectTransform TilesContainer => m_ItemsContainer;
         public RectTransform ItemsContainer => m_ItemsContainer;
-        public string ActiveThemeId => !string.IsNullOrEmpty(m_SelectedPartId) ? m_SelectedPartId : "crystal";
+        public string ActiveThemeId => !string.IsNullOrEmpty(m_SelectedPartId) ? m_SelectedPartId : ThemeIds.Classic;
         public string PreviewedThemeId => !string.IsNullOrEmpty(m_ActivePartId) ? m_ActivePartId : ActiveThemeId;
         public string ActivePartId => m_ActivePartId;
         public string SelectedPartId => m_SelectedPartId;
@@ -66,6 +68,10 @@ namespace Line98.Presentation
             base.Awake();
 
             EnsureFullscreenPresentation();
+            if (m_FullscreenBackdrop is UnityEngine.UI.RawImage rawBackdrop && m_CrystalBackdropTexture == null && rawBackdrop.texture is Texture2D tex)
+            {
+                m_CrystalBackdropTexture = tex;
+            }
             ApplyMockupTypography();
 
             // ThemeAuthoring wires BtnBack as PopupView.m_CloseButton. Do not register the
@@ -218,6 +224,58 @@ namespace Line98.Presentation
             UpdatePreview(animate: false);
         }
 
+        public void ApplyTheme(UiThemeSO theme)
+        {
+            if (theme == null) return;
+            m_CurrentTheme = theme;
+
+            m_BrandNavy = theme.BrandNavy;
+            ApplyMockupTypography();
+
+            if (m_FullscreenBackdrop != null)
+            {
+                var rawImg = m_FullscreenBackdrop as UnityEngine.UI.RawImage;
+                if (theme.CardBackgroundSprite != null)
+                {
+                    if (rawImg != null)
+                    {
+                        rawImg.texture = m_CrystalBackdropTexture;
+                    }
+                    m_FullscreenBackdrop.color = Color.white;
+                }
+                else
+                {
+                    if (rawImg != null)
+                    {
+                        rawImg.texture = null;
+                    }
+                    m_FullscreenBackdrop.color = theme.LightScrim;
+                }
+            }
+
+            if (m_TitleLabel != null)
+            {
+                Transform leaf = m_TitleLabel.transform.Find("LeafDecor");
+                if (leaf != null)
+                {
+                    leaf.gameObject.SetActive(theme.CardBackgroundSprite != null);
+                }
+            }
+
+            var appliers = GetComponentsInChildren<UiThemeApplier>(true);
+            for (int i = 0; i < appliers.Length; i++)
+            {
+                appliers[i].Apply(theme);
+            }
+
+            m_TabStrip?.ApplyTheme(theme);
+
+            for (int i = 0; i < m_SpawnedItems.Count; i++)
+            {
+                m_SpawnedItems[i]?.ApplyTheme(theme);
+            }
+        }
+
         private void ResolveSelectedPartId(string fallbackId = null)
         {
             if (m_Selector != null)
@@ -233,7 +291,7 @@ namespace Line98.Presentation
 
             if (string.IsNullOrEmpty(m_SelectedPartId))
             {
-                m_SelectedPartId = !string.IsNullOrEmpty(fallbackId) ? fallbackId : (m_Catalog?.DefaultThemeId ?? "crystal");
+                m_SelectedPartId = !string.IsNullOrEmpty(fallbackId) ? fallbackId : (m_Catalog?.DefaultThemeId ?? ThemeIds.Classic);
             }
         }
 
@@ -324,6 +382,10 @@ namespace Line98.Presentation
                 bool isApplied = string.Equals(model.PartId, m_SelectedPartId, StringComparison.OrdinalIgnoreCase);
 
                 listItem.Bind(model, isActive, isApplied);
+                if (m_CurrentTheme != null)
+                {
+                    listItem.ApplyTheme(m_CurrentTheme);
+                }
                 listItem.OnCardClicked += HandleCardClicked;
                 listItem.OnSelectClicked += HandleSelectClicked;
 
@@ -459,8 +521,17 @@ namespace Line98.Presentation
             if (m_TitleLabel != null)
             {
                 m_TitleLabel.text = "THEMES";
-                // The title carries an authored navy vertex gradient; only tint flat titles.
-                if (!m_TitleLabel.enableVertexGradient)
+                if (m_CurrentTheme != null && m_CurrentTheme.CardBackgroundSprite == null)
+                {
+                    m_TitleLabel.enableVertexGradient = false;
+                    m_TitleLabel.color = m_CurrentTheme.BrandNavy;
+                }
+                else if (m_CurrentTheme != null && m_CurrentTheme.CardBackgroundSprite != null)
+                {
+                    m_TitleLabel.enableVertexGradient = true;
+                    m_TitleLabel.colorGradient = new VertexGradient(new Color(0.118f, 0.290f, 0.549f, 1f), new Color(0.118f, 0.290f, 0.549f, 1f), m_BrandNavy, m_BrandNavy);
+                }
+                else if (!m_TitleLabel.enableVertexGradient)
                 {
                     m_TitleLabel.color = m_BrandNavy;
                 }
@@ -473,7 +544,7 @@ namespace Line98.Presentation
             {
                 // The flanking rules are separate Images in the prefab.
                 m_FooterNote.text = "THEMES CHANGE VISUALS ONLY";
-                m_FooterNote.color = m_BrandNavy;
+                m_FooterNote.color = m_CurrentTheme != null ? m_CurrentTheme.InkLabel : m_BrandNavy;
                 m_FooterNote.alignment = TextAlignmentOptions.Center;
                 m_FooterNote.raycastTarget = false;
             }

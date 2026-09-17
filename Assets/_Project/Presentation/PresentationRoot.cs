@@ -377,9 +377,9 @@ namespace Line98.Presentation
                 m_Root = root;
             }
 
-            public string ActiveBallThemeId => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme.ThemeId : m_Catalog?.DefaultTheme?.BallTheme?.ThemeId ?? "crystal";
-            public string ActiveBoardThemeId => m_Root != null && m_Root.m_BoardTheme != null ? m_Root.m_BoardTheme.ThemeId : m_Catalog?.DefaultTheme?.BoardTheme?.ThemeId ?? "crystal";
-            public string ActiveClearEffectThemeId => m_Catalog?.DefaultTheme?.ClearEffect?.ThemeId ?? "crystal";
+            public string ActiveBallThemeId => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme.ThemeId : m_Catalog?.DefaultTheme?.BallTheme?.ThemeId ?? ThemeIds.Classic;
+            public string ActiveBoardThemeId => m_Root != null && m_Root.m_BoardTheme != null ? m_Root.m_BoardTheme.ThemeId : m_Catalog?.DefaultTheme?.BoardTheme?.ThemeId ?? ThemeIds.Classic;
+            public string ActiveClearEffectThemeId => m_Catalog?.DefaultTheme?.ClearEffect?.ThemeId ?? ThemeIds.Classic;
 
             public void RequestTheme(string themeId)
             {

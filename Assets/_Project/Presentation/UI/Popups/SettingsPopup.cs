@@ -33,6 +33,7 @@ namespace Line98.Presentation
 
         [Header("Footer")]
         [SerializeField] private TMP_Text m_VersionText;
+        [SerializeField] private UnityEngine.UI.Image[] m_GemSlots = System.Array.Empty<UnityEngine.UI.Image>();
 
         [Header("Compatibility")]
         [SerializeField] private Button m_CosmeticsButton;
@@ -80,10 +81,39 @@ namespace Line98.Presentation
 
         public void ApplyTheme(Line98.Data.UiThemeSO theme)
         {
+            if (theme == null) return;
+
+            var appliers = GetComponentsInChildren<UiThemeApplier>(true);
+            for (int i = 0; i < appliers.Length; i++)
+            {
+                appliers[i].Apply(theme);
+            }
+
             m_MusicToggle?.ApplyTheme(theme);
             m_SfxToggle?.ApplyTheme(theme);
             m_VibrationToggle?.ApplyTheme(theme);
             m_ReduceEffectsToggle?.ApplyTheme(theme);
+
+            if (m_GemSlots != null && theme.PreviewSpriteSet != null)
+            {
+                var colors = new[]
+                {
+                    Line98.Core.BallColor.Red,
+                    Line98.Core.BallColor.Orange,
+                    Line98.Core.BallColor.Yellow,
+                    Line98.Core.BallColor.Green,
+                    Line98.Core.BallColor.Cyan,
+                    Line98.Core.BallColor.Purple,
+                    Line98.Core.BallColor.Blue
+                };
+                for (int i = 0; i < m_GemSlots.Length && i < colors.Length; i++)
+                {
+                    if (m_GemSlots[i] != null)
+                    {
+                        m_GemSlots[i].sprite = theme.PreviewSpriteSet.GetSprite(colors[i]);
+                    }
+                }
+            }
         }
 
         private void BindListeners()

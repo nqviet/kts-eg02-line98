@@ -34364,10 +34364,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7039184613299368687, guid: 4e6472eecefd16e4da04fb9605db740b, type: 3}
-      propertyPath: m_UiTheme
-      value: 
-      objectReference: {fileID: 11400000, guid: a7507a5c9cb94244aa5de8f0f3a78b31, type: 2}
-    - target: {fileID: 7039184613299368687, guid: 4e6472eecefd16e4da04fb9605db740b, type: 3}
       propertyPath: m_CosmeticsPopup
       value: 
       objectReference: {fileID: 1249495658}

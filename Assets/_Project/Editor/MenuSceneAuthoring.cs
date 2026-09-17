@@ -509,13 +509,13 @@ namespace Line98.Editor
             AddApplier(footerDivider, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
             // Hydrate initial theme visuals on the authored prefab
-            var crystalTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Themes/UI/UiTheme_Crystal.asset");
-            if (crystalTheme != null)
+            var defaultTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Themes/UI/UiTheme_Default.asset");
+            if (defaultTheme != null)
             {
                 var appliers = root.GetComponentsInChildren<UiThemeApplier>(true);
                 for (int i = 0; i < appliers.Length; i++)
                 {
-                    appliers[i].Apply(crystalTheme);
+                    appliers[i].Apply(defaultTheme);
                 }
             }
 
@@ -769,10 +769,10 @@ namespace Line98.Editor
             ConfigureMenuSafeAreaFitter(uiRoot);
 
             var shell = uiRoot.GetComponent<UiShell>();
-            var crystalTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Themes/UI/UiTheme_Crystal.asset");
-            if (shell != null && crystalTheme != null)
+            var defaultTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>("Assets/_Project/Content/Themes/UI/UiTheme_Default.asset");
+            if (shell != null && defaultTheme != null)
             {
-                SetObjectReference(shell, "m_UiTheme", crystalTheme);
+                SetObjectReference(shell, "m_UiTheme", defaultTheme);
             }
 
             Canvas staticCanvas = FindNamedComponent<Canvas>(uiRoot, "Canvas_StaticHUD");
