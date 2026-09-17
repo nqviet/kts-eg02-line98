@@ -28,8 +28,10 @@ namespace Line98.Presentation
         private Transform m_Parent;
         private TweenRunner m_TweenRunner;
         private float m_Pitch = 1.0f;
+        private BallThemeSO m_BallTheme;
 
         public float Pitch => m_Pitch;
+        public BallThemeSO BallTheme => m_BallTheme;
 
         public void Initialize(
             Mesh ballMesh,
@@ -39,7 +41,8 @@ namespace Line98.Presentation
             Material shadowMaterial,
             Transform parent,
             TweenRunner runner,
-            float pitch = 1.0f)
+            float pitch = 1.0f,
+            BallThemeSO ballTheme = null)
         {
             m_BallMesh = ballMesh;
             m_ShadowMesh = shadowMesh;
@@ -48,8 +51,10 @@ namespace Line98.Presentation
             m_Parent = parent;
             m_TweenRunner = runner;
             m_Pitch = pitch;
+            m_BallTheme = ballTheme;
 
             // Cache the 7 materials indexed by BallColor enum
+            Array.Clear(m_ColorMaterials, 0, m_ColorMaterials.Length);
             if (ballMaterials != null)
             {
                 for (int i = 0; i < ballMaterials.Length && i < m_ColorMaterials.Length; i++)
@@ -215,6 +220,8 @@ namespace Line98.Presentation
         public void ApplyTheme(BallThemeSO theme)
         {
             if (theme == null) return;
+            if (theme == m_BallTheme && ThemeAssetsMatch(theme)) return;
+            m_BallTheme = theme;
 
             if (theme.BallMesh != null)
             {
@@ -222,6 +229,7 @@ namespace Line98.Presentation
             }
 
             // 1. Rebuild m_ColorMaterials
+            Array.Clear(m_ColorMaterials, 0, m_ColorMaterials.Length);
             if (theme.BallMaterials != null)
             {
                 for (int i = 0; i < theme.BallMaterials.Length && i < m_ColorMaterials.Length; i++)
@@ -299,6 +307,31 @@ namespace Line98.Presentation
                     }
                 }
             }
+        }
+
+        private bool ThemeAssetsMatch(BallThemeSO theme)
+        {
+            if (theme.BallMesh != null && theme.BallMesh != m_BallMesh)
+            {
+                return false;
+            }
+
+            Material[] materials = theme.BallMaterials;
+            if (materials == null)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < m_ColorMaterials.Length; i++)
+            {
+                Material expected = i < materials.Length ? materials[i] : null;
+                if (m_ColorMaterials[i] != expected)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void Dispose()

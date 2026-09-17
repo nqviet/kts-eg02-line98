@@ -43,6 +43,7 @@ namespace Line98.Presentation
         [SerializeField] private Color m_SelectBorderColor = new Color(0.353f, 0.651f, 0.863f, 1f); // Sky #5AA6DC
 
         private string m_PartId;
+        private string m_BundleThemeId;
         private bool m_IsActive;
         private bool m_IsApplied;
         private TweenRunner m_TweenRunner;
@@ -51,6 +52,7 @@ namespace Line98.Presentation
         public event Action<string> OnSelectClicked;
 
         public string PartId => m_PartId;
+        public string BundleThemeId => m_BundleThemeId;
         public bool IsActive => m_IsActive;
         public bool IsApplied => m_IsApplied;
         public bool IsBorderVisible => m_ActiveBorder != null && m_ActiveBorder.enabled;
@@ -173,6 +175,7 @@ namespace Line98.Presentation
             EnsureControls();
             if (tweenRunner != null) m_TweenRunner = tweenRunner;
             m_PartId = model.PartId;
+            m_BundleThemeId = model.Bundle != null ? model.Bundle.ThemeId : model.PartId;
 
             if (m_ItemNameLabel != null)
             {

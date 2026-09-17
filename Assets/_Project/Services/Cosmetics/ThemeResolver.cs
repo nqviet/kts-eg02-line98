@@ -53,9 +53,14 @@ namespace Line98.Services
 
         public static BallThemeSO ResolveBall(ThemeCatalogSO catalog, string requestedBallId, ThemeDefinitionSO contextTheme = null)
         {
-            if (catalog != null && !string.IsNullOrEmpty(requestedBallId) && catalog.TryGetBallTheme(requestedBallId, out var ballTheme))
+            if (!string.IsNullOrEmpty(requestedBallId))
             {
-                return ballTheme;
+                if (catalog != null && catalog.TryGetBallTheme(requestedBallId, out var ballTheme) && ballTheme != null)
+                {
+                    return ballTheme;
+                }
+
+                WarnOnce($"ThemeResolver: Requested ball theme '{requestedBallId}' was not found. Falling back to the active bundle.");
             }
 
             if (contextTheme != null && contextTheme.BallTheme != null)
@@ -63,15 +68,35 @@ namespace Line98.Services
                 return contextTheme.BallTheme;
             }
 
-            var resolvedTheme = Resolve(catalog, null);
-            return resolvedTheme?.BallTheme;
+            if (contextTheme != null)
+            {
+                WarnOnce($"ThemeResolver: Bundle '{contextTheme.ThemeId}' has no ball theme. Falling back to the catalog default ball theme.");
+            }
+            else
+            {
+                WarnOnce("ThemeResolver: No bundle context was supplied for ball resolution. Falling back to the catalog default ball theme.");
+            }
+
+            BallThemeSO defaultBallTheme = catalog?.DefaultTheme?.BallTheme;
+            if (defaultBallTheme != null)
+            {
+                return defaultBallTheme;
+            }
+
+            WarnOnce("ThemeResolver: Unable to resolve a ball theme because the catalog default bundle has no ball theme.");
+            return null;
         }
 
         public static BoardThemeSO ResolveBoard(ThemeCatalogSO catalog, string requestedBoardId, ThemeDefinitionSO contextTheme = null)
         {
-            if (catalog != null && !string.IsNullOrEmpty(requestedBoardId) && catalog.TryGetBoardTheme(requestedBoardId, out var boardTheme))
+            if (!string.IsNullOrEmpty(requestedBoardId))
             {
-                return boardTheme;
+                if (catalog != null && catalog.TryGetBoardTheme(requestedBoardId, out var boardTheme) && boardTheme != null)
+                {
+                    return boardTheme;
+                }
+
+                WarnOnce($"ThemeResolver: Requested board theme '{requestedBoardId}' was not found. Falling back to the active bundle.");
             }
 
             if (contextTheme != null && contextTheme.BoardTheme != null)
@@ -79,8 +104,23 @@ namespace Line98.Services
                 return contextTheme.BoardTheme;
             }
 
-            var resolvedTheme = Resolve(catalog, null);
-            return resolvedTheme?.BoardTheme;
+            if (contextTheme != null)
+            {
+                WarnOnce($"ThemeResolver: Bundle '{contextTheme.ThemeId}' has no board theme. Falling back to the catalog default board theme.");
+            }
+            else
+            {
+                WarnOnce("ThemeResolver: No bundle context was supplied for board resolution. Falling back to the catalog default board theme.");
+            }
+
+            BoardThemeSO defaultBoardTheme = catalog?.DefaultTheme?.BoardTheme;
+            if (defaultBoardTheme != null)
+            {
+                return defaultBoardTheme;
+            }
+
+            WarnOnce("ThemeResolver: Unable to resolve a board theme because the catalog default bundle has no board theme.");
+            return null;
         }
 
         public static void ResetWarnings()

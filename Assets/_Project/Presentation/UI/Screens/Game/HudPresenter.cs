@@ -48,6 +48,9 @@ namespace Line98.Presentation
         [Header("Sub-Systems & Theme")]
         [SerializeField] private UiShell m_UIRouter;
         [SerializeField] private UiThemeSO m_Theme;
+        private BallThemeSO m_BallTheme;
+
+        public BallThemeSO BallTheme => m_BallTheme;
 
         private GameSession m_Session;
         private TweenRunner m_TweenRunner;
@@ -89,15 +92,25 @@ namespace Line98.Presentation
             if (theme != null)
             {
                 m_Theme = theme;
-                if (m_PreviewView != null && theme.PreviewSpriteSet != null)
-                {
-                    m_PreviewView.SetSpriteSet(theme.PreviewSpriteSet);
-                }
             }
 
-            if (ballTheme != null && m_PreviewView != null)
+            if (ballTheme != null)
             {
-                m_PreviewView.SetSpriteTints(ballTheme.PreviewTints);
+                m_BallTheme = ballTheme;
+            }
+
+            if (m_PreviewView != null)
+            {
+                var spriteSet = m_BallTheme?.PreviewSpriteSet ?? m_Theme?.PreviewSpriteSet;
+                if (spriteSet != null)
+                {
+                    m_PreviewView.SetSpriteSet(spriteSet);
+                }
+
+                if (m_BallTheme != null)
+                {
+                    m_PreviewView.SetSpriteTints(m_BallTheme.PreviewTints);
+                }
             }
 
             RefreshAllViews();

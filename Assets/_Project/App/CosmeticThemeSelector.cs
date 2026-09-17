@@ -17,6 +17,8 @@ namespace Line98.App
             m_CosmeticService = cosmeticService;
         }
 
+        public string ActiveThemeId => m_CosmeticService?.ActiveThemeId ?? ThemeIds.Classic;
+        public BallThemeSO ActiveBallTheme => m_CosmeticService?.ActiveBallTheme;
         public string ActiveBallThemeId => m_CosmeticService?.ActiveBallThemeId ?? ThemeIds.Classic;
         public string ActiveBoardThemeId => m_CosmeticService?.ActiveBoardThemeId ?? ThemeIds.Classic;
         public string ActiveClearEffectThemeId => m_CosmeticService?.ActiveClearEffectThemeId ?? ThemeIds.Classic;

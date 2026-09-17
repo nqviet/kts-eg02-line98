@@ -8,10 +8,12 @@ namespace Line98.Presentation
     /// </summary>
     public interface IThemeSelector
     {
-        // v1 — bundle-level, kept for the Settings quick path and existing tests
+        // Bundle-level selection is the player-facing authority.
+        string ActiveThemeId { get; }
         void RequestTheme(string bundleThemeId);
 
-        // v2 — per-category tab support
+        // Category-level APIs remain available for explicit future mixing affordances.
+        BallThemeSO ActiveBallTheme { get; }
         string ActiveBallThemeId { get; }
         string ActiveBoardThemeId { get; }
         string ActiveClearEffectThemeId { get; }

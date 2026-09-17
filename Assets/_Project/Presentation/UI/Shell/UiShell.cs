@@ -119,6 +119,7 @@ namespace Line98.Presentation
         }
 
         private string m_ActiveBundleThemeId = ThemeIds.Classic;
+        private BallThemeSO m_BallTheme;
 
         public void ApplyTheme(UiThemeSO theme, string bundleThemeId = null)
         {
@@ -166,6 +167,22 @@ namespace Line98.Presentation
             if (m_CosmeticsPopup != null && m_CosmeticsPopup.IsOpen)
             {
                 m_CosmeticsPopup.SetActiveTheme(m_ActiveBundleThemeId);
+            }
+        }
+
+        public void ApplyBallTheme(BallThemeSO ballTheme)
+        {
+            if (ballTheme == null) return;
+            m_BallTheme = ballTheme;
+
+            m_SettingsPopup?.ApplyBallTheme(ballTheme);
+
+            if (m_PopupRegistry != null)
+            {
+                if (m_PopupRegistry.TryGetRegistered(UiPopupId.Settings, out var sp) && sp is SettingsPopup settings)
+                {
+                    settings.ApplyBallTheme(ballTheme);
+                }
             }
         }
 
@@ -295,6 +312,10 @@ namespace Line98.Presentation
             {
                 m_SettingsPopup = settings;
                 settings.ApplyTheme(theme);
+                if (m_BallTheme != null)
+                {
+                    settings.ApplyBallTheme(m_BallTheme);
+                }
             }
             else if (popup is CosmeticsPopup cosmetics)
             {

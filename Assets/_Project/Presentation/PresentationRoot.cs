@@ -202,15 +202,22 @@ namespace Line98.Presentation
                 ballsRoot = go.transform;
             }
             m_BallManager = new BallViewManager();
+            Mesh initialBallMesh = m_BallTheme != null && m_BallTheme.BallMesh != null
+                ? m_BallTheme.BallMesh
+                : m_BallMesh;
+            Material[] initialBallMaterials = m_BallTheme != null && m_BallTheme.BallMaterials != null && m_BallTheme.BallMaterials.Length > 0
+                ? m_BallTheme.BallMaterials
+                : m_BallMaterials;
             m_BallManager.Initialize(
-                m_BallMesh,
+                initialBallMesh,
                 m_ShadowMesh,
-                m_BallMaterials,
+                initialBallMaterials,
                 m_GlowMaterial,
                 m_ShadowMaterial,
                 ballsRoot,
                 m_TweenRunner,
-                m_BoardView.CellPitch);
+                m_BoardView.CellPitch,
+                m_BallTheme);
 
             // 5. Initialize Animators
             if (m_MotionProfile == null)
@@ -260,6 +267,10 @@ namespace Line98.Presentation
             if (m_HudPresenter != null && m_Session != null)
             {
                 m_HudPresenter.Initialize(m_Session, m_UIRouter, m_TweenRunner, m_UiTheme, m_PathPreviewView);
+                if (m_BallTheme != null)
+                {
+                    m_HudPresenter.ApplyTheme(m_UiTheme, m_BallTheme);
+                }
             }
 
             // 9. Initialize ThemeSwapController
@@ -270,12 +281,17 @@ namespace Line98.Presentation
 
         public void ApplyTheme(ThemeDefinitionSO theme)
         {
+            ApplyTheme(theme, null);
+        }
+
+        public void ApplyTheme(ThemeDefinitionSO theme, BallThemeSO ballTheme)
+        {
             if (theme == null) return;
             m_ActiveTheme = theme;
-            m_BallTheme = theme.BallTheme;
+            m_BallTheme = ballTheme != null ? ballTheme : theme.BallTheme;
             m_BoardTheme = theme.BoardTheme;
             m_UiTheme = theme.UiTheme;
-            m_ThemeSwapController?.ApplyTheme(theme);
+            m_ThemeSwapController?.ApplyTheme(theme, m_BallTheme);
         }
 
         public void ApplyBallTheme(BallThemeSO ballTheme)
@@ -377,6 +393,8 @@ namespace Line98.Presentation
                 m_Root = root;
             }
 
+            public string ActiveThemeId => m_Root != null && m_Root.m_ActiveTheme != null ? m_Root.m_ActiveTheme.ThemeId : m_Catalog?.DefaultTheme?.ThemeId ?? ThemeIds.Classic;
+            public BallThemeSO ActiveBallTheme => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme : m_Catalog?.DefaultTheme?.BallTheme;
             public string ActiveBallThemeId => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme.ThemeId : m_Catalog?.DefaultTheme?.BallTheme?.ThemeId ?? ThemeIds.Classic;
             public string ActiveBoardThemeId => m_Root != null && m_Root.m_BoardTheme != null ? m_Root.m_BoardTheme.ThemeId : m_Catalog?.DefaultTheme?.BoardTheme?.ThemeId ?? ThemeIds.Classic;
             public string ActiveClearEffectThemeId => m_Catalog?.DefaultTheme?.ClearEffect?.ThemeId ?? ThemeIds.Classic;
@@ -490,7 +508,7 @@ namespace Line98.Presentation
                 }
             }
 
-            if (!m_IsInitialized) return;
+            if (!m_IsInitialized || m_TweenRunner == null) return;
 
             float presentationDt = dt * m_ClockScale;
 

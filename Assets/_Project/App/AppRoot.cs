@@ -16,7 +16,13 @@ namespace Line98.App
     public sealed class AppRoot : MonoBehaviour
     {
         private static AppRoot s_Instance;
+        private static Func<ISaveBackend> s_SaveBackendFactory;
         public static AppRoot Instance => s_Instance;
+        public static Func<ISaveBackend> SaveBackendFactory
+        {
+            get => s_SaveBackendFactory;
+            set => s_SaveBackendFactory = value;
+        }
 
         [Header("Configuration Assets")]
         [SerializeField] private Line98.Data.ScoreTableSO m_ScoreTable;
@@ -133,7 +139,7 @@ namespace Line98.App
 #endif
 
             m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
-            m_SaveService = new SaveService(new FileSaveBackend());
+            m_SaveService = new SaveService(CreateSaveBackend());
             SaveData loadedSave = m_SaveService.LoadGame();
             PlayerStats initialStats = new PlayerStats
             {
@@ -149,7 +155,7 @@ namespace Line98.App
             m_AnalyticsService = new DebugAnalyticsService();
             m_AdService = new NoOpAdService();
             m_IapService = new EditorStubIapService();
-            m_CosmeticService = new CosmeticService(m_ThemeCatalog, new FileSaveBackend());
+            m_CosmeticService = new CosmeticService(m_ThemeCatalog, CreateSaveBackend());
             m_ThemeSelector = new CosmeticThemeSelector(m_CosmeticService);
 
             if (m_AudioCatalog != null && m_MainMixer != null)
@@ -272,7 +278,7 @@ namespace Line98.App
                         m_BoundPresentationRoot.Initialize(
                             m_Session,
                             themeSelector: m_ThemeSelector,
-                            ballTheme: m_CosmeticService?.ActiveTheme?.BallTheme,
+                            ballTheme: m_CosmeticService?.ActiveBallTheme,
                             boardTheme: m_CosmeticService?.ActiveTheme?.BoardTheme,
                             uiTheme: m_CosmeticService?.ActiveTheme?.UiTheme,
                             audioService: m_AudioService);
@@ -280,7 +286,7 @@ namespace Line98.App
 
                     if (m_CosmeticService?.ActiveTheme != null)
                     {
-                        m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
+                        m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme, m_CosmeticService.ActiveBallTheme);
                     }
                 }
             }
@@ -319,6 +325,11 @@ namespace Line98.App
             }
 
             BindShell();
+
+            if (m_CosmeticService?.ActiveBallTheme != null)
+            {
+                ApplyBallThemeEverywhere(m_CosmeticService.ActiveBallTheme);
+            }
         }
 
         private void BindThemeChanges()
@@ -352,6 +363,11 @@ namespace Line98.App
             {
                 m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
             }
+
+            if (m_CosmeticService?.ActiveBallTheme != null)
+            {
+                m_BoundShell.ApplyBallTheme(m_CosmeticService.ActiveBallTheme);
+            }
         }
 
         private void HandleThemeChanged(ThemeChange change)
@@ -367,7 +383,7 @@ namespace Line98.App
                 }
                 else if (m_CosmeticService?.ActiveTheme != null)
                 {
-                    m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme);
+                    m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme, m_CosmeticService.ActiveBallTheme);
                 }
             }
             if (m_BoundShowcaseRig != null && m_CosmeticService?.ActiveTheme != null)
@@ -381,6 +397,35 @@ namespace Line98.App
             if (m_BoundShell != null && m_CosmeticService?.ActiveTheme != null)
             {
                 m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
+            }
+
+            if (m_CosmeticService?.ActiveBallTheme != null)
+            {
+                ApplyBallThemeEverywhere(m_CosmeticService.ActiveBallTheme);
+            }
+        }
+
+        private void ApplyBallThemeEverywhere(BallThemeSO ball)
+        {
+            if (ball == null) return;
+
+            // Unity objects can retain a managed wrapper after their scene is unloaded.
+            // Use Unity's overloaded null check so stale scene bindings are not invoked.
+            if (m_BoundPresentationRoot != null)
+            {
+                m_BoundPresentationRoot.ApplyBallTheme(ball);
+            }
+            if (m_BoundShowcaseRig != null)
+            {
+                m_BoundShowcaseRig.ApplyBallTheme(ball);
+            }
+            if (m_BoundMenuPresenter != null)
+            {
+                m_BoundMenuPresenter.ApplyBallTheme(ball);
+            }
+            if (m_BoundShell != null)
+            {
+                m_BoundShell.ApplyBallTheme(ball);
             }
         }
 
@@ -494,8 +539,18 @@ namespace Line98.App
 
         private void OnDestroy()
         {
+            if (s_Instance == this)
+            {
+                s_Instance = null;
+            }
+
             m_AudioService?.Dispose();
             m_AudioService = null;
+        }
+
+        private static ISaveBackend CreateSaveBackend()
+        {
+            return s_SaveBackendFactory?.Invoke() ?? new FileSaveBackend();
         }
 
         private void Autosave()

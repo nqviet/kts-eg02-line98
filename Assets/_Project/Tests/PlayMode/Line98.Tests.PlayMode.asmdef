@@ -7,6 +7,7 @@
     "Line98.Gameplay",
     "Line98.App",
     "Line98.Presentation",
+    "Line98.Services",
     "Unity.InputSystem",
     "UnityEngine.UI"
   ],

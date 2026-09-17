@@ -124,7 +124,8 @@ namespace Line98.Presentation
                     m_BallTheme.BlobShadowMaterial,
                     m_BallsRoot,
                     m_TweenRunner,
-                    m_BoardView.CellPitch);
+                    m_BoardView.CellPitch,
+                    m_BallTheme);
 
                 SpawnShowcaseBalls();
             }
@@ -230,7 +231,14 @@ namespace Line98.Presentation
         public void ApplyTheme(ThemeDefinitionSO theme)
         {
             if (theme == null) return;
-            ApplyTheme(theme.BoardTheme, theme.BallTheme);
+            ApplyTheme(theme.BoardTheme, null);
+        }
+
+        public void ApplyBallTheme(BallThemeSO ballTheme)
+        {
+            if (ballTheme == null) return;
+            m_BallTheme = ballTheme;
+            m_BallManager?.ApplyTheme(m_BallTheme);
         }
 
         public void ApplyTheme(BoardThemeSO boardTheme, BallThemeSO ballTheme)

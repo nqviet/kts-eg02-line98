@@ -55,7 +55,12 @@ namespace Line98.Presentation
         public UiToggle VibrationToggle => m_VibrationToggle;
         public UiToggle ReduceEffectsToggle => m_ReduceEffectsToggle;
         public Button CosmeticsButton => m_CosmeticsButton;
+        public UnityEngine.UI.Image[] GemSlots => m_GemSlots;
+        public Line98.Data.BallThemeSO BallTheme => m_BallTheme;
         public override bool UsesFullLayoutHeight => true;
+
+        private Line98.Data.UiThemeSO m_UiTheme;
+        private Line98.Data.BallThemeSO m_BallTheme;
 
         protected override void Awake()
         {
@@ -82,6 +87,7 @@ namespace Line98.Presentation
         public void ApplyTheme(Line98.Data.UiThemeSO theme)
         {
             if (theme == null) return;
+            m_UiTheme = theme;
 
             var appliers = GetComponentsInChildren<UiThemeApplier>(true);
             for (int i = 0; i < appliers.Length; i++)
@@ -94,24 +100,35 @@ namespace Line98.Presentation
             m_VibrationToggle?.ApplyTheme(theme);
             m_ReduceEffectsToggle?.ApplyTheme(theme);
 
-            if (m_GemSlots != null && theme.PreviewSpriteSet != null)
+            RefreshGemSlots();
+        }
+
+        public void ApplyBallTheme(Line98.Data.BallThemeSO ballTheme)
+        {
+            m_BallTheme = ballTheme;
+            RefreshGemSlots();
+        }
+
+        private void RefreshGemSlots()
+        {
+            var spriteSet = m_BallTheme?.PreviewSpriteSet ?? m_UiTheme?.PreviewSpriteSet;
+            if (m_GemSlots == null || spriteSet == null) return;
+
+            var colors = new[]
             {
-                var colors = new[]
+                Line98.Core.BallColor.Red,
+                Line98.Core.BallColor.Orange,
+                Line98.Core.BallColor.Yellow,
+                Line98.Core.BallColor.Green,
+                Line98.Core.BallColor.Cyan,
+                Line98.Core.BallColor.Purple,
+                Line98.Core.BallColor.Blue
+            };
+            for (int i = 0; i < m_GemSlots.Length && i < colors.Length; i++)
+            {
+                if (m_GemSlots[i] != null)
                 {
-                    Line98.Core.BallColor.Red,
-                    Line98.Core.BallColor.Orange,
-                    Line98.Core.BallColor.Yellow,
-                    Line98.Core.BallColor.Green,
-                    Line98.Core.BallColor.Cyan,
-                    Line98.Core.BallColor.Purple,
-                    Line98.Core.BallColor.Blue
-                };
-                for (int i = 0; i < m_GemSlots.Length && i < colors.Length; i++)
-                {
-                    if (m_GemSlots[i] != null)
-                    {
-                        m_GemSlots[i].sprite = theme.PreviewSpriteSet.GetSprite(colors[i]);
-                    }
+                    m_GemSlots[i].sprite = spriteSet.GetSprite(colors[i]);
                 }
             }
         }

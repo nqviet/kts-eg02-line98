@@ -9,7 +9,9 @@ namespace Line98.Services
     [Serializable]
     public sealed class CosmeticSettings
     {
-        public int Version = 1;
+        public const int CurrentVersion = 2;
+
+        public int Version = CurrentVersion;
         public string ThemeId = ThemeIds.Classic;
         public string BallOverrideId;
         public string BoardOverrideId;

@@ -64,7 +64,7 @@ namespace Line98.Presentation
             }
         }
 
-        public void ApplyTheme(ThemeDefinitionSO theme)
+        public void ApplyTheme(ThemeDefinitionSO theme, BallThemeSO ballTheme = null)
         {
             if (theme == null) return;
 
@@ -74,11 +74,8 @@ namespace Line98.Presentation
                 ApplyBoardTheme(theme.BoardTheme);
             }
 
-            // 2. Balls
-            if (theme.BallTheme != null)
-            {
-                ApplyBallTheme(theme.BallTheme);
-            }
+            // 2. Balls (effective ball theme wins over the bundle's)
+            ApplyBallTheme(ballTheme != null ? ballTheme : theme.BallTheme);
 
             // 3. UI
             ApplyUiTheme(theme.UiTheme, theme.ThemeId);

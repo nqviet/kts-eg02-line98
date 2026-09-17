@@ -22,6 +22,7 @@ namespace Line98.Presentation
 
         [Header("Theme")]
         [SerializeField] private UiThemeSO m_Theme;
+        private BallThemeSO m_BallTheme;
 
         private int m_BestScore;
         private int m_CurrentStreak;
@@ -30,6 +31,7 @@ namespace Line98.Presentation
         public TMP_Text StreakText => m_StreakText;
         public StreakDotsView StreakDotsView => m_StreakDotsView;
         public UnityEngine.UI.Image[] ShowcaseGems => m_ShowcaseGems;
+        public BallThemeSO BallTheme => m_BallTheme;
         public int BestScore => m_BestScore;
         public int CurrentStreak => m_CurrentStreak;
 
@@ -65,6 +67,12 @@ namespace Line98.Presentation
             RefreshShowcaseGems();
         }
 
+        public void ApplyBallTheme(BallThemeSO ballTheme)
+        {
+            m_BallTheme = ballTheme;
+            RefreshShowcaseGems();
+        }
+
         public void Refresh()
         {
             if (m_BestCard != null)
@@ -87,7 +95,8 @@ namespace Line98.Presentation
 
         private void RefreshShowcaseGems()
         {
-            if (m_Theme == null || m_Theme.PreviewSpriteSet == null || m_ShowcaseGems == null)
+            var spriteSet = m_BallTheme?.PreviewSpriteSet ?? m_Theme?.PreviewSpriteSet;
+            if (spriteSet == null || m_ShowcaseGems == null)
             {
                 return;
             }
@@ -108,7 +117,7 @@ namespace Line98.Presentation
             {
                 if (m_ShowcaseGems[i] != null)
                 {
-                    m_ShowcaseGems[i].sprite = m_Theme.PreviewSpriteSet.GetSprite(colors[i]);
+                    m_ShowcaseGems[i].sprite = spriteSet.GetSprite(colors[i]);
                 }
             }
         }

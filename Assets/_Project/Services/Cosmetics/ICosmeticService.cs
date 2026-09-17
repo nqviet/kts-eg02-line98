@@ -11,6 +11,7 @@ namespace Line98.Services
     {
         string ActiveThemeId { get; }
         ThemeDefinitionSO ActiveTheme { get; }
+        BallThemeSO ActiveBallTheme { get; }
         string ActiveClearEffectThemeId { get; }
         string BallOverrideId { get; }
         string BoardOverrideId { get; }
@@ -19,6 +20,7 @@ namespace Line98.Services
         void SetTheme(string themeId);
         void SetUiTheme(string uiThemeId);
         void SetClearEffectTheme(string clearEffectId);
+        void ResetCategoryOverride(ThemeCategory category);
         void ResetToDefault();
     }
 }
