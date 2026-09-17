@@ -60,7 +60,7 @@ namespace Line98.Services
                     return ballTheme;
                 }
 
-                WarnOnce($"ThemeResolver: Requested ball theme '{requestedBallId}' was not found. Falling back to the active bundle.");
+                WarnOnce($"ThemeResolver: Requested ball theme '{requestedBallId}' was not found. Falling back to the default pack.");
             }
 
             if (contextTheme != null && contextTheme.BallTheme != null)
@@ -96,7 +96,7 @@ namespace Line98.Services
                     return boardTheme;
                 }
 
-                WarnOnce($"ThemeResolver: Requested board theme '{requestedBoardId}' was not found. Falling back to the active bundle.");
+                WarnOnce($"ThemeResolver: Requested board theme '{requestedBoardId}' was not found. Falling back to the default pack.");
             }
 
             if (contextTheme != null && contextTheme.BoardTheme != null)
@@ -120,6 +120,68 @@ namespace Line98.Services
             }
 
             WarnOnce("ThemeResolver: Unable to resolve a board theme because the catalog default bundle has no board theme.");
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves a board and the UI theme of the pack that owns it, as one atomic pair.
+        /// UI is never resolved by its own id: the board's pack is the single source of truth.
+        /// </summary>
+        public static bool ResolveBoardWithUi(
+            ThemeCatalogSO catalog,
+            string requestedBoardId,
+            out BoardThemeSO board,
+            out UiThemeSO ui,
+            out ThemeDefinitionSO pack)
+        {
+            board = ResolveBoard(catalog, requestedBoardId, catalog?.DefaultTheme);
+            ui = null;
+            pack = null;
+            if (board == null)
+            {
+                return false;
+            }
+
+            if (!catalog.TryGetPackForPart(ThemeCategory.Board, board.ThemeId, out pack) || pack == null)
+            {
+                WarnOnce($"ThemeResolver: Board theme '{board.ThemeId}' has no owning pack. Falling back to the catalog default pack for UI.");
+                pack = catalog.DefaultTheme;
+            }
+
+            ui = pack != null ? pack.UiTheme : null;
+            if (ui == null)
+            {
+                WarnOnce($"ThemeResolver: Pack '{pack?.ThemeId ?? "<none>"}' has no UI theme. Falling back to the catalog default UI theme.");
+                ui = catalog.DefaultTheme?.UiTheme;
+            }
+
+            return true;
+        }
+
+        public static ClearEffectSO ResolveClearEffect(ThemeCatalogSO catalog, string requestedId, ThemeDefinitionSO fallbackPack = null)
+        {
+            if (!string.IsNullOrEmpty(requestedId))
+            {
+                if (catalog != null && catalog.TryGetClearEffect(requestedId, out var clearEffect) && clearEffect != null)
+                {
+                    return clearEffect;
+                }
+
+                WarnOnce($"ThemeResolver: Requested clear effect '{requestedId}' was not found. Falling back to the default pack.");
+            }
+
+            if (fallbackPack != null && fallbackPack.ClearEffect != null)
+            {
+                return fallbackPack.ClearEffect;
+            }
+
+            ClearEffectSO defaultClearEffect = catalog?.DefaultTheme?.ClearEffect;
+            if (defaultClearEffect != null)
+            {
+                return defaultClearEffect;
+            }
+
+            WarnOnce("ThemeResolver: Unable to resolve a clear effect because the catalog default pack has no clear effect.");
             return null;
         }
 

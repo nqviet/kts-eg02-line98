@@ -52,6 +52,7 @@ namespace Line98.Editor
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            ThemeAuthoring.ValidateDefaultThemePacks();
             Debug.Log("[CrystalThemeAuthoring] Crystal theme and settings popup authored successfully.");
         }
 

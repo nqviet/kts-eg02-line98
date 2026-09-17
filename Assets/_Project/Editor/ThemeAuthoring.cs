@@ -329,7 +329,72 @@ namespace Line98.Editor
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            ValidateThemePacks(catalog);
             Debug.Log("[ThemeAuthoring] Setup completed successfully!");
+        }
+
+        [MenuItem("Line98/Authoring/Validate Theme Packs")]
+        public static void ValidateDefaultThemePacks()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>($"{DefinitionsFolder}/ThemeCatalog_Default.asset");
+            if (ValidateThemePacks(catalog))
+            {
+                Debug.Log("[ThemeAuthoring] Theme packs are valid.");
+            }
+        }
+
+        /// <summary>
+        /// ADR D35: every pack declares all four parts (after inheritance), and a part id shared by
+        /// several packs must reference the same asset so part→pack (board⇒UI) stays deterministic.
+        /// </summary>
+        public static bool ValidateThemePacks(ThemeCatalogSO catalog)
+        {
+            if (catalog == null)
+            {
+                Debug.LogError("[ThemeAuthoring] Cannot validate theme packs: catalog is missing.");
+                return false;
+            }
+
+            bool isValid = true;
+            var categories = new[] { ThemeCategory.Ball, ThemeCategory.Board, ThemeCategory.ClearEffect };
+            var seen = new Dictionary<(ThemeCategory, string), UnityEngine.Object>();
+            for (int i = 0; i < catalog.Count; i++)
+            {
+                ThemeDefinitionSO pack = catalog.ThemeAt(i);
+                if (pack == null)
+                {
+                    Debug.LogError($"[ThemeAuthoring] Catalog entry {i} is null.");
+                    isValid = false;
+                    continue;
+                }
+
+                if (pack.BallTheme == null || pack.BoardTheme == null || pack.UiTheme == null || pack.ClearEffect == null)
+                {
+                    Debug.LogError($"[ThemeAuthoring] Pack '{pack.ThemeId}' must resolve Ball, Board, UI and ClearEffect parts.", pack);
+                    isValid = false;
+                    continue;
+                }
+
+                foreach (ThemeCategory category in categories)
+                {
+                    string partId = ThemeCatalogSO.PartId(pack, category);
+                    UnityEngine.Object asset = category == ThemeCategory.Ball ? pack.BallTheme
+                        : category == ThemeCategory.Board ? pack.BoardTheme
+                        : (UnityEngine.Object)pack.ClearEffect;
+                    var key = (category, partId.ToLowerInvariant());
+                    if (seen.TryGetValue(key, out var existing) && existing != asset)
+                    {
+                        Debug.LogError($"[ThemeAuthoring] {category} id '{partId}' in pack '{pack.ThemeId}' collides with a different asset in another pack.", pack);
+                        isValid = false;
+                    }
+                    else
+                    {
+                        seen[key] = asset;
+                    }
+                }
+            }
+
+            return isValid;
         }
 
         [MenuItem("Line98/Authoring/Setup Cosmetics UI and Prefabs")]

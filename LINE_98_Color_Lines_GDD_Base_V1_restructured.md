@@ -1002,6 +1002,8 @@ Potential future themes: Bubble · Crystal · Firework · Confetti · Lightning
 
 **Do not build a large economy or shop for V1.**
 
+**Selection model (ADR D35):** themes ship as packs (ball + board + UI + clear effect), but the player selects balls, board, and clear effect independently. The UI theme always follows the selected board's pack.
+
 **Exit criteria:** theme swap works through `IThemeProvider` without touching gameplay code; only 2 themes ship in V1.
 
 ---

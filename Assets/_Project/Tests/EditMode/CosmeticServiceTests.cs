@@ -9,293 +9,257 @@ using Line98.Services;
 
 namespace Line98.Tests.EditMode
 {
+    /// <summary>
+    /// Per-part cosmetic selection (ADR D35): Ball, Board and ClearEffect are independent axes;
+    /// UI is derived from the selected board's pack and never persisted.
+    /// </summary>
     [TestFixture]
     public sealed class CosmeticServiceTests
     {
         private const string CatalogPath = "Assets/_Project/Content/Definitions/ThemeCatalog_Default.asset";
+        private const string SaveKey = "line98_cosmetics";
+
+        private ThemeCatalogSO m_Catalog;
+
+        [SetUp]
+        public void SetUp()
+        {
+            m_Catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
+            Assert.IsNotNull(m_Catalog, $"Missing default theme catalog at {CatalogPath}");
+            ThemeResolver.ResetWarnings();
+        }
 
         [Test]
-        public void CosmeticSettings_DefaultsToClassic()
+        public void CosmeticSettings_V3_DefaultsToClassicParts()
         {
             var settings = new CosmeticSettings();
+            Assert.AreEqual(3, CosmeticSettings.CurrentVersion);
             Assert.AreEqual(CosmeticSettings.CurrentVersion, settings.Version);
-            Assert.AreEqual(ThemeIds.Classic, settings.ThemeId);
-            Assert.IsNull(settings.BallOverrideId);
-            Assert.IsNull(settings.BoardOverrideId);
-            Assert.IsNull(settings.UiOverrideId);
-            Assert.IsNull(settings.ClearEffectOverrideId);
+            Assert.AreEqual(ThemeIds.Classic, settings.BallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, settings.BoardThemeId);
+            Assert.AreEqual(ThemeIds.Classic, settings.ClearEffectThemeId);
         }
 
         [Test]
-        public void CosmeticService_InitializesWithDefaultClassicTheme()
+        public void CosmeticService_InitializesWithClassicPartsAndClassicPackUi()
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            Assert.IsNotNull(catalog, $"Missing default theme catalog at {CatalogPath}");
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
 
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
-
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveThemeId);
-            Assert.IsNotNull(service.ActiveTheme);
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveTheme.ThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBoardThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveClearEffectThemeId);
+            Assert.AreSame(m_Catalog.DefaultTheme.UiTheme, service.ActiveUiTheme);
+            Assert.IsNotNull(service.ActiveBallTheme);
+            Assert.IsNotNull(service.ActiveBoardTheme);
+            Assert.IsNotNull(service.ActiveClearEffect);
         }
 
         [Test]
-        public void CosmeticService_SetTheme_IdempotentFiresNoEvent()
+        public void SetBallTheme_ChangesOnlyBall()
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            var events = Record(service);
 
-            int eventCount = 0;
-            service.OnThemeChanged += _ => eventCount++;
+            service.SetBallTheme(ThemeIds.Crystal);
 
-            service.SetTheme(ThemeIds.Classic);
-            Assert.AreEqual(0, eventCount, "Idempotent SetTheme must not fire OnThemeChanged");
-
-            service.SetTheme(ThemeIds.Crystal);
-            Assert.AreEqual(1, eventCount, "Setting a different theme must fire OnThemeChanged once");
-            Assert.AreEqual(ThemeIds.Crystal, service.ActiveThemeId);
-
-            service.SetTheme(ThemeIds.Crystal);
-            Assert.AreEqual(1, eventCount, "Setting the same theme again must not fire OnThemeChanged");
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBoardThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveClearEffectThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Classic), service.ActiveUiTheme, "Ball selection must not move the UI theme.");
+            CollectionAssert.AreEqual(new[] { ThemeCategory.Ball }, Categories(events));
         }
 
         [Test]
-        public void CosmeticService_UnknownOrEmptyId_FallsBackToDefaultClassic()
+        public void SetBoardTheme_EmitsBoardThenUi_AndUiFollowsBoardPack()
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            var events = Record(service);
 
-            service.SetTheme(ThemeIds.Crystal);
-            Assert.AreEqual(ThemeIds.Crystal, service.ActiveThemeId);
+            service.SetBoardTheme(ThemeIds.Crystal);
 
-            service.SetTheme("non_existent_theme_id_xyz");
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveThemeId, "Unknown id must fall back to the catalog default");
-
-            service.SetTheme(null);
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveThemeId, "Null id must fall back to the catalog default");
-
-            service.SetTheme(string.Empty);
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveThemeId, "Empty id must fall back to the catalog default");
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBoardThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Crystal), service.ActiveUiTheme);
+            Assert.AreEqual(service.ActiveUiTheme.ThemeId, service.ActiveUiThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId, "Board selection must not move the ball theme.");
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveClearEffectThemeId, "Board selection must not move the clear effect.");
+            CollectionAssert.AreEqual(new[] { ThemeCategory.Board, ThemeCategory.Ui }, Categories(events));
+            Assert.AreEqual(service.ActiveUiThemeId, events[1].ThemeId);
         }
 
         [Test]
-        public void CosmeticService_InheritanceFlattening_ResolvesAllParts()
+        public void SetClearEffectTheme_ChangesOnlyClearEffect()
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            var events = Record(service);
 
-            service.SetTheme("crystal");
-            var theme = service.ActiveTheme;
-            Assert.IsNotNull(theme);
-            Assert.AreEqual("crystal", theme.ThemeId);
+            service.SetClearEffectTheme(ThemeIds.Crystal);
 
-            // Crystal is a complete visual theme with a dedicated asset for each presentation surface.
-            Assert.IsNotNull(theme.BallTheme, "BallTheme must be resolved");
-            Assert.AreEqual("crystal", theme.BallTheme.ThemeId);
-
-            Assert.IsNotNull(theme.BoardTheme, "BoardTheme must be resolved");
-            Assert.AreEqual("crystal", theme.BoardTheme.ThemeId);
-
-            Assert.IsNotNull(theme.UiTheme, "UiTheme must be resolved");
-            Assert.AreEqual("crystal", theme.UiTheme.ThemeId);
-
-            Assert.IsNotNull(theme.ClearEffect, "ClearEffect must be resolved");
-            Assert.AreEqual("crystal", theme.ClearEffect.ThemeId);
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveClearEffectThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBoardThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Classic), service.ActiveUiTheme);
+            CollectionAssert.AreEqual(new[] { ThemeCategory.ClearEffect }, Categories(events));
         }
 
         [Test]
-        public void CosmeticService_PersistenceRoundTrips_ViaSaveBackend()
+        public void Setters_AreIdempotent()
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            var events = Record(service);
+
+            service.SetBallTheme(ThemeIds.Classic);
+            service.SetBoardTheme(ThemeIds.Classic);
+            service.SetClearEffectTheme(ThemeIds.Classic);
+            Assert.AreEqual(0, events.Count);
+
+            service.SetBoardTheme(ThemeIds.Crystal);
+            service.SetBoardTheme(ThemeIds.Crystal);
+            Assert.AreEqual(2, events.Count, "Repeating a board selection must not re-emit Board/Ui.");
+        }
+
+        [Test]
+        public void CrystalBall_WithClassicBoard_ResolvesClassicUi()
+        {
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            service.SetBoardTheme(ThemeIds.Crystal);
+            service.SetBallTheme(ThemeIds.Crystal);
+
+            service.SetBoardTheme(ThemeIds.Classic);
+
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBoardThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Classic), service.ActiveUiTheme);
+        }
+
+        [Test]
+        public void UnknownOrEmptyIds_FallBackToDefaultPart()
+        {
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            service.SetBallTheme(ThemeIds.Crystal);
+
+            LogAssert.ignoreFailingMessages = true;
+            service.SetBallTheme("non_existent_theme_id_xyz");
+            LogAssert.ignoreFailingMessages = false;
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId, "Unknown id must fall back to the catalog default");
+
+            service.SetBoardTheme(ThemeIds.Crystal);
+            service.SetBoardTheme(null);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBoardThemeId, "Null id must fall back to the catalog default");
+            Assert.AreSame(PackUi(ThemeIds.Classic), service.ActiveUiTheme);
+        }
+
+        [Test]
+        public void Persistence_RoundTripsThreeIndependentIds()
+        {
             var backend = new InMemorySaveBackend();
+            var service1 = new CosmeticService(m_Catalog, backend);
+            service1.SetBallTheme(ThemeIds.Crystal);
+            service1.SetBoardTheme(ThemeIds.Classic);
+            service1.SetClearEffectTheme(ThemeIds.Crystal);
 
-            var service1 = new CosmeticService(catalog, backend);
-            service1.SetTheme("crystal");
-            Assert.AreEqual("crystal", service1.ActiveThemeId);
+            var service2 = new CosmeticService(m_Catalog, backend);
+            Assert.AreEqual(ThemeIds.Crystal, service2.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service2.ActiveBoardThemeId);
+            Assert.AreEqual(ThemeIds.Crystal, service2.ActiveClearEffectThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Classic), service2.ActiveUiTheme);
 
-            // Create new service instance sharing the same save backend
-            var service2 = new CosmeticService(catalog, backend);
-            Assert.AreEqual("crystal", service2.ActiveThemeId, "Persisted theme selection must be restored");
-            Assert.AreEqual("crystal", service2.ActiveTheme.ThemeId);
+            string json = backend.Load(SaveKey);
+            StringAssert.DoesNotContain("UiThemeId", json, "UI must never be persisted independently.");
+            var saved = JsonUtility.FromJson<CosmeticSettings>(json);
+            Assert.AreEqual(3, saved.Version);
+        }
+
+        [Test]
+        public void LoadV2_KeepsBallOverrideAsNormalSelection()
+        {
+            var backend = new InMemorySaveBackend();
+            backend.Save(SaveKey, "{\"Version\":2,\"ThemeId\":\"crystal\",\"BallOverrideId\":\"classic\",\"BoardOverrideId\":\"\",\"UiOverrideId\":\"\",\"ClearEffectOverrideId\":\"\"}");
+
+            var service = new CosmeticService(m_Catalog, backend);
+
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId, "The v2 ball override becomes the ball selection.");
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBoardThemeId, "Board comes from the legacy bundle.");
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveClearEffectThemeId, "Clear effect comes from the legacy bundle.");
+            Assert.AreSame(PackUi(ThemeIds.Crystal), service.ActiveUiTheme);
+
+            var migrated = JsonUtility.FromJson<CosmeticSettings>(backend.Load(SaveKey));
+            Assert.AreEqual(3, migrated.Version);
+            Assert.AreEqual(ThemeIds.Classic, migrated.BallThemeId);
+            Assert.AreEqual(ThemeIds.Crystal, migrated.BoardThemeId);
+        }
+
+        [Test]
+        public void LoadV1_FlattensBundleAndDropsUiOverrideWithWarning()
+        {
+            var backend = new InMemorySaveBackend();
+            backend.Save(SaveKey, "{\"Version\":1,\"ThemeId\":\"classic\",\"BoardOverrideId\":\"crystal\",\"UiOverrideId\":\"default\"}");
+
+            LogAssert.Expect(LogType.Warning, new Regex("Dropped legacy UI override 'default'"));
+            var service = new CosmeticService(m_Catalog, backend);
+
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBoardThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveClearEffectThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Crystal), service.ActiveUiTheme, "The board's pack UI wins over the legacy UI override.");
+            Assert.AreEqual(3, JsonUtility.FromJson<CosmeticSettings>(backend.Load(SaveKey)).Version);
+        }
+
+        [Test]
+        public void ResetToDefault_RestoresAllDefaultParts()
+        {
+            var service = new CosmeticService(m_Catalog, new InMemorySaveBackend());
+            service.SetBallTheme(ThemeIds.Crystal);
+            service.SetBoardTheme(ThemeIds.Crystal);
+            service.SetClearEffectTheme(ThemeIds.Crystal);
+
+            service.ResetToDefault();
+
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveBoardThemeId);
+            Assert.AreEqual(ThemeIds.Classic, service.ActiveClearEffectThemeId);
+            Assert.AreSame(PackUi(ThemeIds.Classic), service.ActiveUiTheme);
         }
 
         [Test]
         public void ThemeResolver_EmptyOrNullCatalog_FallsBackWithoutThrowing()
         {
-            var resolved = ThemeResolver.Resolve(null, "classic");
-            Assert.IsNull(resolved);
+            Assert.IsNull(ThemeResolver.Resolve(null, "classic"));
 
             var emptyCatalog = ScriptableObject.CreateInstance<ThemeCatalogSO>();
-            var resolvedEmpty = ThemeResolver.Resolve(emptyCatalog, "any");
-            Assert.IsNull(resolvedEmpty);
+            LogAssert.ignoreFailingMessages = true;
+            Assert.IsNull(ThemeResolver.Resolve(emptyCatalog, "any"));
+            Assert.IsFalse(ThemeResolver.ResolveBoardWithUi(emptyCatalog, "any", out _, out _, out _));
+            Assert.IsNull(ThemeResolver.ResolveClearEffect(emptyCatalog, "any"));
+            LogAssert.ignoreFailingMessages = false;
 
             Object.DestroyImmediate(emptyCatalog);
         }
 
         [Test]
-        public void CosmeticService_ActiveBallTheme_ReturnsOverrideSO_WhenBallOverrideIdIsSet()
+        public void ThemeResolver_ResolveBoardWithUi_ReturnsAtomicPair()
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
-
-            service.SetTheme("classic");
-            Assert.AreEqual("classic", service.ActiveBallThemeId);
-            Assert.AreEqual("classic", service.ActiveBallTheme.ThemeId);
-
-            service.SetBallTheme("crystal");
-            Assert.AreEqual("crystal", service.BallOverrideId);
-            Assert.AreEqual("crystal", service.ActiveBallThemeId);
-            Assert.IsNotNull(service.ActiveBallTheme);
-            Assert.AreEqual("crystal", service.ActiveBallTheme.ThemeId);
-            Assert.AreEqual("classic", service.ActiveThemeId, "Active bundle theme must remain classic");
+            Assert.IsTrue(ThemeResolver.ResolveBoardWithUi(m_Catalog, ThemeIds.Crystal, out var board, out var ui, out var pack));
+            Assert.AreEqual(ThemeIds.Crystal, pack.ThemeId);
+            Assert.AreSame(pack.BoardTheme, board);
+            Assert.AreSame(pack.UiTheme, ui);
         }
 
-        [Test]
-        public void CosmeticService_ActiveBallTheme_FallsBackToBundle_WhenOverrideIsNull()
+        private UiThemeSO PackUi(string packId)
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
-
-            service.SetTheme("crystal");
-            Assert.IsNull(service.BallOverrideId);
-            Assert.AreEqual("crystal", service.ActiveBallThemeId);
-            Assert.IsNotNull(service.ActiveBallTheme);
-            Assert.AreEqual("crystal", service.ActiveBallTheme.ThemeId);
+            Assert.IsTrue(m_Catalog.TryGetTheme(packId, out var pack));
+            return pack.UiTheme;
         }
 
-        [Test]
-        public void CosmeticService_ActiveBallTheme_SurvivesServiceReload()
+        private static List<ThemeChange> Record(CosmeticService service)
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-
-            var service1 = new CosmeticService(catalog, backend);
-            service1.SetTheme("classic");
-            service1.SetBallTheme("crystal");
-            Assert.AreEqual("crystal", service1.ActiveBallThemeId);
-
-            var service2 = new CosmeticService(catalog, backend);
-            Assert.AreEqual("classic", service2.ActiveThemeId, "Persisted bundle theme must be restored");
-            Assert.AreEqual("crystal", service2.BallOverrideId, "Persisted ball override must be restored");
-            Assert.AreEqual("crystal", service2.ActiveBallThemeId, "Effective ball theme id must be restored");
-            Assert.IsNotNull(service2.ActiveBallTheme);
-            Assert.AreEqual("crystal", service2.ActiveBallTheme.ThemeId, "Effective ball theme SO must be restored");
+            var events = new List<ThemeChange>();
+            service.OnThemeChanged += events.Add;
+            return events;
         }
 
-        [Test]
-        public void CosmeticService_SetTheme_ClearsBallOverride_AndRestoresBundleBallTheme()
+        private static List<ThemeCategory> Categories(List<ThemeChange> events)
         {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var service = new CosmeticService(catalog, backend);
-
-            service.SetTheme("classic");
-            service.SetBallTheme("crystal");
-            Assert.AreEqual("crystal", service.ActiveBallThemeId);
-
-            service.SetTheme("classic");
-            Assert.IsNull(service.BallOverrideId, "SetTheme must clear BallOverrideId");
-            Assert.AreEqual("classic", service.ActiveBallThemeId, "ActiveBallThemeId must revert to bundle's ball theme");
-            Assert.IsNotNull(service.ActiveBallTheme);
-            Assert.AreEqual("classic", service.ActiveBallTheme.ThemeId);
-        }
-
-        [Test]
-        public void CosmeticService_SetBallTheme_DedupesOverrideMatchingActiveBundle()
-        {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var legacyNoOpOverride = new CosmeticSettings
-            {
-                Version = CosmeticSettings.CurrentVersion,
-                ThemeId = ThemeIds.Crystal,
-                BallOverrideId = ThemeIds.Crystal
-            };
-            backend.Save("line98_cosmetics", JsonUtility.ToJson(legacyNoOpOverride));
-
-            var service = new CosmeticService(catalog, backend);
-            Assert.AreEqual(ThemeIds.Crystal, service.BallOverrideId, "The seeded no-op override must exist before the write is normalized.");
-
-            service.SetBallTheme(ThemeIds.Crystal);
-
-            Assert.IsNull(service.BallOverrideId, "A category selection matching the active bundle must be stored as no override.");
-            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBallThemeId);
-        }
-
-        [Test]
-        public void CosmeticService_LoadV2_DivergentOverrideWarnsOnceAndRemainsExplicit()
-        {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var settings = new CosmeticSettings
-            {
-                Version = CosmeticSettings.CurrentVersion,
-                ThemeId = ThemeIds.Crystal,
-                BallOverrideId = ThemeIds.Classic
-            };
-            backend.Save("line98_cosmetics", JsonUtility.ToJson(settings));
-
-            LogAssert.Expect(
-                LogType.Warning,
-                new Regex("Persisted Ball override 'classic' diverges from bundle 'crystal' part 'crystal'"));
-
-            var service = new CosmeticService(catalog, backend);
-
-            Assert.AreEqual(ThemeIds.Crystal, service.ActiveThemeId);
-            Assert.AreEqual(ThemeIds.Classic, service.BallOverrideId);
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId);
-        }
-
-        [Test]
-        public void CosmeticService_LoadV1_MigratesToV2AndDropsContradictoryOverride()
-        {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var backend = new InMemorySaveBackend();
-            var legacySettings = new CosmeticSettings
-            {
-                Version = 1,
-                ThemeId = ThemeIds.Crystal,
-                BallOverrideId = ThemeIds.Classic
-            };
-            backend.Save("line98_cosmetics", JsonUtility.ToJson(legacySettings));
-
-            LogAssert.Expect(
-                LogType.Warning,
-                new Regex("Migrated cosmetic settings v1 to v2; dropped divergent overrides: Ball='classic'"));
-
-            var service = new CosmeticService(catalog, backend);
-
-            Assert.AreEqual(ThemeIds.Crystal, service.ActiveThemeId);
-            Assert.IsNull(service.BallOverrideId);
-            Assert.AreEqual(ThemeIds.Crystal, service.ActiveBallThemeId);
-
-            CosmeticSettings migrated = JsonUtility.FromJson<CosmeticSettings>(backend.Load("line98_cosmetics"));
-            Assert.AreEqual(CosmeticSettings.CurrentVersion, migrated.Version);
-            // JsonUtility round-trips a null string as empty; both mean "no override".
-            Assert.IsTrue(string.IsNullOrEmpty(migrated.BallOverrideId));
-        }
-
-        [Test]
-        public void CosmeticService_ResetCategoryOverride_ReturnsToBundlePart()
-        {
-            var catalog = AssetDatabase.LoadAssetAtPath<ThemeCatalogSO>(CatalogPath);
-            var service = new CosmeticService(catalog, new InMemorySaveBackend());
-
-            service.SetTheme(ThemeIds.Classic);
-            service.SetBallTheme(ThemeIds.Crystal);
-            Assert.AreEqual(ThemeIds.Crystal, service.BallOverrideId);
-
-            service.ResetCategoryOverride(ThemeCategory.Ball);
-
-            Assert.IsNull(service.BallOverrideId);
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallThemeId);
-            Assert.AreEqual(ThemeIds.Classic, service.ActiveBallTheme.ThemeId);
+            return events.ConvertAll(e => e.Category);
         }
     }
 }

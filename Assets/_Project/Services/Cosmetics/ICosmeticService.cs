@@ -4,23 +4,20 @@ using Line98.Data;
 namespace Line98.Services
 {
     /// <summary>
-    /// Extension of frozen IThemeProvider providing bundle selection, UI/Clear theme management,
-    /// persistence, and change notifications without modifying IThemeProvider.
+    /// Extension of frozen IThemeProvider exposing the three independent cosmetic axes
+    /// (Ball, Board, ClearEffect), the board-derived UI theme, persistence, and change notifications.
     /// </summary>
     public interface ICosmeticService : IThemeProvider
     {
-        string ActiveThemeId { get; }
-        ThemeDefinitionSO ActiveTheme { get; }
         BallThemeSO ActiveBallTheme { get; }
+        BoardThemeSO ActiveBoardTheme { get; }
+        UiThemeSO ActiveUiTheme { get; }
+        string ActiveUiThemeId { get; }
+        ClearEffectSO ActiveClearEffect { get; }
         string ActiveClearEffectThemeId { get; }
-        string BallOverrideId { get; }
-        string BoardOverrideId { get; }
         event Action<ThemeChange> OnThemeChanged;
 
-        void SetTheme(string themeId);
-        void SetUiTheme(string uiThemeId);
         void SetClearEffectTheme(string clearEffectId);
-        void ResetCategoryOverride(ThemeCategory category);
         void ResetToDefault();
     }
 }

@@ -6,7 +6,7 @@ namespace Line98.Presentation
 {
     /// <summary>
     /// Orchestrates live runtime cosmetic theme swaps across board, balls, UI, and clear effects.
-    /// Fixed execution order per architecture: Board -> Balls -> UI -> Clear.
+    /// Fixed execution order per architecture: Board -> UI -> Balls -> Clear.
     /// </summary>
     public sealed class ThemeSwapController
     {
@@ -55,36 +55,20 @@ namespace Line98.Presentation
             m_BoardAnimator.ApplyClearEffect(clearEffect);
         }
 
-        public void ApplyUiTheme(UiThemeSO uiTheme, string themeId)
+        public void ApplyUiTheme(UiThemeSO uiTheme)
         {
-            m_UiShell?.ApplyTheme(uiTheme, themeId);
-            if (uiTheme != null)
-            {
-                m_HudPresenter?.ApplyTheme(uiTheme, null);
-            }
+            if (uiTheme == null) return;
+            m_UiShell?.ApplyTheme(uiTheme);
+            m_HudPresenter?.ApplyTheme(uiTheme, null);
         }
 
-        public void ApplyTheme(ThemeDefinitionSO theme, BallThemeSO ballTheme = null)
+        /// <summary>Applies every resolved part. Board and UI go together so they never visibly diverge.</summary>
+        public void ApplySelection(ThemeSelection selection)
         {
-            if (theme == null) return;
-
-            // 1. Board
-            if (theme.BoardTheme != null)
-            {
-                ApplyBoardTheme(theme.BoardTheme);
-            }
-
-            // 2. Balls (effective ball theme wins over the bundle's)
-            ApplyBallTheme(ballTheme != null ? ballTheme : theme.BallTheme);
-
-            // 3. UI
-            ApplyUiTheme(theme.UiTheme, theme.ThemeId);
-
-            // 4. Clear effect
-            if (theme.ClearEffect != null)
-            {
-                ApplyClearEffect(theme.ClearEffect);
-            }
+            ApplyBoardTheme(selection.Board);
+            ApplyUiTheme(selection.Ui);
+            ApplyBallTheme(selection.Ball);
+            ApplyClearEffect(selection.ClearEffect);
         }
     }
 }

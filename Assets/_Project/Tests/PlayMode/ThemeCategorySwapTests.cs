@@ -14,8 +14,8 @@ using Line98.Services;
 namespace Line98.Tests.PlayMode
 {
     /// <summary>
-    /// PlayMode integration tests verifying both service-level category changes and the
-    /// player-facing bundle-authoritative theme picker.
+    /// PlayMode integration tests for per-part theme selection (ADR D35): Ball, Board and
+    /// ClearEffect are independent; the UI theme always follows the selected board's pack.
     /// </summary>
     [TestFixture]
     public sealed class ThemeCategorySwapTests
@@ -35,17 +35,14 @@ namespace Line98.Tests.PlayMode
             Assert.IsTrue(presRoot.IsInitialized, "PresentationRoot must be initialized");
             Assert.IsNotNull(presRoot.ThemeSelector, "ThemeSelector must be wired on PresentationRoot");
 
-            // Ensure baseline is crystal
-            presRoot.ThemeSelector.RequestTheme("crystal");
+            // Ensure baseline is all-crystal
+            SelectPack(presRoot.ThemeSelector, ThemeIds.Crystal);
             yield return null;
 
-            Assert.IsNotNull(presRoot.ActiveTheme);
-            Assert.AreEqual("crystal", presRoot.ActiveTheme.ThemeId);
-
             var initialBoardTheme = presRoot.BoardView.Theme;
-            var initialBoardThemeId = presRoot.ActiveTheme.BoardTheme.ThemeId;
-            var initialUiThemeId = presRoot.ActiveTheme.UiTheme.ThemeId;
-            var initialClearEffectId = presRoot.ActiveTheme.ClearEffect.ThemeId;
+            var initialBoardThemeId = presRoot.ThemeSelector.ActiveBoardThemeId;
+            var initialUiTheme = presRoot.UIRouter.UiTheme;
+            var initialClearEffectId = presRoot.ThemeSelector.ActiveClearEffectThemeId;
 
             // Record initial ball materials
             var initialBalls = new List<(GridPos pos, BallColor color, Material mat)>();
@@ -90,9 +87,9 @@ namespace Line98.Tests.PlayMode
 
             // Assert BoardTheme, UiTheme, ClearEffect are untouched
             Assert.AreSame(initialBoardTheme, presRoot.BoardView.Theme, "BoardView theme must remain untouched");
-            Assert.AreEqual(initialBoardThemeId, presRoot.ActiveTheme.BoardTheme.ThemeId);
-            Assert.AreEqual(initialUiThemeId, presRoot.ActiveTheme.UiTheme.ThemeId);
-            Assert.AreEqual(initialClearEffectId, presRoot.ActiveTheme.ClearEffect.ThemeId);
+            Assert.AreEqual(initialBoardThemeId, presRoot.ThemeSelector.ActiveBoardThemeId);
+            Assert.AreSame(initialUiTheme, presRoot.UIRouter.UiTheme);
+            Assert.AreEqual(initialClearEffectId, presRoot.ThemeSelector.ActiveClearEffectThemeId);
 
             // Assert HUD preview tray sprite set and tints follow ball theme
             Assert.IsNotNull(presRoot.HudPresenter);
@@ -146,9 +143,9 @@ namespace Line98.Tests.PlayMode
 
             // Board, UI, and ClearEffect still untouched
             Assert.AreSame(initialBoardTheme, presRoot.BoardView.Theme);
-            Assert.AreEqual(initialBoardThemeId, presRoot.ActiveTheme.BoardTheme.ThemeId);
-            Assert.AreEqual(initialUiThemeId, presRoot.ActiveTheme.UiTheme.ThemeId);
-            Assert.AreEqual(initialClearEffectId, presRoot.ActiveTheme.ClearEffect.ThemeId);
+            Assert.AreEqual(initialBoardThemeId, presRoot.ThemeSelector.ActiveBoardThemeId);
+            Assert.AreSame(initialUiTheme, presRoot.UIRouter.UiTheme);
+            Assert.AreEqual(initialClearEffectId, presRoot.ThemeSelector.ActiveClearEffectThemeId);
 
             // Assert HUD preview tray sprite set reverted to crystal
             Assert.AreEqual("crystal", presRoot.HudPresenter.BallTheme.ThemeId);
@@ -180,109 +177,70 @@ namespace Line98.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator BundleSelection_AppliesToMainMenuGemsAndSurvivesSceneReload()
+        public IEnumerator MixedSelection_AppliesToMainMenuAndSurvivesSceneReload()
         {
             yield return SceneManager.LoadSceneAsync("Boot");
-            const int maxFrames = 120;
-            for (int i = 0; i < maxFrames && SceneManager.GetActiveScene().name != "MainMenu"; i++)
-            {
-                yield return null;
-            }
-            Assert.AreEqual("MainMenu", SceneManager.GetActiveScene().name);
-            yield return null;
+            yield return WaitForScene("MainMenu");
 
             var shell = Object.FindAnyObjectByType<UiShell>();
             Assert.IsNotNull(shell, "MainMenu UiShell must exist");
             var menuPresenter = Object.FindAnyObjectByType<MainMenuPresenter>();
             Assert.IsNotNull(menuPresenter, "MainMenuPresenter must exist");
 
-            // 1. Establish baseline with classic bundle
-            shell.ThemeSelector.RequestTheme("classic");
+            // 1. Baseline: all Classic
+            SelectPack(shell.ThemeSelector, ThemeIds.Classic);
             yield return null;
-
             Assert.IsNotNull(menuPresenter.ShowcaseGems);
             Assert.IsTrue(menuPresenter.ShowcaseGems.Length > 0);
             var classicRedSprite = menuPresenter.ShowcaseGems[0].sprite;
 
-            // 2. Select the Crystal bundle through the same popup flow as the player.
+            // 2. Select Crystal on the BALLS tab through the player flow.
             shell.OpenSettings();
             yield return null;
-            Assert.IsNotNull(shell.SettingsPopup);
-            Assert.IsNotNull(shell.SettingsPopup.CosmeticsButton);
-
             shell.SettingsPopup.CosmeticsButton.onClick.Invoke();
             yield return null;
 
             var cosmeticsPopup = shell.CosmeticsPopup;
-            Assert.IsNotNull(cosmeticsPopup);
             Assert.IsTrue(cosmeticsPopup.IsOpen);
-
-            Transform crystalItem = cosmeticsPopup.ItemsContainer.Find("Item_crystal");
-            Assert.IsNotNull(crystalItem, "Crystal must be available on the BALLS tab");
-            var crystalListItem = crystalItem.GetComponent<UiThemeListItem>();
-            Assert.IsNotNull(crystalListItem);
-            Assert.IsNotNull(crystalListItem.StatusButton);
-
-            crystalListItem.StatusButton.onClick.Invoke();
+            Assert.AreEqual(ThemeCategory.Ball, cosmeticsPopup.ActiveTab);
+            PressSelect(cosmeticsPopup, ThemeIds.Crystal);
             yield return null;
 
-            Assert.AreEqual("crystal", shell.ThemeSelector.ActiveThemeId, "The active bundle must be crystal");
-            Assert.AreEqual("crystal", shell.ThemeSelector.ActiveBallThemeId, "The bundle's ball theme must be crystal");
-            Assert.IsNotNull(menuPresenter.BallTheme);
-            Assert.AreEqual("crystal", menuPresenter.BallTheme.ThemeId);
+            Assert.AreEqual(ThemeIds.Crystal, shell.ThemeSelector.ActiveBallThemeId);
+            Assert.AreEqual(ThemeIds.Classic, shell.ThemeSelector.ActiveBoardThemeId, "Ball selection must not change the board.");
+            Assert.AreEqual(ThemeIds.Classic, shell.ThemeSelector.ActiveClearEffectThemeId, "Ball selection must not change the clear effect.");
+            Assert.AreSame(PackUi(ThemeIds.Classic), shell.UiTheme, "UI must stay on the Classic board's pack.");
 
-            // Assert MainMenu showcase gems updated to crystal
+            Assert.AreEqual(ThemeIds.Crystal, menuPresenter.BallTheme.ThemeId);
             var crystalRedSprite = menuPresenter.ShowcaseGems[0].sprite;
-            Assert.AreNotSame(classicRedSprite, crystalRedSprite, "Showcase gem sprite must change when the Crystal bundle is selected");
+            Assert.AreNotSame(classicRedSprite, crystalRedSprite, "Showcase gem sprite must change with the ball theme");
             Assert.AreSame(menuPresenter.BallTheme.PreviewSpriteSet.GetSprite(BallColor.Red), crystalRedSprite);
 
-            // Close Themes back to Settings and assert its gem slots updated too.
             cosmeticsPopup.Close();
             yield return null;
             Assert.IsTrue(shell.SettingsPopup.IsOpen);
-            Assert.AreEqual("crystal", shell.SettingsPopup.BallTheme.ThemeId);
-            if (shell.SettingsPopup.GemSlots.Length > 0 && shell.SettingsPopup.GemSlots[0] != null)
-            {
-                Assert.AreSame(crystalRedSprite, shell.SettingsPopup.GemSlots[0].sprite);
-            }
+            Assert.AreEqual(ThemeIds.Crystal, shell.SettingsPopup.BallTheme.ThemeId);
             shell.SettingsPopup.Close();
             yield return null;
 
-            // 3. Load Game scene and verify the bundle persists at bind-time
+            // 3. Game scene binds the mixed selection
             yield return SceneManager.LoadSceneAsync("Game");
             yield return null;
-
             var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
-            Assert.IsNotNull(presRoot, "PresentationRoot must exist in Game scene");
-            AssertGameUsesBundle(presRoot, ThemeIds.Crystal);
+            AssertGameUsesParts(presRoot, ThemeIds.Crystal, ThemeIds.Classic, ThemeIds.Classic);
 
-            // Board ball materials must be crystal
-            for (int y = 0; y < BoardModel.Size; y++)
-            {
-                for (int x = 0; x < BoardModel.Size; x++)
-                {
-                    var pos = new GridPos(x, y);
-                    if (!presRoot.Session.Board.IsEmpty(pos))
-                    {
-                        var ballView = presRoot.BallManager.GetBallAt(pos);
-                        var mr = ballView.Visual.GetComponent<MeshRenderer>();
-                        Assert.IsTrue(mr.sharedMaterial.name.Contains("Crystal"), $"Ball at {pos} must have Crystal material after scene reload, was {mr.sharedMaterial.name}");
-                    }
-                }
-            }
-
-            // 4. Return to MainMenu and verify the bundle is still active
+            // 4. Back to MainMenu: still mixed
             yield return SceneManager.LoadSceneAsync("MainMenu");
             yield return null;
-
             menuPresenter = Object.FindAnyObjectByType<MainMenuPresenter>();
-            Assert.IsNotNull(menuPresenter);
-            Assert.AreEqual("crystal", menuPresenter.BallTheme.ThemeId);
+            shell = Object.FindAnyObjectByType<UiShell>();
+            Assert.AreEqual(ThemeIds.Crystal, menuPresenter.BallTheme.ThemeId);
             Assert.AreSame(crystalRedSprite, menuPresenter.ShowcaseGems[0].sprite, "Showcase gem must still be crystal after scene reload");
+            Assert.AreSame(PackUi(ThemeIds.Classic), shell.UiTheme);
         }
 
         [UnityTest]
-        public IEnumerator ThemeCards_OnEveryTab_ApplyWholeBundleAcrossGameSurfaces()
+        public IEnumerator ThemeCards_OnEachTab_ChangeOnlyThatPart()
         {
             yield return SceneManager.LoadSceneAsync("Boot");
             yield return WaitForScene("MainMenu");
@@ -292,64 +250,46 @@ namespace Line98.Tests.PlayMode
             var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
             Assert.IsNotNull(presRoot);
 
-            ThemeCategory[] tabs =
-            {
-                ThemeCategory.Ball,
-                ThemeCategory.Board,
-                ThemeCategory.ClearEffect
-            };
-
-            for (int i = 0; i < tabs.Length; i++)
-            {
-                presRoot.ThemeSelector.RequestTheme(ThemeIds.Classic);
-                yield return null;
-                AssertGameUsesBundle(presRoot, ThemeIds.Classic);
-
-                presRoot.UIRouter.OpenCosmetics();
-                yield return null;
-
-                CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
-                Assert.IsNotNull(popup);
-                popup.TabStrip.SetActive(tabs[i], notify: true);
-                yield return null;
-
-                Assert.IsTrue(popup.ItemsContainer.gameObject.activeSelf, $"{tabs[i]} must display bundle cards.");
-                Transform crystalItem = popup.ItemsContainer.Find("Item_crystal");
-                Assert.IsNotNull(crystalItem, $"Crystal must be selectable from the {tabs[i]} tab.");
-
-                UiThemeListItem listItem = crystalItem.GetComponent<UiThemeListItem>();
-                Assert.IsNotNull(listItem);
-                listItem.StatusButton.onClick.Invoke();
-                yield return null;
-
-                Assert.AreEqual(ThemeIds.Crystal, popup.ActiveThemeId);
-                AssertGameUsesBundle(presRoot, ThemeIds.Crystal);
-
-                popup.Close();
-                yield return null;
-            }
-
-            yield return SceneManager.LoadSceneAsync("MainMenu");
+            // BALLS
+            SelectPack(presRoot.ThemeSelector, ThemeIds.Classic);
             yield return null;
+            yield return SelectOnTab(presRoot, ThemeCategory.Ball, ThemeIds.Crystal);
+            AssertGameUsesParts(presRoot, ThemeIds.Crystal, ThemeIds.Classic, ThemeIds.Classic);
 
-            var menuPresenter = Object.FindAnyObjectByType<MainMenuPresenter>();
-            var shell = Object.FindAnyObjectByType<UiShell>();
-            Assert.IsNotNull(menuPresenter);
-            Assert.IsNotNull(shell);
-            Assert.AreEqual(ThemeIds.Crystal, menuPresenter.BallTheme.ThemeId);
-            Assert.AreEqual(ThemeIds.Crystal, shell.UiTheme.ThemeId);
-            Assert.AreSame(
-                menuPresenter.BallTheme.PreviewSpriteSet.GetSprite(BallColor.Red),
-                menuPresenter.ShowcaseGems[0].sprite);
-
-            yield return SceneManager.LoadSceneAsync("Game");
+            // BOARD (UI follows)
+            SelectPack(presRoot.ThemeSelector, ThemeIds.Classic);
             yield return null;
+            yield return SelectOnTab(presRoot, ThemeCategory.Board, ThemeIds.Crystal);
+            AssertGameUsesParts(presRoot, ThemeIds.Classic, ThemeIds.Crystal, ThemeIds.Classic);
 
-            AssertGameUsesBundle(Object.FindAnyObjectByType<PresentationRoot>(), ThemeIds.Crystal);
+            // EFFECTS
+            SelectPack(presRoot.ThemeSelector, ThemeIds.Classic);
+            yield return null;
+            yield return SelectOnTab(presRoot, ThemeCategory.ClearEffect, ThemeIds.Crystal);
+            AssertGameUsesParts(presRoot, ThemeIds.Classic, ThemeIds.Classic, ThemeIds.Crystal);
         }
 
         [UnityTest]
-        public IEnumerator LegacyCrystalBundleWithClassicBallOverride_BootsFullyCrystalAndMigratesSave()
+        public IEnumerator UiThemeRequest_IsIgnored()
+        {
+            yield return SceneManager.LoadSceneAsync("Boot");
+            yield return WaitForScene("MainMenu");
+            yield return SceneManager.LoadSceneAsync("Game");
+            yield return null;
+
+            var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
+            SelectPack(presRoot.ThemeSelector, ThemeIds.Classic);
+            yield return null;
+
+            LogAssert.Expect(LogType.Warning, new Regex("Ignored UI theme request 'crystal'"));
+            presRoot.ThemeSelector.RequestTheme(ThemeCategory.Ui, ThemeIds.Crystal);
+            yield return null;
+
+            AssertGameUsesParts(presRoot, ThemeIds.Classic, ThemeIds.Classic, ThemeIds.Classic);
+        }
+
+        [UnityTest]
+        public IEnumerator LegacyV2CrystalBundleWithClassicBallOverride_BootsMixedAndMigratesSave()
         {
             AppRoot existingRoot = AppRoot.Instance;
             if (existingRoot != null)
@@ -359,19 +299,10 @@ namespace Line98.Tests.PlayMode
             }
 
             var backend = new InMemorySaveBackend();
-            var legacySettings = new CosmeticSettings
-            {
-                Version = 1,
-                ThemeId = ThemeIds.Crystal,
-                BallOverrideId = ThemeIds.Classic
-            };
-            backend.Save("line98_cosmetics", JsonUtility.ToJson(legacySettings));
+            backend.Save("line98_cosmetics", "{\"Version\":2,\"ThemeId\":\"crystal\",\"BallOverrideId\":\"classic\"}");
 
             var previousFactory = AppRoot.SaveBackendFactory;
             AppRoot.SaveBackendFactory = () => backend;
-            LogAssert.Expect(
-                LogType.Warning,
-                new Regex("Migrated cosmetic settings v1 to v2; dropped divergent overrides: Ball='classic'"));
 
             try
             {
@@ -380,12 +311,13 @@ namespace Line98.Tests.PlayMode
                 yield return SceneManager.LoadSceneAsync("Game");
                 yield return null;
 
-                AssertGameUsesBundle(Object.FindAnyObjectByType<PresentationRoot>(), ThemeIds.Crystal);
+                AssertGameUsesParts(Object.FindAnyObjectByType<PresentationRoot>(), ThemeIds.Classic, ThemeIds.Crystal, ThemeIds.Crystal);
 
                 CosmeticSettings migrated = JsonUtility.FromJson<CosmeticSettings>(backend.Load("line98_cosmetics"));
                 Assert.AreEqual(CosmeticSettings.CurrentVersion, migrated.Version);
-                // JsonUtility round-trips a null string as empty; both mean "no override".
-                Assert.IsTrue(string.IsNullOrEmpty(migrated.BallOverrideId));
+                Assert.AreEqual(ThemeIds.Classic, migrated.BallThemeId);
+                Assert.AreEqual(ThemeIds.Crystal, migrated.BoardThemeId);
+                Assert.AreEqual(ThemeIds.Crystal, migrated.ClearEffectThemeId);
             }
             finally
             {
@@ -399,19 +331,72 @@ namespace Line98.Tests.PlayMode
             yield return null;
         }
 
-        private static void AssertGameUsesBundle(PresentationRoot presRoot, string expectedThemeId)
+        private static IEnumerator SelectOnTab(PresentationRoot presRoot, ThemeCategory tab, string partId)
+        {
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+
+            CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
+            Assert.IsNotNull(popup);
+            popup.TabStrip.SetActive(tab, notify: true);
+            yield return null;
+
+            Assert.IsTrue(popup.ItemsContainer.gameObject.activeSelf, $"{tab} must display part cards.");
+            PressSelect(popup, partId);
+            yield return null;
+
+            Assert.AreEqual(partId, popup.AppliedPartId, $"{tab} card must mark its own part as applied.");
+            popup.Close();
+            yield return null;
+        }
+
+        private static void PressSelect(CosmeticsPopup popup, string partId)
+        {
+            Transform item = popup.ItemsContainer.Find($"Item_{partId}");
+            Assert.IsNotNull(item, $"'{partId}' must be selectable from the {popup.ActiveTab} tab.");
+            var listItem = item.GetComponent<UiThemeListItem>();
+            Assert.IsNotNull(listItem);
+            Assert.IsNotNull(listItem.StatusButton);
+            listItem.StatusButton.onClick.Invoke();
+        }
+
+        private static void SelectPack(IThemeSelector selector, string packId)
+        {
+            selector.RequestTheme(ThemeCategory.Board, packId);
+            selector.RequestTheme(ThemeCategory.Ball, packId);
+            selector.RequestTheme(ThemeCategory.ClearEffect, packId);
+        }
+
+        private static ThemeDefinitionSO Pack(string packId)
+        {
+            var shell = Object.FindAnyObjectByType<UiShell>();
+            ThemeCatalogSO catalog = shell != null ? shell.ThemeCatalog : null;
+            Assert.IsNotNull(catalog, "A theme catalog must be reachable.");
+            Assert.IsTrue(catalog.TryGetTheme(packId, out var pack), $"Pack '{packId}' must exist.");
+            return pack;
+        }
+
+        private static UiThemeSO PackUi(string packId) => Pack(packId).UiTheme;
+
+        private static void AssertGameUsesParts(PresentationRoot presRoot, string ballPackId, string boardPackId, string clearPackId)
         {
             Assert.IsNotNull(presRoot, "PresentationRoot must exist in Game scene.");
-            Assert.IsNotNull(presRoot.ActiveTheme);
-            Assert.AreEqual(expectedThemeId, presRoot.ThemeSelector.ActiveThemeId);
-            Assert.AreEqual(expectedThemeId, presRoot.ActiveTheme.ThemeId);
-            // Part ids are not guaranteed to equal the bundle id (classic's UI part is "default"),
-            // so compare every surface against the bundle's own parts.
-            ThemeDefinitionSO bundle = presRoot.ActiveTheme;
-            Assert.AreSame(bundle.BoardTheme, presRoot.BoardView.Theme);
-            Assert.AreSame(bundle.UiTheme, presRoot.UIRouter.UiTheme);
-            Assert.AreSame(bundle.BallTheme, presRoot.BallManager.BallTheme);
-            Assert.AreSame(bundle.BallTheme, presRoot.HudPresenter.BallTheme);
+            ThemeDefinitionSO ballPack = Pack(ballPackId);
+            ThemeDefinitionSO boardPack = Pack(boardPackId);
+            ThemeDefinitionSO clearPack = Pack(clearPackId);
+
+            Assert.AreEqual(ballPack.BallTheme.ThemeId, presRoot.ThemeSelector.ActiveBallThemeId);
+            Assert.AreEqual(boardPack.BoardTheme.ThemeId, presRoot.ThemeSelector.ActiveBoardThemeId);
+            Assert.AreEqual(clearPack.ClearEffect.ThemeId, presRoot.ThemeSelector.ActiveClearEffectThemeId);
+
+            // Part ids are not guaranteed to equal pack ids (classic's UI part is "default"),
+            // so compare every surface against asset references.
+            Assert.AreSame(boardPack.BoardTheme, presRoot.BoardView.Theme);
+            Assert.AreSame(boardPack.UiTheme, presRoot.UIRouter.UiTheme, "UI must follow the board's pack.");
+            Assert.AreSame(boardPack.UiTheme, presRoot.ThemeSelector.ActiveUiTheme);
+            Assert.AreSame(ballPack.BallTheme, presRoot.BallManager.BallTheme);
+            Assert.AreSame(ballPack.BallTheme, presRoot.HudPresenter.BallTheme);
+            Assert.AreSame(clearPack.ClearEffect, presRoot.ClearEffect);
 
             BallThemeSO ballTheme = presRoot.BallManager.BallTheme;
             for (int y = 0; y < BoardModel.Size; y++)
@@ -426,8 +411,8 @@ namespace Line98.Tests.PlayMode
                     var meshFilter = ballView.Visual.GetComponent<MeshFilter>();
                     var meshRenderer = ballView.Visual.GetComponent<MeshRenderer>();
                     int materialIndex = (int)ballView.Color - 1;
-                    Assert.AreSame(ballTheme.BallMesh, meshFilter.sharedMesh, $"Ball at {pos} must use the {expectedThemeId} mesh.");
-                    Assert.AreSame(ballTheme.BallMaterials[materialIndex], meshRenderer.sharedMaterial, $"Ball at {pos} must use the {expectedThemeId} material.");
+                    Assert.AreSame(ballTheme.BallMesh, meshFilter.sharedMesh, $"Ball at {pos} must use the {ballPackId} mesh.");
+                    Assert.AreSame(ballTheme.BallMaterials[materialIndex], meshRenderer.sharedMaterial, $"Ball at {pos} must use the {ballPackId} material.");
                 }
             }
 

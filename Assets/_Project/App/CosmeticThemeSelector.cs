@@ -1,3 +1,4 @@
+using UnityEngine;
 using Line98.Data;
 using Line98.Presentation;
 using Line98.Services;
@@ -17,33 +18,29 @@ namespace Line98.App
             m_CosmeticService = cosmeticService;
         }
 
-        public string ActiveThemeId => m_CosmeticService?.ActiveThemeId ?? ThemeIds.Classic;
         public BallThemeSO ActiveBallTheme => m_CosmeticService?.ActiveBallTheme;
         public string ActiveBallThemeId => m_CosmeticService?.ActiveBallThemeId ?? ThemeIds.Classic;
         public string ActiveBoardThemeId => m_CosmeticService?.ActiveBoardThemeId ?? ThemeIds.Classic;
+        public UiThemeSO ActiveUiTheme => m_CosmeticService?.ActiveUiTheme;
+        public string ActiveUiThemeId => m_CosmeticService?.ActiveUiThemeId ?? ThemeIds.Default;
         public string ActiveClearEffectThemeId => m_CosmeticService?.ActiveClearEffectThemeId ?? ThemeIds.Classic;
 
-        public void RequestTheme(string themeId)
-        {
-            m_CosmeticService?.SetTheme(themeId);
-        }
-
-        public void RequestTheme(Line98.Data.ThemeCategory category, string partThemeId)
+        public void RequestTheme(ThemeCategory category, string partThemeId)
         {
             if (m_CosmeticService == null) return;
             switch (category)
             {
-                case Line98.Data.ThemeCategory.Ball:
+                case ThemeCategory.Ball:
                     m_CosmeticService.SetBallTheme(partThemeId);
                     break;
-                case Line98.Data.ThemeCategory.Board:
+                case ThemeCategory.Board:
                     m_CosmeticService.SetBoardTheme(partThemeId);
                     break;
-                case Line98.Data.ThemeCategory.Ui:
-                    m_CosmeticService.SetUiTheme(partThemeId);
-                    break;
-                case Line98.Data.ThemeCategory.ClearEffect:
+                case ThemeCategory.ClearEffect:
                     m_CosmeticService.SetClearEffectTheme(partThemeId);
+                    break;
+                case ThemeCategory.Ui:
+                    Debug.LogWarning($"[CosmeticThemeSelector] Ignored UI theme request '{partThemeId}': UI follows the selected board.");
                     break;
             }
         }

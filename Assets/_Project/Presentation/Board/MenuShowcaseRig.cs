@@ -228,12 +228,6 @@ namespace Line98.Presentation
             }
         }
 
-        public void ApplyTheme(ThemeDefinitionSO theme)
-        {
-            if (theme == null) return;
-            ApplyTheme(theme.BoardTheme, null);
-        }
-
         public void ApplyBallTheme(BallThemeSO ballTheme)
         {
             if (ballTheme == null) return;

@@ -138,19 +138,33 @@ namespace Line98.Presentation
                 catalog.TryGetBallTheme(partId, out resolvedBall);
             }
 
-            var spriteSet = ResolveSpriteSet(catalog, resolvedBundle, resolvedBall);
-            if (spriteSet != null)
-            {
-                sprites[0] = spriteSet.GetSprite(BallColor.Red);
-                sprites[1] = spriteSet.GetSprite(BallColor.Orange);
-                sprites[2] = spriteSet.GetSprite(BallColor.Yellow);
-                sprites[3] = spriteSet.GetSprite(BallColor.Green);
-                sprites[4] = spriteSet.GetSprite(BallColor.Cyan);
-                sprites[5] = spriteSet.GetSprite(BallColor.Purple);
-                sprites[6] = spriteSet.GetSprite(BallColor.Blue);
-            }
-
+            FillPreviewSprites(sprites, ResolveSpriteSet(catalog, resolvedBundle, resolvedBall));
             return sprites;
+        }
+
+        /// <summary>The 7 preview gems for a specific ball theme, independent of any board/UI selection.</summary>
+        public static Sprite[] ResolvePreviewSprites(ThemeCatalogSO catalog, BallThemeSO ballTheme)
+        {
+            var sprites = new Sprite[7];
+            ThemeDefinitionSO pack = null;
+            if (catalog != null && ballTheme != null)
+            {
+                catalog.TryGetPackForPart(ThemeCategory.Ball, ballTheme.ThemeId, out pack);
+            }
+            FillPreviewSprites(sprites, ResolveSpriteSet(catalog, pack, ballTheme));
+            return sprites;
+        }
+
+        private static void FillPreviewSprites(Sprite[] sprites, UiPreviewSpriteSetSO spriteSet)
+        {
+            if (spriteSet == null) return;
+            sprites[0] = spriteSet.GetSprite(BallColor.Red);
+            sprites[1] = spriteSet.GetSprite(BallColor.Orange);
+            sprites[2] = spriteSet.GetSprite(BallColor.Yellow);
+            sprites[3] = spriteSet.GetSprite(BallColor.Green);
+            sprites[4] = spriteSet.GetSprite(BallColor.Cyan);
+            sprites[5] = spriteSet.GetSprite(BallColor.Purple);
+            sprites[6] = spriteSet.GetSprite(BallColor.Blue);
         }
 
         public static UiPreviewSpriteSetSO ResolveSpriteSet(ThemeCatalogSO catalog, ThemeDefinitionSO bundle, BallThemeSO ballTheme = null)

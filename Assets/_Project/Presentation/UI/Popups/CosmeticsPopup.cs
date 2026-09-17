@@ -44,19 +44,22 @@ namespace Line98.Presentation
         private IThemeSelector m_Selector;
         private ThemeCategory m_ActiveTab = ThemeCategory.Ball;
         private string m_ActivePartId;    // The previewed part id; null on open
-        private string m_SelectedPartId;  // The currently applied/persisted part id
-        private string m_SelectedBundleId; // The authoritative applied bundle id
+        private string m_SelectedPartId;  // The applied part id for the active tab
+        // Applied ids when no selector is bound (editor previews/tests); the selector is authoritative otherwise.
+        private readonly Dictionary<ThemeCategory, string> m_LocalAppliedIds = new Dictionary<ThemeCategory, string>();
         private readonly List<UiThemeListItem> m_SpawnedItems = new List<UiThemeListItem>();
 
-        public event Action<string> OnThemeRequested;
+        /// <summary>Raised after SELECT with the tab's category and the requested part id.</summary>
+        public event Action<ThemeCategory, string> OnThemeRequested;
 
         public override bool UsesFullLayoutHeight => true;
         public override bool UsesDimScrim => false;
 
         public RectTransform TilesContainer => m_ItemsContainer;
         public RectTransform ItemsContainer => m_ItemsContainer;
-        public string ActiveThemeId => !string.IsNullOrEmpty(m_SelectedBundleId) ? m_SelectedBundleId : ThemeIds.Classic;
-        public string PreviewedThemeId => !string.IsNullOrEmpty(m_ActivePartId) ? m_ActivePartId : ActiveThemeId;
+        /// <summary>Applied part id for the active tab.</summary>
+        public string AppliedPartId => !string.IsNullOrEmpty(m_SelectedPartId) ? m_SelectedPartId : ThemeIds.Classic;
+        public string PreviewedThemeId => !string.IsNullOrEmpty(m_ActivePartId) ? m_ActivePartId : AppliedPartId;
         public string ActivePartId => m_ActivePartId;
         public string SelectedPartId => m_SelectedPartId;
         public ThemeCatalogSO Catalog => m_Catalog;
@@ -189,14 +192,12 @@ namespace Line98.Presentation
 
         public void Populate(
             ThemeCatalogSO catalog,
-            string activeThemeId,
             IThemeSelector selector,
             ThemeCategory initialTab = ThemeCategory.Ball)
         {
             m_Catalog = catalog;
             m_Selector = selector;
             m_ActiveTab = initialTab;
-            m_SelectedBundleId = activeThemeId;
 
             // F2: on open, ActivePartId is null, nothing is highlighted
             m_ActivePartId = null;
@@ -206,22 +207,15 @@ namespace Line98.Presentation
                 m_TabStrip.SetActive(m_ActiveTab, notify: false);
             }
 
-            ResolveSelectedPartId(activeThemeId);
+            ResolveSelectedPartId();
             RebuildItems();
             UpdatePreview(animate: false);
         }
 
-        public void Populate(
-            ThemeCatalogSO catalog,
-            IThemeSelector selector,
-            ThemeCategory initialTab = ThemeCategory.Ball)
+        /// <summary>Re-reads the applied part ids from the selector (e.g. after an external theme change).</summary>
+        public void RefreshSelection()
         {
-            Populate(catalog, selector?.ActiveThemeId, selector, initialTab);
-        }
-
-        public void SetActiveTheme(string themeId)
-        {
-            ResolveSelectedPartId(themeId);
+            ResolveSelectedPartId();
             RefreshItems();
             UpdatePreview(animate: false);
         }
@@ -278,31 +272,35 @@ namespace Line98.Presentation
             }
         }
 
-        private void ResolveSelectedPartId(string fallbackId = null)
+        private void ResolveSelectedPartId()
         {
+            m_SelectedPartId = GetAppliedPartId(m_ActiveTab);
+        }
+
+        private string GetAppliedPartId(ThemeCategory category)
+        {
+            string id = null;
             if (m_Selector != null)
             {
-                m_SelectedBundleId = m_Selector.ActiveThemeId;
-                m_SelectedPartId = m_ActiveTab switch
+                id = category switch
                 {
                     ThemeCategory.Ball => m_Selector.ActiveBallThemeId,
                     ThemeCategory.Board => m_Selector.ActiveBoardThemeId,
                     ThemeCategory.ClearEffect => m_Selector.ActiveClearEffectThemeId,
-                    _ => m_Selector.ActiveBallThemeId
+                    ThemeCategory.Ui => m_Selector.ActiveUiThemeId,
+                    _ => null
                 };
             }
-
-            if (string.IsNullOrEmpty(m_SelectedBundleId))
+            else
             {
-                m_SelectedBundleId = !string.IsNullOrEmpty(fallbackId) ? fallbackId : (m_Catalog?.DefaultThemeId ?? ThemeIds.Classic);
+                m_LocalAppliedIds.TryGetValue(category, out id);
             }
 
-            if (string.IsNullOrEmpty(m_SelectedPartId))
+            if (string.IsNullOrEmpty(id))
             {
-                ThemeDefinitionSO selectedBundle = null;
-                m_Catalog?.TryGetTheme(m_SelectedBundleId, out selectedBundle);
-                m_SelectedPartId = ResolvePartId(selectedBundle) ?? m_SelectedBundleId;
+                id = m_Catalog != null ? m_Catalog.DefaultPartId(category) : ThemeIds.Classic;
             }
+            return id;
         }
 
         private void HandleTabChanged(ThemeCategory newCategory)
@@ -416,14 +414,18 @@ namespace Line98.Presentation
                 return;
             }
 
-            // Preview item: active item if tapped, otherwise currently selected item
+            // Preview item: active item if tapped, otherwise the applied item for this tab
             string previewId = !string.IsNullOrEmpty(m_ActivePartId) ? m_ActivePartId : m_SelectedPartId;
-            var bundle = ThemePartResolver.ResolveBundle(m_Catalog, m_ActiveTab, previewId);
-            string themeName = bundle != null ? bundle.DisplayName : previewId;
+            m_Catalog.TryGetPackForPart(m_ActiveTab, previewId, out ThemeDefinitionSO pack);
+            string themeName = pack != null ? pack.DisplayName : previewId;
 
-            var previewSprites = ThemePartResolver.ResolvePreviewSprites(m_Catalog, m_ActiveTab, previewId, bundle);
-            bool showSelectedBadge = !string.IsNullOrEmpty(m_ActivePartId) &&
-                                     string.Equals(bundle?.ThemeId, m_SelectedBundleId, StringComparison.OrdinalIgnoreCase);
+            // Gems always come from a ball theme: the previewed one on the BALLS tab, otherwise the
+            // applied one, so mixed packs (e.g. Crystal balls on a Classic board) preview correctly.
+            string ballId = m_ActiveTab == ThemeCategory.Ball ? previewId : GetAppliedPartId(ThemeCategory.Ball);
+            m_Catalog.TryGetBallTheme(ballId, out BallThemeSO ballTheme);
+            var previewSprites = ThemePartResolver.ResolvePreviewSprites(m_Catalog, ballTheme);
+
+            bool showSelectedBadge = !string.IsNullOrEmpty(m_ActivePartId) && IsAppliedPartId(m_ActivePartId);
 
             m_PreviewPanel.Show(themeName, previewSprites, showSelectedBadge, animate);
         }
@@ -438,26 +440,20 @@ namespace Line98.Presentation
 
         private void HandleSelectClicked(string partId)
         {
-            // F4: Tap SELECT -> activate and apply theme
+            // F4: Tap SELECT -> apply this part only. On the BOARD tab the service pairs the UI theme.
             m_ActivePartId = partId;
 
-            ThemeDefinitionSO bundle = ThemePartResolver.ResolveBundle(m_Catalog, m_ActiveTab, partId);
-            string bundleThemeId = bundle != null ? bundle.ThemeId : partId;
-
-            // Apply the whole bundle. Tabs filter and preview bundle components; they do not
-            // create invisible category overrides.
             if (m_Selector != null)
             {
-                m_Selector.RequestTheme(bundleThemeId);
-                ResolveSelectedPartId(bundleThemeId);
+                m_Selector.RequestTheme(m_ActiveTab, partId);
             }
             else
             {
-                m_SelectedBundleId = bundleThemeId;
-                m_SelectedPartId = ResolvePartId(bundle) ?? partId;
+                m_LocalAppliedIds[m_ActiveTab] = partId;
             }
+            ResolveSelectedPartId();
 
-            OnThemeRequested?.Invoke(m_SelectedBundleId);
+            OnThemeRequested?.Invoke(m_ActiveTab, partId);
 
             // Update items with punch animation on status badge
             for (int i = 0; i < m_SpawnedItems.Count; i++)
@@ -475,29 +471,19 @@ namespace Line98.Presentation
             UpdatePreview(animate: false);
         }
 
+        private bool IsAppliedPartId(string partId)
+        {
+            return string.Equals(partId, m_SelectedPartId, StringComparison.OrdinalIgnoreCase);
+        }
+
         private bool ComponentIsApplied(ThemeItemModel model)
         {
-            string bundleThemeId = model.Bundle != null ? model.Bundle.ThemeId : model.PartId;
-            return string.Equals(bundleThemeId, m_SelectedBundleId, StringComparison.OrdinalIgnoreCase);
+            return IsAppliedPartId(model.PartId);
         }
 
         private bool ComponentIsApplied(UiThemeListItem item)
         {
-            return item != null && string.Equals(item.BundleThemeId, m_SelectedBundleId, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private string ResolvePartId(ThemeDefinitionSO bundle)
-        {
-            if (bundle == null) return null;
-
-            return m_ActiveTab switch
-            {
-                ThemeCategory.Ball => bundle.BallTheme?.ThemeId,
-                ThemeCategory.Board => bundle.BoardTheme?.ThemeId,
-                ThemeCategory.Ui => bundle.UiTheme?.ThemeId,
-                ThemeCategory.ClearEffect => bundle.ClearEffect?.ThemeId,
-                _ => bundle.ThemeId
-            };
+            return item != null && IsAppliedPartId(item.PartId);
         }
 
         private void EnsureFullscreenPresentation()

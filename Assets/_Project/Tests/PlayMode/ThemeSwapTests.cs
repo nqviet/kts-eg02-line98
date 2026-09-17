@@ -38,10 +38,9 @@ namespace Line98.Tests.PlayMode
             Assert.IsNotNull(presRoot.ThemeSelector, "IThemeSelector must be wired on PresentationRoot");
             Assert.AreSame(presRoot.ThemeSelector, presRoot.UIRouter.ThemeSelector, "UiShell must receive PresentationRoot's selector");
 
-            presRoot.ThemeSelector.RequestTheme("classic");
+            SelectPack(presRoot.ThemeSelector, "classic");
             yield return null;
-            Assert.IsNotNull(presRoot.ActiveTheme);
-            Assert.AreEqual("classic", presRoot.ActiveTheme.ThemeId, "The swap test must begin from the Classic theme.");
+            Assert.AreEqual("classic", presRoot.BallManager.BallTheme.ThemeId, "The swap test must begin from Classic balls.");
 
             var session = presRoot.Session;
             Assert.IsNotNull(session, "GameSession must be active");
@@ -76,11 +75,10 @@ namespace Line98.Tests.PlayMode
             Assert.AreEqual(3, initialBalls.Count);
 
             // 2. Swap to Crystal
-            presRoot.ThemeSelector.RequestTheme("crystal");
+            SelectPack(presRoot.ThemeSelector, "crystal");
             yield return null;
 
-            Assert.IsNotNull(presRoot.ActiveTheme);
-            Assert.AreEqual("crystal", presRoot.ActiveTheme.ThemeId, "Active theme must be 'crystal'");
+            Assert.AreEqual("crystal", presRoot.ThemeSelector.ActiveBallThemeId, "Active ball theme must be 'crystal'");
 
             // Assert balls have swapped materials, unchanged colors, no MPB
             for (int i = 0; i < initialBalls.Count; i++)
@@ -105,11 +103,10 @@ namespace Line98.Tests.PlayMode
             Assert.AreEqual(initialMoveCount, session.MoveCount);
 
             // 3. Swap back to Classic
-            presRoot.ThemeSelector.RequestTheme("classic");
+            SelectPack(presRoot.ThemeSelector, "classic");
             yield return null;
 
-            Assert.IsNotNull(presRoot.ActiveTheme);
-            Assert.AreEqual("classic", presRoot.ActiveTheme.ThemeId, "Active theme must be 'classic'");
+            Assert.AreEqual("classic", presRoot.ThemeSelector.ActiveBallThemeId, "Active ball theme must be 'classic'");
 
             // Assert balls have reverted to classic materials
             for (int i = 0; i < initialBalls.Count; i++)
@@ -163,8 +160,7 @@ namespace Line98.Tests.PlayMode
             listItem.StatusButton.onClick.Invoke();
             yield return null;
 
-            Assert.IsNotNull(presRoot.ActiveTheme);
-            Assert.AreEqual("crystal", presRoot.ActiveTheme.ThemeId);
+            Assert.AreEqual("crystal", presRoot.ThemeSelector.ActiveBallThemeId);
             Assert.AreEqual(popup.Catalog.Count, popup.ItemsContainer.childCount, "Changing a theme must update existing items instead of growing the container.");
         }
 
@@ -181,7 +177,7 @@ namespace Line98.Tests.PlayMode
             var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
             Assert.IsNotNull(presRoot);
 
-            presRoot.ThemeSelector.RequestTheme("crystal");
+            SelectPack(presRoot.ThemeSelector, "crystal");
             yield return null;
 
             presRoot.UIRouter.OpenCosmetics();
@@ -236,7 +232,7 @@ namespace Line98.Tests.PlayMode
             var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
             Assert.IsNotNull(presRoot);
 
-            presRoot.ThemeSelector.RequestTheme("crystal");
+            SelectPack(presRoot.ThemeSelector, "crystal");
             yield return null;
 
             presRoot.UIRouter.OpenCosmetics();
@@ -260,8 +256,8 @@ namespace Line98.Tests.PlayMode
             Assert.AreEqual("CLASSIC", popup.PreviewPanel.ThemeName.ToUpperInvariant());
 
             // - Real game board theme has NOT changed
-            Assert.AreEqual("crystal", presRoot.ActiveTheme.ThemeId, "Tapping card must not apply the theme to the live game");
-            Assert.AreEqual("crystal", popup.ActiveThemeId, "Active applied theme ID must remain crystal");
+            Assert.AreEqual("crystal", presRoot.ThemeSelector.ActiveBallThemeId, "Tapping card must not apply the theme to the live game");
+            Assert.AreEqual("crystal", popup.AppliedPartId, "Applied ball part id must remain crystal");
 
             popup.Close();
             yield return null;
@@ -280,7 +276,7 @@ namespace Line98.Tests.PlayMode
             var presRoot = Object.FindAnyObjectByType<PresentationRoot>();
             Assert.IsNotNull(presRoot);
 
-            presRoot.ThemeSelector.RequestTheme("crystal");
+            SelectPack(presRoot.ThemeSelector, "crystal");
             yield return null;
 
             presRoot.UIRouter.OpenCosmetics();
@@ -376,7 +372,7 @@ namespace Line98.Tests.PlayMode
             Assert.IsNotNull(shell.CosmeticsPopup, "MainMenu must include the Themes popup.");
 
             shell.CloseAllPopups();
-            shell.ThemeSelector.RequestTheme("classic");
+            SelectPack(shell.ThemeSelector, "classic");
             yield return null;
 
             shell.OpenSettings();
@@ -396,7 +392,8 @@ namespace Line98.Tests.PlayMode
             listItem.StatusButton.onClick.Invoke();
             yield return null;
 
-            Assert.AreEqual("crystal", popup.ActiveThemeId, "Selecting Crystal must update the active MainMenu theme.");
+            Assert.AreEqual("crystal", popup.AppliedPartId, "Selecting Crystal must update the applied MainMenu ball theme.");
+            Assert.AreEqual("crystal", shell.ThemeSelector.ActiveBallThemeId);
         }
 
         [UnityTest]
@@ -428,6 +425,13 @@ namespace Line98.Tests.PlayMode
             yield return null;
 
             Assert.IsTrue(popup.IsOpen, "Themes must reopen after its close button is used.");
+        }
+
+        private static void SelectPack(IThemeSelector selector, string packId)
+        {
+            selector.RequestTheme(ThemeCategory.Board, packId);
+            selector.RequestTheme(ThemeCategory.Ball, packId);
+            selector.RequestTheme(ThemeCategory.ClearEffect, packId);
         }
 
         private static IEnumerator WaitForMainMenu()

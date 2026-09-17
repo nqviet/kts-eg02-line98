@@ -118,16 +118,10 @@ namespace Line98.Presentation
             m_ThemeCatalog = catalog;
         }
 
-        private string m_ActiveBundleThemeId = ThemeIds.Classic;
         private BallThemeSO m_BallTheme;
 
-        public void ApplyTheme(UiThemeSO theme, string bundleThemeId = null)
+        public void ApplyTheme(UiThemeSO theme)
         {
-            if (!string.IsNullOrEmpty(bundleThemeId))
-            {
-                m_ActiveBundleThemeId = bundleThemeId;
-            }
-
             if (theme != null)
             {
                 m_UiTheme = theme;
@@ -164,9 +158,15 @@ namespace Line98.Presentation
                 }
             }
 
+            RefreshCosmeticsSelection();
+        }
+
+        /// <summary>Re-reads applied part ids into an open Themes popup (e.g. after an external theme change).</summary>
+        public void RefreshCosmeticsSelection()
+        {
             if (m_CosmeticsPopup != null && m_CosmeticsPopup.IsOpen)
             {
-                m_CosmeticsPopup.SetActiveTheme(m_ActiveBundleThemeId);
+                m_CosmeticsPopup.RefreshSelection();
             }
         }
 
@@ -218,7 +218,6 @@ namespace Line98.Presentation
 
         public void OpenCosmetics()
         {
-            string activeId = !string.IsNullOrEmpty(m_ActiveBundleThemeId) ? m_ActiveBundleThemeId : ThemeIds.Classic;
             if (m_ThemeCatalog == null)
             {
                 Debug.LogWarning("[UiShell] Cannot populate themes because no ThemeCatalogSO is configured.");
@@ -228,7 +227,7 @@ namespace Line98.Presentation
                 Debug.LogWarning("[UiShell] Cannot change themes because no IThemeSelector is configured.");
             }
 
-            if (m_PopupRegistry == null || !m_PopupRegistry.Open(UiPopupId.Cosmetics, new CosmeticsPopupPayload(m_ThemeCatalog, activeId, m_ThemeSelector)))
+            if (m_PopupRegistry == null || !m_PopupRegistry.Open(UiPopupId.Cosmetics, new CosmeticsPopupPayload(m_ThemeCatalog, m_ThemeSelector)))
             {
                 Debug.LogWarning("[UiShell] Cannot open Themes because its popup is not configured.");
             }

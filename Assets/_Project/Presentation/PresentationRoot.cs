@@ -88,8 +88,11 @@ namespace Line98.Presentation
         public UiShell UIRouter => m_UIRouter;
         public HudPresenter HudPresenter => m_HudPresenter;
         public GameSession Session => m_Session;
-        private ThemeDefinitionSO m_ActiveTheme;
-        public ThemeDefinitionSO ActiveTheme => m_ActiveTheme;
+        private ClearEffectSO m_ClearEffect;
+        public BallThemeSO BallTheme => m_BallTheme;
+        public BoardThemeSO BoardTheme => m_BoardTheme;
+        public UiThemeSO UiTheme => m_UiTheme;
+        public ClearEffectSO ClearEffect => m_ClearEffect;
         public ThemeSwapController ThemeSwapController => m_ThemeSwapController;
         public IThemeSelector ThemeSelector
         {
@@ -134,7 +137,7 @@ namespace Line98.Presentation
             }
             else if (m_ThemeSelector == null && m_UIRouter != null && m_UIRouter.ThemeCatalog != null)
             {
-                ThemeSelector = new CatalogThemeSelector(m_UIRouter.ThemeCatalog, ApplyTheme, this);
+                ThemeSelector = new CatalogThemeSelector(m_UIRouter.ThemeCatalog, this);
             }
 
             // 1. Initialize procedural TweenRunner
@@ -279,19 +282,25 @@ namespace Line98.Presentation
             m_IsInitialized = true;
         }
 
-        public void ApplyTheme(ThemeDefinitionSO theme)
+        /// <summary>Applies all resolved parts in canonical order Board -> UI -> Balls -> Clear.</summary>
+        public void ApplyThemeSelection(ThemeSelection selection)
         {
-            ApplyTheme(theme, null);
+            if (selection.Board != null) m_BoardTheme = selection.Board;
+            if (selection.Ui != null) m_UiTheme = selection.Ui;
+            if (selection.Ball != null)
+            {
+                m_BallTheme = selection.Ball;
+                m_BallMaterials = selection.Ball.BallMaterials;
+            }
+            if (selection.ClearEffect != null) m_ClearEffect = selection.ClearEffect;
+            m_ThemeSwapController?.ApplySelection(selection);
         }
 
-        public void ApplyTheme(ThemeDefinitionSO theme, BallThemeSO ballTheme)
+        /// <summary>Board and its pack's UI always change together.</summary>
+        public void ApplyBoardAndUi(BoardThemeSO board, UiThemeSO ui)
         {
-            if (theme == null) return;
-            m_ActiveTheme = theme;
-            m_BallTheme = ballTheme != null ? ballTheme : theme.BallTheme;
-            m_BoardTheme = theme.BoardTheme;
-            m_UiTheme = theme.UiTheme;
-            m_ThemeSwapController?.ApplyTheme(theme, m_BallTheme);
+            ApplyBoardTheme(board);
+            ApplyUiTheme(ui);
         }
 
         public void ApplyBallTheme(BallThemeSO ballTheme)
@@ -312,111 +321,68 @@ namespace Line98.Presentation
         public void ApplyClearEffect(ClearEffectSO clearEffect)
         {
             if (clearEffect == null) return;
+            m_ClearEffect = clearEffect;
             m_ThemeSwapController?.ApplyClearEffect(clearEffect);
         }
 
-        public void ApplyUiTheme(UiThemeSO uiTheme, string themeId)
+        public void ApplyUiTheme(UiThemeSO uiTheme)
         {
             if (uiTheme == null) return;
             m_UiTheme = uiTheme;
-            m_ThemeSwapController?.ApplyUiTheme(uiTheme, themeId);
+            m_ThemeSwapController?.ApplyUiTheme(uiTheme);
         }
 
-        public void ApplyCategoryTheme(ThemeCategory category, ThemeDefinitionSO theme)
-        {
-            if (theme == null) return;
-            switch (category)
-            {
-                case ThemeCategory.Ball:
-                    ApplyBallTheme(theme.BallTheme);
-                    break;
-                case ThemeCategory.Board:
-                    ApplyBoardTheme(theme.BoardTheme);
-                    break;
-                case ThemeCategory.ClearEffect:
-                    ApplyClearEffect(theme.ClearEffect);
-                    break;
-                case ThemeCategory.Ui:
-                    ApplyUiTheme(theme.UiTheme, theme.ThemeId);
-                    break;
-            }
-        }
-
-        public void ApplyCategoryTheme(ThemeCategory category, string partId)
-        {
-            var catalog = m_UIRouter != null ? m_UIRouter.ThemeCatalog : null;
-            if (catalog == null) return;
-
-            switch (category)
-            {
-                case ThemeCategory.Ball:
-                    if (catalog.TryGetBallTheme(partId, out var bt)) ApplyBallTheme(bt);
-                    break;
-                case ThemeCategory.Board:
-                    if (catalog.TryGetBoardTheme(partId, out var brdt)) ApplyBoardTheme(brdt);
-                    break;
-                case ThemeCategory.ClearEffect:
-                    for (int i = 0; i < catalog.Count; i++)
-                    {
-                        var t = catalog.ThemeAt(i);
-                        if (t != null && t.ClearEffect != null && string.Equals(t.ClearEffect.ThemeId, partId, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ApplyClearEffect(t.ClearEffect);
-                            break;
-                        }
-                    }
-                    break;
-                case ThemeCategory.Ui:
-                    for (int i = 0; i < catalog.Count; i++)
-                    {
-                        var t = catalog.ThemeAt(i);
-                        if (t != null && t.UiTheme != null && string.Equals(t.UiTheme.ThemeId, partId, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ApplyUiTheme(t.UiTheme, t.ThemeId);
-                            break;
-                        }
-                    }
-                    break;
-            }
-        }
-
+        /// <summary>
+        /// Service-less fallback (scene opened directly in the editor): applies part requests locally
+        /// with the same per-part rules as CosmeticService, without persistence.
+        /// </summary>
         private sealed class CatalogThemeSelector : IThemeSelector
         {
             private readonly ThemeCatalogSO m_Catalog;
-            private readonly Action<ThemeDefinitionSO> m_ApplyTheme;
             private readonly PresentationRoot m_Root;
 
-            public CatalogThemeSelector(ThemeCatalogSO catalog, Action<ThemeDefinitionSO> applyTheme, PresentationRoot root = null)
+            public CatalogThemeSelector(ThemeCatalogSO catalog, PresentationRoot root)
             {
                 m_Catalog = catalog;
-                m_ApplyTheme = applyTheme;
                 m_Root = root;
             }
 
-            public string ActiveThemeId => m_Root != null && m_Root.m_ActiveTheme != null ? m_Root.m_ActiveTheme.ThemeId : m_Catalog?.DefaultTheme?.ThemeId ?? ThemeIds.Classic;
-            public BallThemeSO ActiveBallTheme => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme : m_Catalog?.DefaultTheme?.BallTheme;
-            public string ActiveBallThemeId => m_Root != null && m_Root.m_BallTheme != null ? m_Root.m_BallTheme.ThemeId : m_Catalog?.DefaultTheme?.BallTheme?.ThemeId ?? ThemeIds.Classic;
-            public string ActiveBoardThemeId => m_Root != null && m_Root.m_BoardTheme != null ? m_Root.m_BoardTheme.ThemeId : m_Catalog?.DefaultTheme?.BoardTheme?.ThemeId ?? ThemeIds.Classic;
-            public string ActiveClearEffectThemeId => m_Catalog?.DefaultTheme?.ClearEffect?.ThemeId ?? ThemeIds.Classic;
+            private ThemeDefinitionSO DefaultPack => m_Catalog != null ? m_Catalog.DefaultTheme : null;
 
-            public void RequestTheme(string themeId)
-            {
-                if (m_Catalog != null && m_Catalog.TryGetTheme(themeId, out ThemeDefinitionSO theme))
-                {
-                    m_ApplyTheme?.Invoke(theme);
-                }
-            }
+            public BallThemeSO ActiveBallTheme => m_Root.m_BallTheme != null ? m_Root.m_BallTheme : DefaultPack?.BallTheme;
+            public string ActiveBallThemeId => ActiveBallTheme != null ? ActiveBallTheme.ThemeId : DefaultPartId(ThemeCategory.Ball);
+            public string ActiveBoardThemeId => m_Root.m_BoardTheme != null ? m_Root.m_BoardTheme.ThemeId : DefaultPartId(ThemeCategory.Board);
+            public UiThemeSO ActiveUiTheme => m_Root.m_UiTheme != null ? m_Root.m_UiTheme : DefaultPack?.UiTheme;
+            public string ActiveUiThemeId => ActiveUiTheme != null ? ActiveUiTheme.ThemeId : DefaultPartId(ThemeCategory.Ui);
+            public string ActiveClearEffectThemeId => m_Root.m_ClearEffect != null ? m_Root.m_ClearEffect.ThemeId : DefaultPartId(ThemeCategory.ClearEffect);
 
             public void RequestTheme(ThemeCategory category, string partThemeId)
             {
-                if (m_Root != null)
+                if (m_Catalog == null) return;
+
+                switch (category)
                 {
-                    m_Root.ApplyCategoryTheme(category, partThemeId);
+                    case ThemeCategory.Ball:
+                        if (m_Catalog.TryGetBallTheme(partThemeId, out var ball)) m_Root.ApplyBallTheme(ball);
+                        break;
+                    case ThemeCategory.Board:
+                        if (m_Catalog.TryGetPackForPart(ThemeCategory.Board, partThemeId, out var pack))
+                        {
+                            m_Root.ApplyBoardAndUi(pack.BoardTheme, pack.UiTheme);
+                        }
+                        break;
+                    case ThemeCategory.ClearEffect:
+                        if (m_Catalog.TryGetClearEffect(partThemeId, out var clearEffect)) m_Root.ApplyClearEffect(clearEffect);
+                        break;
+                    case ThemeCategory.Ui:
+                        Debug.LogWarning($"[PresentationRoot] Ignored UI theme request '{partThemeId}': UI follows the selected board.");
+                        break;
                 }
-                else if (m_Catalog != null && m_Catalog.TryGetTheme(partThemeId, out ThemeDefinitionSO theme))
-                {
-                    m_ApplyTheme?.Invoke(theme);
-                }
+            }
+
+            private string DefaultPartId(ThemeCategory category)
+            {
+                return m_Catalog != null ? m_Catalog.DefaultPartId(category) : ThemeIds.Classic;
             }
         }
 

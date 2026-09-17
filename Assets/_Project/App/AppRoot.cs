@@ -279,14 +279,14 @@ namespace Line98.App
                             m_Session,
                             themeSelector: m_ThemeSelector,
                             ballTheme: m_CosmeticService?.ActiveBallTheme,
-                            boardTheme: m_CosmeticService?.ActiveTheme?.BoardTheme,
-                            uiTheme: m_CosmeticService?.ActiveTheme?.UiTheme,
+                            boardTheme: m_CosmeticService?.ActiveBoardTheme,
+                            uiTheme: m_CosmeticService?.ActiveUiTheme,
                             audioService: m_AudioService);
                     }
 
-                    if (m_CosmeticService?.ActiveTheme != null)
+                    if (m_CosmeticService != null)
                     {
-                        m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme, m_CosmeticService.ActiveBallTheme);
+                        m_BoundPresentationRoot.ApplyThemeSelection(CurrentThemeSelection());
                     }
                 }
             }
@@ -298,9 +298,9 @@ namespace Line98.App
                 if (m_BoundShowcaseRig != null)
                 {
                     m_BoundShowcaseRig.SetReducedMotion(SettingsPresenter.IsReduceEffectsEnabled);
-                    if (m_CosmeticService?.ActiveTheme != null)
+                    if (m_CosmeticService != null)
                     {
-                        m_BoundShowcaseRig.ApplyTheme(m_CosmeticService.ActiveTheme);
+                        m_BoundShowcaseRig.ApplyTheme(m_CosmeticService.ActiveBoardTheme, m_CosmeticService.ActiveBallTheme);
                     }
                 }
             }
@@ -321,7 +321,7 @@ namespace Line98.App
                 m_BoundMenuPresenter = menuPresenter;
                 int best = m_StatsService?.Stats?.BestScore ?? 0;
                 int streak = m_StatsService?.Stats?.CurrentDailyStreak ?? 0;
-                m_BoundMenuPresenter.SetStats(best, streak, m_CosmeticService?.ActiveTheme?.UiTheme);
+                m_BoundMenuPresenter.SetStats(best, streak, m_CosmeticService?.ActiveUiTheme);
             }
 
             BindShell();
@@ -359,9 +359,9 @@ namespace Line98.App
 
             m_BoundShell.SetThemeSelector(m_ThemeSelector);
             m_BoundShell.SetThemeCatalog(m_ThemeCatalog);
-            if (m_CosmeticService?.ActiveTheme != null)
+            if (m_CosmeticService?.ActiveUiTheme != null)
             {
-                m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
+                m_BoundShell.ApplyTheme(m_CosmeticService.ActiveUiTheme);
             }
 
             if (m_CosmeticService?.ActiveBallTheme != null)
@@ -370,38 +370,45 @@ namespace Line98.App
             }
         }
 
+        private Presentation.ThemeSelection CurrentThemeSelection()
+        {
+            return new Presentation.ThemeSelection(
+                m_CosmeticService.ActiveBallTheme,
+                m_CosmeticService.ActiveBoardTheme,
+                m_CosmeticService.ActiveUiTheme,
+                m_CosmeticService.ActiveClearEffect);
+        }
+
+        /// <summary>
+        /// Any change re-reads the service's full selection and pushes it down. The service is the
+        /// single source of truth, so a Board change and its paired Ui change are both safe to re-apply.
+        /// </summary>
         private void HandleThemeChanged(ThemeChange change)
         {
+            if (m_CosmeticService == null) return;
+
+            Presentation.ThemeSelection selection = CurrentThemeSelection();
+
+            // Unity objects can retain a managed wrapper after their scene is unloaded.
+            // Use Unity's overloaded null check so stale scene bindings are not invoked.
             if (m_BoundPresentationRoot != null)
             {
-                bool isCategoryOverride = (change.Category == ThemeCategory.Ball && !string.IsNullOrEmpty(m_CosmeticService?.BallOverrideId))
-                    || (change.Category == ThemeCategory.Board && !string.IsNullOrEmpty(m_CosmeticService?.BoardOverrideId));
-
-                if (isCategoryOverride)
-                {
-                    m_BoundPresentationRoot.ApplyCategoryTheme(change.Category, change.ThemeId);
-                }
-                else if (m_CosmeticService?.ActiveTheme != null)
-                {
-                    m_BoundPresentationRoot.ApplyTheme(m_CosmeticService.ActiveTheme, m_CosmeticService.ActiveBallTheme);
-                }
+                m_BoundPresentationRoot.ApplyThemeSelection(selection);
             }
-            if (m_BoundShowcaseRig != null && m_CosmeticService?.ActiveTheme != null)
+            if (m_BoundShowcaseRig != null)
             {
-                m_BoundShowcaseRig.ApplyTheme(m_CosmeticService.ActiveTheme);
+                m_BoundShowcaseRig.ApplyTheme(selection.Board, selection.Ball);
             }
-            if (m_BoundMenuPresenter != null && m_CosmeticService?.ActiveTheme != null)
+            if (m_BoundMenuPresenter != null)
             {
-                m_BoundMenuPresenter.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme);
+                if (selection.Ui != null) m_BoundMenuPresenter.ApplyTheme(selection.Ui);
+                if (selection.Ball != null) m_BoundMenuPresenter.ApplyBallTheme(selection.Ball);
             }
-            if (m_BoundShell != null && m_CosmeticService?.ActiveTheme != null)
+            if (m_BoundShell != null)
             {
-                m_BoundShell.ApplyTheme(m_CosmeticService.ActiveTheme.UiTheme, m_CosmeticService.ActiveTheme.ThemeId);
-            }
-
-            if (m_CosmeticService?.ActiveBallTheme != null)
-            {
-                ApplyBallThemeEverywhere(m_CosmeticService.ActiveBallTheme);
+                if (selection.Ui != null) m_BoundShell.ApplyTheme(selection.Ui);
+                if (selection.Ball != null) m_BoundShell.ApplyBallTheme(selection.Ball);
+                m_BoundShell.RefreshCosmeticsSelection();
             }
         }
 

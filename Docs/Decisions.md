@@ -202,6 +202,18 @@
   - Today's shipped look is re-identified as the **`classic`** theme (parts: `BallTheme_Classic`, `BoardTheme_Classic`, `UiTheme_Default`, `ClearEffect_Classic`); **`crystal`** ships as the V1 alternative with placeholder colors.
   - Theme ids are **namespaced**: bundle ids and per-category part ids are independent namespaces with independent uniqueness, resolved through separate catalog lookups.
 - **Rationale:** Satisfies GDD §16 / [P3.9] ("theme swap through `IThemeProvider` without touching gameplay code; only 2 themes in V1") while scaling to N themes at the cost of one `ThemeDefinitionSO` + one `BallThemeSO` + 7 materials. Preserves the 2.5D baked projection contract, the single-palette authority of D27, the colorblind guarantees of D33, and the frozen-interface commitment of D26.
+- **Status:** Approved & Implemented. Selection model superseded by D35 (bundle/asset architecture still applies).
+
+### D35: Per-Part Cosmetic Selection; UI Derived From the Board's Pack
+- **Decision:**
+  - A `ThemeDefinitionSO` is a **pack**: an authoring container grouping Ball + Board + UI + ClearEffect. A pack is **not** a runtime selection; `ActiveThemeId` / `ActiveTheme` are removed.
+  - Runtime selection is **three independent axes**: `Ball`, `Board`, `ClearEffect`. The Themes popup tabs (BALLS / BOARD / EFFECTS) each change only their own part.
+  - **UI is derived, never selected or persisted.** `CosmeticService.SetBoardTheme` resolves the board's owning pack and switches its UI atomically, emitting `ThemeChange(Board)` then `ThemeChange(Ui)`. `ThemeCategory.Ui` remains an apply/notify category only; `RequestTheme(Ui, …)` is ignored with a warning.
+  - `ThemeCatalogSO.TryGetPackForPart` is the single part→pack lookup for Services and Presentation. **Invariant (audited by `ThemeCatalogAuditTests` and `ThemeAuthoring.ValidateThemePacks`):** a part id may appear in several packs only if it references the same asset.
+  - `CosmeticSettings` v3 persists `BallThemeId`, `BoardThemeId`, `ClearEffectThemeId`. v1/v2 saves are flattened: `part = override ?? bundle part`; a legacy UI override is dropped with a warning. Mixed selections (e.g. Crystal balls on a Classic board) are normal state, not divergence.
+  - On any `ThemeChange`, `AppRoot` re-reads the service's full selection and pushes a resolved `ThemeSelection` down (`PresentationRoot.ApplyThemeSelection`, canonical order Board → UI → Balls → Clear).
+  - `IThemeProvider` stays byte-identical (D26). `ThemeDefinitionSO.InheritsFrom` is kept for authoring; resets beyond `ResetToDefault` are dropped.
+- **Rationale:** Players customize each surface independently, while board and UI art stay visually coherent. Removes the bundle-override/divergence machinery and the dead UI/clear-effect override paths.
 - **Status:** Approved & Implemented.
 
 ---

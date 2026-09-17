@@ -1,13 +1,13 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using Line98.Data;
 
 namespace Line98.Services
 {
     /// <summary>
-    /// Core cosmetic service: resolves themes, manages persistence across restarts,
-    /// and dispatches notifications on theme changes.
+    /// Core cosmetic service: owns three independent selection axes (Ball, Board, ClearEffect),
+    /// derives the UI theme from the selected board's pack, persists across restarts,
+    /// and dispatches notifications on changes.
     /// </summary>
     public sealed class CosmeticService : ICosmeticService
     {
@@ -16,9 +16,11 @@ namespace Line98.Services
         private readonly ThemeCatalogSO m_Catalog;
         private readonly ISaveBackend m_Backend;
         private CosmeticSettings m_Settings;
-        private ThemeDefinitionSO m_ActiveTheme;
         private BallThemeSO m_ActiveBallTheme;
-        private readonly HashSet<ThemeCategory> m_WarnedDivergentOverrides = new HashSet<ThemeCategory>();
+        private BoardThemeSO m_ActiveBoardTheme;
+        private UiThemeSO m_ActiveUiTheme;
+        private ThemeDefinitionSO m_ActivePack;
+        private ClearEffectSO m_ActiveClearEffect;
 
         public event Action<ThemeChange> OnThemeChanged;
 
@@ -30,210 +32,110 @@ namespace Line98.Services
             LoadAndInitialize();
         }
 
-        public string ActiveThemeId => m_ActiveTheme != null ? m_ActiveTheme.ThemeId : (m_Settings?.ThemeId ?? ThemeIds.Classic);
-
-        public ThemeDefinitionSO ActiveTheme => m_ActiveTheme;
-
         public BallThemeSO ActiveBallTheme => m_ActiveBallTheme;
+        public string ActiveBallThemeId => m_ActiveBallTheme != null ? m_ActiveBallTheme.ThemeId : DefaultPartId(ThemeCategory.Ball);
 
-        public string ActiveBallThemeId => m_ActiveBallTheme != null ? m_ActiveBallTheme.ThemeId : ThemeIds.Classic;
+        public BoardThemeSO ActiveBoardTheme => m_ActiveBoardTheme;
+        public string ActiveBoardThemeId => m_ActiveBoardTheme != null ? m_ActiveBoardTheme.ThemeId : DefaultPartId(ThemeCategory.Board);
 
-        public string ActiveBoardThemeId
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(m_Settings?.BoardOverrideId))
-                {
-                    return m_Settings.BoardOverrideId;
-                }
-                return m_ActiveTheme?.BoardTheme?.ThemeId ?? ThemeIds.Classic;
-            }
-        }
+        /// <summary>UI theme of the pack that owns the active board. Never selected independently.</summary>
+        public UiThemeSO ActiveUiTheme => m_ActiveUiTheme;
+        public string ActiveUiThemeId => m_ActiveUiTheme != null ? m_ActiveUiTheme.ThemeId : DefaultPartId(ThemeCategory.Ui);
 
-        public string ActiveClearEffectThemeId
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(m_Settings?.ClearEffectOverrideId))
-                {
-                    return m_Settings.ClearEffectOverrideId;
-                }
-                return m_ActiveTheme?.ClearEffect?.ThemeId ?? ThemeIds.Classic;
-            }
-        }
-
-        public string BallOverrideId => m_Settings?.BallOverrideId;
-        public string BoardOverrideId => m_Settings?.BoardOverrideId;
-
-        public void SetTheme(string themeId)
-        {
-            var resolved = ThemeResolver.Resolve(m_Catalog, themeId);
-            if (resolved == null)
-            {
-                Debug.LogWarning($"[CosmeticService] Cannot set theme '{themeId ?? "<null>"}' because it could not be resolved.");
-                return;
-            }
-
-            bool isSameTheme = m_ActiveTheme != null && string.Equals(m_ActiveTheme.ThemeId, resolved.ThemeId, StringComparison.OrdinalIgnoreCase);
-            bool hasOverrides = !string.IsNullOrEmpty(m_Settings.BallOverrideId)
-                || !string.IsNullOrEmpty(m_Settings.BoardOverrideId)
-                || !string.IsNullOrEmpty(m_Settings.UiOverrideId)
-                || !string.IsNullOrEmpty(m_Settings.ClearEffectOverrideId);
-
-            if (isSameTheme && !hasOverrides)
-            {
-                // Idempotent call — no change and no event
-                return;
-            }
-
-            m_ActiveTheme = resolved;
-            m_Settings.ThemeId = resolved.ThemeId;
-            m_Settings.BallOverrideId = null;
-            m_Settings.BoardOverrideId = null;
-            m_Settings.UiOverrideId = null;
-            m_Settings.ClearEffectOverrideId = null;
-
-            RefreshEffectiveBallTheme();
-            SaveSettings();
-
-            // Notify subscribers after persistence is committed
-            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Ball, resolved.ThemeId));
-        }
+        public ClearEffectSO ActiveClearEffect => m_ActiveClearEffect;
+        public string ActiveClearEffectThemeId => m_ActiveClearEffect != null ? m_ActiveClearEffect.ThemeId : DefaultPartId(ThemeCategory.ClearEffect);
 
         public void SetBallTheme(string ballThemeId)
         {
-            var resolvedBall = ThemeResolver.ResolveBall(m_Catalog, ballThemeId, m_ActiveTheme);
-            if (resolvedBall == null) return;
+            var resolved = ThemeResolver.ResolveBall(m_Catalog, ballThemeId, m_Catalog?.DefaultTheme);
+            if (resolved == null || resolved == m_ActiveBallTheme) return;
 
-            string targetId = resolvedBall.ThemeId;
-            string bundlePartId = m_ActiveTheme?.BallTheme?.ThemeId;
-            string overrideId = IdsMatch(targetId, bundlePartId) ? null : targetId;
-            if (IdsMatch(m_Settings.BallOverrideId, overrideId) && IdsMatch(ActiveBallThemeId, targetId))
-            {
-                return;
-            }
-
-            m_Settings.BallOverrideId = overrideId;
-            RefreshEffectiveBallTheme();
+            m_ActiveBallTheme = resolved;
+            m_Settings.BallThemeId = resolved.ThemeId;
             SaveSettings();
-            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Ball, targetId));
+            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Ball, resolved.ThemeId));
         }
 
+        /// <summary>
+        /// Selects a board and atomically switches the UI theme to the board's pack.
+        /// This is the only place the UI theme changes. Emits Board, then Ui (if it changed).
+        /// </summary>
         public void SetBoardTheme(string boardThemeId)
         {
-            var resolvedBoard = ThemeResolver.ResolveBoard(m_Catalog, boardThemeId, m_ActiveTheme);
-            if (resolvedBoard == null) return;
-
-            string targetId = resolvedBoard.ThemeId;
-            string bundlePartId = m_ActiveTheme?.BoardTheme?.ThemeId;
-            string overrideId = IdsMatch(targetId, bundlePartId) ? null : targetId;
-            if (IdsMatch(m_Settings.BoardOverrideId, overrideId) && IdsMatch(ActiveBoardThemeId, targetId))
+            if (!ThemeResolver.ResolveBoardWithUi(m_Catalog, boardThemeId, out var board, out var ui, out var pack))
             {
                 return;
             }
 
-            m_Settings.BoardOverrideId = overrideId;
-            SaveSettings();
-            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Board, targetId));
-        }
+            bool boardChanged = board != m_ActiveBoardTheme;
+            bool uiChanged = ui != m_ActiveUiTheme;
+            if (!boardChanged && !uiChanged) return;
 
-        public void SetUiTheme(string uiThemeId)
-        {
-            string bundlePartId = m_ActiveTheme?.UiTheme?.ThemeId;
-            string overrideId = IdsMatch(uiThemeId, bundlePartId) ? null : uiThemeId;
-            if (IdsMatch(m_Settings.UiOverrideId, overrideId))
+            m_ActiveBoardTheme = board;
+            m_ActiveUiTheme = ui;
+            m_ActivePack = pack;
+            m_Settings.BoardThemeId = board.ThemeId;
+            SaveSettings();
+
+            // Notify after persistence and after both parts are committed, so any subscriber
+            // reading the service sees a consistent board/UI pair.
+            if (boardChanged)
             {
-                return;
+                OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Board, board.ThemeId));
             }
-
-            m_Settings.UiOverrideId = overrideId;
-            SaveSettings();
-            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Ui, overrideId ?? bundlePartId));
+            if (uiChanged)
+            {
+                OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.Ui, ActiveUiThemeId));
+            }
         }
 
         public void SetClearEffectTheme(string clearEffectId)
         {
-            string bundlePartId = m_ActiveTheme?.ClearEffect?.ThemeId;
-            string overrideId = IdsMatch(clearEffectId, bundlePartId) ? null : clearEffectId;
-            if (IdsMatch(m_Settings.ClearEffectOverrideId, overrideId))
-            {
-                return;
-            }
+            var resolved = ThemeResolver.ResolveClearEffect(m_Catalog, clearEffectId, m_Catalog?.DefaultTheme);
+            if (resolved == null || resolved == m_ActiveClearEffect) return;
 
-            m_Settings.ClearEffectOverrideId = overrideId;
+            m_ActiveClearEffect = resolved;
+            m_Settings.ClearEffectThemeId = resolved.ThemeId;
             SaveSettings();
-            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.ClearEffect, overrideId ?? bundlePartId));
-        }
-
-        public void ResetCategoryOverride(ThemeCategory category)
-        {
-            string effectiveId;
-            switch (category)
-            {
-                case ThemeCategory.Ball:
-                    if (string.IsNullOrEmpty(m_Settings.BallOverrideId)) return;
-                    m_Settings.BallOverrideId = null;
-                    RefreshEffectiveBallTheme();
-                    effectiveId = m_ActiveBallTheme?.ThemeId;
-                    break;
-                case ThemeCategory.Board:
-                    if (string.IsNullOrEmpty(m_Settings.BoardOverrideId)) return;
-                    m_Settings.BoardOverrideId = null;
-                    effectiveId = m_ActiveTheme?.BoardTheme?.ThemeId;
-                    break;
-                case ThemeCategory.Ui:
-                    if (string.IsNullOrEmpty(m_Settings.UiOverrideId)) return;
-                    m_Settings.UiOverrideId = null;
-                    effectiveId = m_ActiveTheme?.UiTheme?.ThemeId;
-                    break;
-                case ThemeCategory.ClearEffect:
-                    if (string.IsNullOrEmpty(m_Settings.ClearEffectOverrideId)) return;
-                    m_Settings.ClearEffectOverrideId = null;
-                    effectiveId = m_ActiveTheme?.ClearEffect?.ThemeId;
-                    break;
-                default:
-                    return;
-            }
-
-            SaveSettings();
-            OnThemeChanged?.Invoke(new ThemeChange(category, effectiveId));
+            OnThemeChanged?.Invoke(new ThemeChange(ThemeCategory.ClearEffect, resolved.ThemeId));
         }
 
         public void ResetToDefault()
         {
-            string defaultId = m_Catalog != null ? m_Catalog.DefaultThemeId : ThemeIds.Classic;
-            SetTheme(defaultId);
+            SetBoardTheme(DefaultPartId(ThemeCategory.Board));
+            SetBallTheme(DefaultPartId(ThemeCategory.Ball));
+            SetClearEffectTheme(DefaultPartId(ThemeCategory.ClearEffect));
         }
 
         private void LoadAndInitialize()
         {
             string json = m_Backend?.Load(s_SaveKey);
+            bool didMigrate = false;
+            m_Settings = null;
+
             if (!string.IsNullOrEmpty(json))
             {
                 try
                 {
-                    m_Settings = JsonUtility.FromJson<CosmeticSettings>(json) ?? new CosmeticSettings();
+                    var legacy = JsonUtility.FromJson<LegacyCosmeticSettings>(json);
+                    if (legacy != null && legacy.Version < CosmeticSettings.CurrentVersion)
+                    {
+                        m_Settings = MigrateLegacy(legacy);
+                        didMigrate = true;
+                    }
+                    else
+                    {
+                        m_Settings = JsonUtility.FromJson<CosmeticSettings>(json);
+                    }
                 }
                 catch (Exception ex)
                 {
                     Debug.LogWarning($"[CosmeticService] Failed to parse cosmetic settings: {ex.Message}");
-                    m_Settings = new CosmeticSettings();
                 }
             }
-            else
-            {
-                m_Settings = new CosmeticSettings();
-            }
 
-            m_ActiveTheme = ThemeResolver.Resolve(m_Catalog, m_Settings.ThemeId);
-            if (m_ActiveTheme != null)
-            {
-                m_Settings.ThemeId = m_ActiveTheme.ThemeId;
-            }
-
-            bool didMigrate = MigrateSettingsIfNeeded();
-            WarnForDivergentOverrides();
-            RefreshEffectiveBallTheme();
+            m_Settings ??= new CosmeticSettings();
+            ResolveActiveParts();
 
             if (didMigrate)
             {
@@ -241,9 +143,42 @@ namespace Line98.Services
             }
         }
 
-        private void RefreshEffectiveBallTheme()
+        private void ResolveActiveParts()
         {
-            m_ActiveBallTheme = ThemeResolver.ResolveBall(m_Catalog, m_Settings?.BallOverrideId, m_ActiveTheme);
+            ThemeDefinitionSO defaultPack = m_Catalog?.DefaultTheme;
+
+            m_ActiveBallTheme = ThemeResolver.ResolveBall(m_Catalog, m_Settings.BallThemeId, defaultPack);
+            ThemeResolver.ResolveBoardWithUi(m_Catalog, m_Settings.BoardThemeId, out m_ActiveBoardTheme, out m_ActiveUiTheme, out m_ActivePack);
+            m_ActiveClearEffect = ThemeResolver.ResolveClearEffect(m_Catalog, m_Settings.ClearEffectThemeId, defaultPack);
+
+            // Normalize persisted ids to what actually resolved (e.g. unknown id -> default).
+            if (m_ActiveBallTheme != null) m_Settings.BallThemeId = m_ActiveBallTheme.ThemeId;
+            if (m_ActiveBoardTheme != null) m_Settings.BoardThemeId = m_ActiveBoardTheme.ThemeId;
+            if (m_ActiveClearEffect != null) m_Settings.ClearEffectThemeId = m_ActiveClearEffect.ThemeId;
+        }
+
+        /// <summary>
+        /// v1/v2 -> v3: flatten "bundle + per-category override" into three independent part ids.
+        /// The legacy UI override is dropped: UI now always follows the board's pack.
+        /// </summary>
+        private CosmeticSettings MigrateLegacy(LegacyCosmeticSettings legacy)
+        {
+            ThemeDefinitionSO bundle = ThemeResolver.Resolve(m_Catalog, legacy.ThemeId);
+
+            var migrated = new CosmeticSettings
+            {
+                BallThemeId = FirstNonEmpty(legacy.BallOverrideId, ThemeCatalogSO.PartId(bundle, ThemeCategory.Ball), DefaultPartId(ThemeCategory.Ball)),
+                BoardThemeId = FirstNonEmpty(legacy.BoardOverrideId, ThemeCatalogSO.PartId(bundle, ThemeCategory.Board), DefaultPartId(ThemeCategory.Board)),
+                ClearEffectThemeId = FirstNonEmpty(legacy.ClearEffectOverrideId, ThemeCatalogSO.PartId(bundle, ThemeCategory.ClearEffect), DefaultPartId(ThemeCategory.ClearEffect))
+            };
+
+            if (!string.IsNullOrEmpty(legacy.UiOverrideId))
+            {
+                Debug.LogWarning(
+                    $"[CosmeticService] Dropped legacy UI override '{legacy.UiOverrideId}' during v{legacy.Version}->v{CosmeticSettings.CurrentVersion} migration; UI now follows board '{migrated.BoardThemeId}'.");
+            }
+
+            return migrated;
         }
 
         private void SaveSettings()
@@ -255,79 +190,29 @@ namespace Line98.Services
             }
         }
 
-        private bool MigrateSettingsIfNeeded()
+        private string DefaultPartId(ThemeCategory category)
         {
-            if (m_Settings == null || m_Settings.Version >= CosmeticSettings.CurrentVersion)
-            {
-                return false;
-            }
-
-            int sourceVersion = m_Settings.Version;
-            var droppedOverrides = new List<string>(4);
-            DropDivergentLegacyOverride(
-                ThemeCategory.Ball,
-                ref m_Settings.BallOverrideId,
-                m_ActiveTheme?.BallTheme?.ThemeId,
-                droppedOverrides);
-            DropDivergentLegacyOverride(
-                ThemeCategory.Board,
-                ref m_Settings.BoardOverrideId,
-                m_ActiveTheme?.BoardTheme?.ThemeId,
-                droppedOverrides);
-            DropDivergentLegacyOverride(
-                ThemeCategory.Ui,
-                ref m_Settings.UiOverrideId,
-                m_ActiveTheme?.UiTheme?.ThemeId,
-                droppedOverrides);
-            DropDivergentLegacyOverride(
-                ThemeCategory.ClearEffect,
-                ref m_Settings.ClearEffectOverrideId,
-                m_ActiveTheme?.ClearEffect?.ThemeId,
-                droppedOverrides);
-
-            m_Settings.Version = CosmeticSettings.CurrentVersion;
-            string dropped = droppedOverrides.Count > 0 ? string.Join(", ", droppedOverrides) : "none";
-            Debug.LogWarning($"[CosmeticService] Migrated cosmetic settings v{sourceVersion} to v{CosmeticSettings.CurrentVersion}; dropped divergent overrides: {dropped}.");
-            return true;
+            return m_Catalog != null ? m_Catalog.DefaultPartId(category) : ThemeIds.Classic;
         }
 
-        private static void DropDivergentLegacyOverride(
-            ThemeCategory category,
-            ref string overrideId,
-            string bundlePartId,
-            List<string> droppedOverrides)
+        private static string FirstNonEmpty(string a, string b, string c)
         {
-            if (string.IsNullOrEmpty(overrideId) || IdsMatch(overrideId, bundlePartId))
-            {
-                return;
-            }
-
-            droppedOverrides.Add($"{category}='{overrideId}'");
-            overrideId = null;
+            if (!string.IsNullOrEmpty(a)) return a;
+            if (!string.IsNullOrEmpty(b)) return b;
+            return c;
         }
 
-        private void WarnForDivergentOverrides()
+        /// <summary>Read-only shape of v1/v2 saves, used only for migration.</summary>
+        [Serializable]
+        private sealed class LegacyCosmeticSettings
         {
-            WarnForDivergentOverride(ThemeCategory.Ball, m_Settings?.BallOverrideId, m_ActiveTheme?.BallTheme?.ThemeId);
-            WarnForDivergentOverride(ThemeCategory.Board, m_Settings?.BoardOverrideId, m_ActiveTheme?.BoardTheme?.ThemeId);
-            WarnForDivergentOverride(ThemeCategory.Ui, m_Settings?.UiOverrideId, m_ActiveTheme?.UiTheme?.ThemeId);
-            WarnForDivergentOverride(ThemeCategory.ClearEffect, m_Settings?.ClearEffectOverrideId, m_ActiveTheme?.ClearEffect?.ThemeId);
-        }
-
-        private void WarnForDivergentOverride(ThemeCategory category, string overrideId, string bundlePartId)
-        {
-            if (string.IsNullOrEmpty(overrideId) || IdsMatch(overrideId, bundlePartId) || !m_WarnedDivergentOverrides.Add(category))
-            {
-                return;
-            }
-
-            Debug.LogWarning(
-                $"[CosmeticService] Persisted {category} override '{overrideId}' diverges from bundle '{m_ActiveTheme?.ThemeId ?? "<none>"}' part '{bundlePartId ?? "<none>"}'.");
-        }
-
-        private static bool IdsMatch(string left, string right)
-        {
-            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+            // Saves predating the Version field are treated as v1.
+            public int Version = 1;
+            public string ThemeId;
+            public string BallOverrideId;
+            public string BoardOverrideId;
+            public string UiOverrideId;
+            public string ClearEffectOverrideId;
         }
     }
 }

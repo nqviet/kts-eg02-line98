@@ -291,7 +291,7 @@ The bridge between raw art assets and architectural runtime systems is strictly 
  Assets/_Project/Content/Definitions/
   ├── ThemeCatalog_Default.asset      --> Central theme bundle catalog (m_DefaultThemeId="classic", lists Classic & Crystal)
   ├── Theme_Classic.asset             --> Classic theme bundle (BallTheme_Classic, BoardTheme_Classic, UiTheme_Default, ClearEffect_Classic)
-  ├── Theme_Crystal.asset             --> Crystal theme bundle (BallTheme_Crystal, inherits Classic board, UI, and clear effect)
+  ├── Theme_Crystal.asset             --> Crystal theme pack (BallTheme_Crystal, BoardTheme_Crystal, UiTheme_Crystal, ClearEffect_Crystal; parts are selected independently, UI follows board — ADR D35)
   ├── BallTheme_Classic.asset         --> References 7 canonical materials (M_Ball_*.mat) + MESH_Ball_Gem_Centered.asset
   ├── BallTheme_Crystal.asset         --> References 7 gemstone materials (M_Ball_Crystal_*.mat with D33 pattern parity)
   ├── BoardTheme_Classic.asset        --> References MESH_BoardCell, MESH_BoardFrame, M_BoardCell, M_BoardFrame, m_RowPitchScale=1.1791784

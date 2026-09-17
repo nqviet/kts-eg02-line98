@@ -112,6 +112,66 @@ namespace Line98.Tests.EditMode
             }
         }
 
+        /// <summary>
+        /// ADR D35 invariant: a part id may appear in several packs only if it is the same asset,
+        /// otherwise part→pack (and therefore board⇒UI pairing) is ambiguous.
+        /// </summary>
+        [Test]
+        public void PartIds_MapDeterministicallyToOnePack()
+        {
+            var categories = new[] { ThemeCategory.Ball, ThemeCategory.Board, ThemeCategory.ClearEffect };
+            foreach (var category in categories)
+            {
+                var assetsById = new Dictionary<string, UnityEngine.Object>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < m_Catalog.Count; i++)
+                {
+                    var pack = m_Catalog.ThemeAt(i);
+                    string partId = ThemeCatalogSO.PartId(pack, category);
+                    UnityEngine.Object asset = category switch
+                    {
+                        ThemeCategory.Ball => pack.BallTheme,
+                        ThemeCategory.Board => pack.BoardTheme,
+                        _ => pack.ClearEffect
+                    };
+
+                    if (assetsById.TryGetValue(partId, out var existing))
+                    {
+                        Assert.AreSame(existing, asset, $"{category} id '{partId}' is declared by several packs with different assets.");
+                    }
+                    else
+                    {
+                        assetsById.Add(partId, asset);
+                    }
+
+                    Assert.IsTrue(m_Catalog.TryGetPackForPart(category, partId, out var owner));
+                    Assert.AreSame(asset, category switch
+                    {
+                        ThemeCategory.Ball => owner.BallTheme,
+                        ThemeCategory.Board => owner.BoardTheme,
+                        _ => owner.ClearEffect
+                    });
+                }
+            }
+        }
+
+        [Test]
+        public void TryGetPartIds_AndDefaultPartIds_MatchPackParts()
+        {
+            for (int i = 0; i < m_Catalog.Count; i++)
+            {
+                var pack = m_Catalog.ThemeAt(i);
+                Assert.IsTrue(m_Catalog.TryGetPartIds(pack, out var ids));
+                Assert.AreEqual(pack.BallTheme.ThemeId, ids.BallId);
+                Assert.AreEqual(pack.BoardTheme.ThemeId, ids.BoardId);
+                Assert.AreEqual(pack.UiTheme.ThemeId, ids.UiId);
+                Assert.AreEqual(pack.ClearEffect.ThemeId, ids.ClearEffectId);
+            }
+
+            Assert.AreEqual(m_Catalog.DefaultTheme.UiTheme.ThemeId, m_Catalog.DefaultPartId(ThemeCategory.Ui));
+            Assert.IsTrue(m_Catalog.TryGetUiTheme(m_Catalog.DefaultPartId(ThemeCategory.Ui), out _));
+            Assert.IsTrue(m_Catalog.TryGetClearEffect(m_Catalog.DefaultPartId(ThemeCategory.ClearEffect), out _));
+        }
+
         [Test]
         public void ThemeInheritance_DepthNeverExceedsOne()
         {
