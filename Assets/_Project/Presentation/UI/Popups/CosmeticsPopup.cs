@@ -29,6 +29,8 @@ namespace Line98.Presentation
         [SerializeField] private RectTransform m_ItemsContainer;
         [SerializeField] private GameObject m_ItemPrefab;
         [SerializeField] private TMP_Text m_FooterNote;
+        [SerializeField] private RectTransform m_PlaceholderRoot;
+        [SerializeField] private TMP_Text m_PlaceholderText;
 
         [Header("Mockup Styling")]
         [SerializeField] private Color m_FullscreenBackdropColor = Color.white;
@@ -57,6 +59,8 @@ namespace Line98.Presentation
 
         public RectTransform TilesContainer => m_ItemsContainer;
         public RectTransform ItemsContainer => m_ItemsContainer;
+        public RectTransform PlaceholderRoot => m_PlaceholderRoot;
+        public TMP_Text PlaceholderText => m_PlaceholderText;
         /// <summary>Applied part id for the active tab.</summary>
         public string AppliedPartId => !string.IsNullOrEmpty(m_SelectedPartId) ? m_SelectedPartId : ThemeIds.Classic;
         public string PreviewedThemeId => !string.IsNullOrEmpty(m_ActivePartId) ? m_ActivePartId : AppliedPartId;
@@ -72,6 +76,7 @@ namespace Line98.Presentation
             base.Awake();
 
             EnsureFullscreenPresentation();
+            EnsurePlaceholder();
             if (m_FullscreenBackdrop is UnityEngine.UI.RawImage rawBackdrop && m_CrystalBackdropTexture == null && rawBackdrop.texture is Texture2D tex)
             {
                 m_CrystalBackdropTexture = tex;
@@ -126,20 +131,36 @@ namespace Line98.Presentation
 
             if (m_TabStrip != null)
             {
+                m_TabStrip.OnTabSelected -= HandleTabChanged;
+                m_TabStrip.OnTabSelected += HandleTabChanged;
                 m_TabStrip.SetActive(m_ActiveTab, notify: false);
             }
 
             ResolveSelectedPartId();
-            RebuildItems();
-            UpdatePreview(animate: false);
+            UpdateTabState(animate: false);
+        }
+
+        public void SelectTab(ThemeCategory category)
+        {
+            if (m_TabStrip != null)
+            {
+                m_TabStrip.SetActive(category, notify: true);
+            }
+            else
+            {
+                HandleTabChanged(category);
+            }
         }
 
         /// <summary>Re-reads the applied part ids from the selector (e.g. after an external theme change).</summary>
         public void RefreshSelection()
         {
             ResolveSelectedPartId();
-            RefreshItems();
-            UpdatePreview(animate: false);
+            if (m_ActiveTab != ThemeCategory.ClearEffect)
+            {
+                RefreshItems();
+                UpdatePreview(animate: false);
+            }
         }
 
         public void ApplyTheme(UiThemeSO theme)
@@ -187,6 +208,11 @@ namespace Line98.Presentation
             }
 
             m_TabStrip?.ApplyTheme(theme);
+
+            if (m_PlaceholderText != null)
+            {
+                m_PlaceholderText.color = theme.BrandNavy;
+            }
 
             for (int i = 0; i < m_SpawnedItems.Count; i++)
             {
@@ -237,14 +263,33 @@ namespace Line98.Presentation
                 m_FooterNote.text = m_ActiveTab == ThemeCategory.Board ? "BOARD SETS THE UI STYLE" : "THEMES CHANGE VISUALS ONLY";
             }
 
-            if (m_ItemsContainer != null) m_ItemsContainer.gameObject.SetActive(true);
-            RebuildItems();
-            UpdatePreview(animate: true);
+            UpdateTabState(animate: true);
+        }
+
+        private void UpdateTabState(bool animate)
+        {
+            EnsurePlaceholder();
+            bool isEffects = m_ActiveTab == ThemeCategory.ClearEffect;
+
+            if (isEffects)
+            {
+                if (m_PreviewPanel != null) m_PreviewPanel.gameObject.SetActive(false);
+                if (m_ItemsContainer != null) m_ItemsContainer.gameObject.SetActive(false);
+                if (m_PlaceholderRoot != null) m_PlaceholderRoot.gameObject.SetActive(true);
+            }
+            else
+            {
+                if (m_PlaceholderRoot != null) m_PlaceholderRoot.gameObject.SetActive(false);
+                if (m_PreviewPanel != null) m_PreviewPanel.gameObject.SetActive(true);
+                if (m_ItemsContainer != null) m_ItemsContainer.gameObject.SetActive(true);
+                RebuildItems();
+                UpdatePreview(animate: animate);
+            }
         }
 
         private void RebuildItems()
         {
-            if (m_ItemsContainer == null || m_Catalog == null)
+            if (m_ItemsContainer == null || m_Catalog == null || m_ActiveTab == ThemeCategory.ClearEffect)
             {
                 return;
             }
@@ -336,7 +381,7 @@ namespace Line98.Presentation
 
         private void UpdatePreview(bool animate = false)
         {
-            if (m_PreviewPanel == null || m_Catalog == null)
+            if (m_PreviewPanel == null || m_Catalog == null || m_ActiveTab == ThemeCategory.ClearEffect)
             {
                 return;
             }
@@ -565,6 +610,68 @@ namespace Line98.Presentation
                 m_FooterNote.alignment = TextAlignmentOptions.Center;
                 m_FooterNote.raycastTarget = false;
             }
+
+            if (m_PlaceholderText != null)
+            {
+                m_PlaceholderText.color = m_CurrentTheme != null ? m_CurrentTheme.BrandNavy : m_BrandNavy;
+                m_PlaceholderText.fontStyle = FontStyles.Bold;
+                m_PlaceholderText.alignment = TextAlignmentOptions.Center;
+                m_PlaceholderText.raycastTarget = false;
+            }
+        }
+
+        private void EnsurePlaceholder()
+        {
+            if (m_PlaceholderRoot != null)
+            {
+                if (m_PlaceholderText == null)
+                {
+                    m_PlaceholderText = m_PlaceholderRoot.GetComponentInChildren<TMP_Text>(true);
+                }
+                return;
+            }
+
+            Transform existing = m_ContentRoot != null
+                ? m_ContentRoot.Find("PlaceholderRoot")
+                : transform.Find("PlaceholderRoot");
+
+            if (existing != null)
+            {
+                m_PlaceholderRoot = existing as RectTransform;
+                m_PlaceholderText = existing.GetComponentInChildren<TMP_Text>(true);
+                return;
+            }
+
+            if (m_ContentRoot == null) return;
+
+            var go = new GameObject("PlaceholderRoot", typeof(RectTransform));
+            go.transform.SetParent(m_ContentRoot, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(0f, 60f);
+            rt.offsetMax = new Vector2(0f, -220f);
+
+            var textGo = new GameObject("Label_Placeholder", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textGo.transform.SetParent(rt, false);
+            var textRt = textGo.GetComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = Vector2.zero;
+            textRt.offsetMax = Vector2.zero;
+
+            var tmp = textGo.GetComponent<TextMeshProUGUI>();
+            tmp.text = "Coming Soon";
+            tmp.fontSize = 40f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = m_CurrentTheme != null ? m_CurrentTheme.BrandNavy : m_BrandNavy;
+            tmp.characterSpacing = 2f;
+            tmp.raycastTarget = false;
+
+            m_PlaceholderRoot = rt;
+            m_PlaceholderText = tmp;
+            go.SetActive(false);
         }
 
         private static GameObject CreateDefaultItemObject(RectTransform parent)

@@ -1333,6 +1333,28 @@ namespace Line98.Editor
                 ConfigureImage(footerRuleRightRt.GetComponent<Image>(), null, ruleColor, sliced: false);
                 AddApplier(footerRuleRightRt.gameObject, colorToken: UiThemeApplier.ColorToken.DividerHairline);
 
+                // ---------- PlaceholderRoot (EFFECTS tab) ----------
+                RectTransform placeholderRt = CreateUi("PlaceholderRoot", contentRt);
+                placeholderRt.anchorMin = Vector2.zero;
+                placeholderRt.anchorMax = Vector2.one;
+                placeholderRt.offsetMin = new Vector2(0f, 60f);
+                placeholderRt.offsetMax = new Vector2(0f, -220f);
+                placeholderRt.gameObject.SetActive(false);
+
+                RectTransform placeholderLabelRt = CreateUi("Label_Placeholder", placeholderRt, typeof(TextMeshProUGUI));
+                Stretch(placeholderLabelRt, Vector2.zero, Vector2.zero);
+                TextMeshProUGUI placeholderLabel = ConfigureLabel(
+                    placeholderLabelRt.GetComponent<TextMeshProUGUI>(),
+                    font,
+                    "Coming Soon",
+                    40f,
+                    defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy,
+                    TextAlignmentOptions.Center);
+                placeholderLabel.characterSpacing = 2f;
+                placeholderLabel.fontStyle = FontStyles.Bold;
+                placeholderLabel.raycastTarget = false;
+                AddApplier(placeholderLabelRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
+
                 // Wire CosmeticsPopup & PopupView
                 var popupSo = new SerializedObject(cosmeticsPopup);
                 popupSo.FindProperty("m_ModalContainer").objectReferenceValue = contentRt;
@@ -1349,6 +1371,8 @@ namespace Line98.Editor
                 popupSo.FindProperty("m_ItemsContainer").objectReferenceValue = itemsRt;
                 popupSo.FindProperty("m_ItemPrefab").objectReferenceValue = itemPrefab;
                 popupSo.FindProperty("m_FooterNote").objectReferenceValue = footerText;
+                popupSo.FindProperty("m_PlaceholderRoot").objectReferenceValue = placeholderRt;
+                popupSo.FindProperty("m_PlaceholderText").objectReferenceValue = placeholderLabel;
                 popupSo.FindProperty("m_BrandNavy").colorValue = defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy;
                 popupSo.ApplyModifiedProperties();
 

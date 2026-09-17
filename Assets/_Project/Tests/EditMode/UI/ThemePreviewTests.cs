@@ -179,5 +179,46 @@ namespace Line98.Tests.EditMode.UI
             var expectedPlateMat = m_CrystalUi.SurfaceMaterialCard != null ? m_CrystalUi.SurfaceMaterialCard : m_Panel.BoardMockPlate.defaultMaterial;
             Assert.AreSame(expectedPlateMat, m_Panel.BoardMockPlate.material, "Must fall back to UiTheme when board is null");
         }
+
+        [Test]
+        public void CosmeticsPopup_EffectsTab_ShowsPlaceholderAndHidesPreviewAndItems()
+        {
+            var popup = m_Instance.GetComponent<CosmeticsPopup>();
+            Assert.IsNotNull(popup, "CosmeticsPopup component must exist");
+
+            popup.Populate(m_Catalog, null, ThemeCategory.Ball);
+            Assert.IsTrue(popup.PreviewPanel.gameObject.activeSelf, "Ball tab must show preview panel");
+            Assert.IsTrue(popup.ItemsContainer.gameObject.activeSelf, "Ball tab must show items container");
+            if (popup.PlaceholderRoot != null)
+            {
+                Assert.IsFalse(popup.PlaceholderRoot.gameObject.activeSelf, "Ball tab must hide placeholder");
+            }
+
+            popup.TabStrip.SetActive(ThemeCategory.ClearEffect, notify: true);
+
+            Assert.IsFalse(popup.PreviewPanel.gameObject.activeSelf, "Effects tab must hide preview panel");
+            Assert.IsFalse(popup.ItemsContainer.gameObject.activeSelf, "Effects tab must hide items container");
+            Assert.IsNotNull(popup.PlaceholderRoot, "PlaceholderRoot must exist");
+            Assert.IsTrue(popup.PlaceholderRoot.gameObject.activeSelf, "Effects tab must show placeholder root");
+            Assert.IsNotNull(popup.PlaceholderText, "PlaceholderText must exist");
+            Assert.IsFalse(string.IsNullOrEmpty(popup.PlaceholderText.text), "PlaceholderText must not be empty");
+        }
+
+        [Test]
+        public void CosmeticsPopup_SwitchingBackFromEffects_RestoresPreviewAndItems()
+        {
+            var popup = m_Instance.GetComponent<CosmeticsPopup>();
+            Assert.IsNotNull(popup);
+
+            popup.Populate(m_Catalog, null, ThemeCategory.ClearEffect);
+            Assert.IsFalse(popup.PreviewPanel.gameObject.activeSelf, "Effects tab must hide preview panel");
+            Assert.IsFalse(popup.ItemsContainer.gameObject.activeSelf, "Effects tab must hide items container");
+            Assert.IsTrue(popup.PlaceholderRoot.gameObject.activeSelf, "Effects tab must show placeholder root");
+
+            popup.TabStrip.SetActive(ThemeCategory.Board, notify: true);
+            Assert.IsTrue(popup.PreviewPanel.gameObject.activeSelf, "Board tab must show preview panel");
+            Assert.IsTrue(popup.ItemsContainer.gameObject.activeSelf, "Board tab must show items container");
+            Assert.IsFalse(popup.PlaceholderRoot.gameObject.activeSelf, "Board tab must hide placeholder root");
+        }
     }
 }

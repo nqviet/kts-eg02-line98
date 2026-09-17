@@ -262,10 +262,23 @@ namespace Line98.Tests.PlayMode
             yield return SelectOnTab(presRoot, ThemeCategory.Board, ThemeIds.Crystal);
             AssertGameUsesParts(presRoot, ThemeIds.Classic, ThemeIds.Crystal, ThemeIds.Classic);
 
-            // EFFECTS
+            // EFFECTS (placeholder tab: hides items and preview, shows placeholder text; service request still independent)
             SelectPack(presRoot.ThemeSelector, ThemeIds.Classic);
             yield return null;
-            yield return SelectOnTab(presRoot, ThemeCategory.ClearEffect, ThemeIds.Crystal);
+            presRoot.UIRouter.OpenCosmetics();
+            yield return null;
+            CosmeticsPopup popup = presRoot.UIRouter.CosmeticsPopup;
+            Assert.IsNotNull(popup);
+            popup.TabStrip.SetActive(ThemeCategory.ClearEffect, notify: true);
+            yield return null;
+            Assert.IsFalse(popup.ItemsContainer.gameObject.activeSelf, "EFFECTS tab must hide items container.");
+            Assert.IsFalse(popup.PreviewPanel.gameObject.activeSelf, "EFFECTS tab must hide preview panel.");
+            Assert.IsTrue(popup.PlaceholderRoot != null && popup.PlaceholderRoot.gameObject.activeSelf, "EFFECTS tab must show placeholder.");
+            popup.Close();
+            yield return null;
+
+            presRoot.ThemeSelector.RequestTheme(ThemeCategory.ClearEffect, ThemeIds.Crystal);
+            yield return null;
             AssertGameUsesParts(presRoot, ThemeIds.Classic, ThemeIds.Classic, ThemeIds.Crystal);
         }
 
