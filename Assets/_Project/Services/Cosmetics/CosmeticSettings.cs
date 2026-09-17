@@ -1,5 +1,4 @@
 using System;
-using Line98.Data;
 
 namespace Line98.Services
 {
@@ -13,8 +12,11 @@ namespace Line98.Services
         public const int CurrentVersion = 3;
 
         public int Version = CurrentVersion;
-        public string BallThemeId = ThemeIds.Classic;
-        public string BoardThemeId = ThemeIds.Classic;
-        public string ClearEffectThemeId = ThemeIds.Classic;
+
+        // Deliberately unset: an empty id resolves to whatever the catalog's default pack provides,
+        // so the shipped default theme is owned by ThemeCatalogSO alone and never duplicated here.
+        public string BallThemeId = string.Empty;
+        public string BoardThemeId = string.Empty;
+        public string ClearEffectThemeId = string.Empty;
     }
 }

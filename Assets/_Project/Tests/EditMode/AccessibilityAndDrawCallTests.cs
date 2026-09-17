@@ -14,6 +14,7 @@ namespace Line98.Tests.EditMode
         private const string ThemePath = "Assets/_Project/Content/Definitions/BallTheme_Classic.asset";
         private const string FeedbackPath = "Assets/_Project/Content/Definitions/FeedbackProfile_Tiers.asset";
         private const string PolishedBallShaderPath = "Assets/_Project/Content/Shaders/PolishedBall.shader";
+        private const string CrystalBallShaderPath = "Assets/_Project/Content/Shaders/CrystalBall.shader";
         private const string BallRimGlowShaderPath = "Assets/_Project/Content/Shaders/BallRimGlow.shader";
 
         [Test]
@@ -150,6 +151,13 @@ namespace Line98.Tests.EditMode
             Assert.IsTrue(polishedShaderText.Contains("_BaseColor;"), "PolishedBall CBuffer must declare _BaseColor");
             Assert.IsTrue(polishedShaderText.Contains("_PatternStrength;"), "PolishedBall CBuffer must declare _PatternStrength");
             Assert.IsTrue(polishedShaderText.Contains("_PatternRect;"), "PolishedBall CBuffer must declare _PatternRect");
+
+            string crystalShaderText = System.IO.File.ReadAllText(CrystalBallShaderPath);
+            Assert.IsTrue(crystalShaderText.Contains("CBUFFER_START(UnityPerMaterial)"), "CrystalBall shader must contain CBUFFER_START(UnityPerMaterial)");
+            Assert.IsTrue(crystalShaderText.Contains("CBUFFER_END"), "CrystalBall shader must contain CBUFFER_END");
+            Assert.IsTrue(crystalShaderText.Contains("_BaseColor;"), "CrystalBall CBuffer must declare _BaseColor");
+            Assert.IsTrue(crystalShaderText.Contains("_PatternStrength;"), "CrystalBall CBuffer must declare _PatternStrength");
+            Assert.IsTrue(crystalShaderText.Contains("_PatternRect;"), "CrystalBall CBuffer must declare _PatternRect");
 
             string rimGlowShaderText = System.IO.File.ReadAllText(BallRimGlowShaderPath);
             Assert.IsTrue(rimGlowShaderText.Contains("CBUFFER_START(UnityPerMaterial)"), "BallRimGlow shader must contain CBUFFER_START(UnityPerMaterial)");

@@ -216,6 +216,17 @@
 - **Rationale:** Players customize each surface independently, while board and UI art stay visually coherent. Removes the bundle-override/divergence machinery and the dead UI/clear-effect override paths.
 - **Status:** Approved & Implemented.
 
+### D36: Crystal Ships as the Default Theme
+- **Decision:**
+  - `ThemeCatalog_Default.asset` sets `m_DefaultThemeId = "crystal"`: Crystal is the pack a player with no saved selection receives. Because UI follows the board's pack (D35), the default includes `UiTheme_Crystal` — the whole UI skin, not only the board and balls.
+  - **Picker order is unchanged.** Classic stays first in the Themes popup; only the shipped default flips.
+  - `CosmeticSettings` leaves its three part ids **empty** by default. An empty id resolves through `ThemeResolver` to `ThemeCatalogSO.DefaultTheme`, so the shipped default is owned by the catalog asset alone and never duplicated in the settings type.
+  - **Existing players keep their saved selection** under `line98_cosmetics`. Only fresh installs and cleared saves see Crystal; no save-version bump is required.
+  - `CosmeticService.ResetToDefault()` and `ThemeCatalogSO.DefaultPartId(...)` now resolve to Crystal parts, since both are defined in terms of the catalog default.
+  - `ThemeAuthoring.SetupThemesAndCatalog` writes Crystal as both the default id and the Crystal pack's UI part. It previously wrote `m_UiTheme = null`, which silently regressed the pack to the Classic UI on any re-run after `CrystalThemeAuthoring`.
+- **Rationale:** Crystal is the art-complete, accessibility-verified look (D33 pattern parity, 7 gemstone materials), making it the strongest first impression for a new player. Routing the fresh-save default through the catalog keeps a single source of truth, so a future default change is one asset field instead of two places that can drift.
+- **Status:** Approved & Implemented.
+
 ---
 
 ## GDD Gap Resolutions (Concept Vocabularies §14)

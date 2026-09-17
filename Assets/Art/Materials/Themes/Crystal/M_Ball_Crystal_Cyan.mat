@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Ball_Crystal_Cyan
-  m_Shader: {fileID: 4800000, guid: 49ebc6df8baa7b241b2c427fd1b2882b, type: 3}
+  m_Shader: {fileID: 4800000, guid: 07b6b99b1f984d54d9a459c88c1f17bf, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -29,9 +29,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _CoreRadius: 0.64
+    - _Depth: 1.6
     - _PatternStrength: 0
     m_Colors:
-    - _BaseColor: {r: 0.34509805, g: 0.84705883, b: 0.9098039, a: 1}
+    - _BaseColor: {r: 0.34509802, g: 0.84705883, b: 0.9098039, a: 1}
     - _PatternColor: {r: 1, g: 1, b: 1, a: 1}
     - _PatternRect: {r: 0.4082, g: 0.08594, b: 0.18555, a: 0.16016}
   m_BuildTextureStacks: []

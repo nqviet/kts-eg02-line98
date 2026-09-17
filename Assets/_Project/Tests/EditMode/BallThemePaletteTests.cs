@@ -8,7 +8,7 @@ namespace Line98.Tests.EditMode
 {
     /// <summary>
     /// Audits ball theme palettes across all BallThemeSO assets in the project:
-    /// - Exactly 7 materials under Assets/Art/Materials/ with Line98/PolishedBall shader
+    /// - Exactly 7 materials under Assets/Art/Materials/ with the theme's ball shader (Crystal: Line98/CrystalBall, else Line98/PolishedBall)
     /// - 7 distinct _BaseColor values per palette
     /// - D33 pattern rect parity: identical _PatternRect per color index across all ball themes
     /// - Mesh bounds and baked pivot contract preservation
@@ -61,9 +61,16 @@ namespace Line98.Tests.EditMode
                         $"Material '{mat.name}' for theme '{theme.ThemeId}' is located at '{assetPath}', but must reside under 'Assets/Art/Materials/'");
 
                     Assert.IsNotNull(mat.shader, $"Material '{mat.name}' has null shader.");
-                    Assert.AreEqual("Line98/PolishedBall", mat.shader.name, $"Material '{mat.name}' must use shader 'Line98/PolishedBall'.");
+                    string expectedShader = ExpectedBallShader(theme);
+                    Assert.AreEqual(expectedShader, mat.shader.name, $"Material '{mat.name}' must use shader '{expectedShader}'.");
                 }
             }
+        }
+
+        // Crystal renders as a faceted gem; every other theme uses the polished sphere.
+        private static string ExpectedBallShader(BallThemeSO theme)
+        {
+            return theme.ThemeId == ThemeIds.Crystal ? "Line98/CrystalBall" : "Line98/PolishedBall";
         }
 
         [Test]

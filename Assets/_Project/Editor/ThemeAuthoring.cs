@@ -21,6 +21,7 @@ namespace Line98.Editor
         private const string BrandQuadSpritePath = "Assets/Art/Sprites/UI/Icons/ui_brand_ball_quad.png";
         private const string CyanBallSpritePath = "Assets/Art/Sprites/Balls/sp_ball_cyan.png";
         private const string PreviewSpriteSetPath = "Assets/_Project/Content/Themes/UI/PreviewSpriteSet_Default.asset";
+        private const string CrystalUiThemePath = "Assets/_Project/Content/Themes/UI/UiTheme_Crystal.asset";
         private const string CrystalUiSheetPath = "Assets/Art/Sprites/UI/Crystal/sprites_2__crystal.png";
         private const string SparkleClusterSpritePath = "Assets/Art/Sprites/UI/Crystal/sp_fx_sparkles_gold.png";
 
@@ -94,7 +95,8 @@ namespace Line98.Editor
                 .OfType<Sprite>()
                 .FirstOrDefault(sprite => sprite.name == "sp_fx_sunburst_gold");
 
-            var shader = Shader.Find("Line98/PolishedBall");
+            // Crystal balls need the gem shader; PolishedBall renders them as flat Classic spheres.
+            var shader = Shader.Find("Line98/CrystalBall") ?? Shader.Find("Line98/PolishedBall");
 
             // 2. Author 7 Crystal materials with exact pattern rect parity
             var crystalColors = new[]
@@ -302,7 +304,10 @@ namespace Line98.Editor
                 so.FindProperty("m_Thumbnail").objectReferenceValue = cyanBallSprite;
                 so.FindProperty("m_InheritsFrom").objectReferenceValue = themeClassic;
                 so.FindProperty("m_BallTheme").objectReferenceValue = ballCrystal;
-                so.FindProperty("m_UiTheme").objectReferenceValue = null;
+                // The Crystal pack owns its UI theme. Writing null here would silently regress the pack
+                // to the Classic UI whenever this setup re-runs after CrystalThemeAuthoring authored it.
+                var crystalUiTheme = AssetDatabase.LoadAssetAtPath<UiThemeSO>(CrystalUiThemePath);
+                so.FindProperty("m_UiTheme").objectReferenceValue = crystalUiTheme;
                 so.ApplyModifiedProperties();
                 EditorUtility.SetDirty(themeCrystal);
             }
@@ -318,9 +323,10 @@ namespace Line98.Editor
 
             {
                 var so = new SerializedObject(catalog);
-                so.FindProperty("m_DefaultThemeId").stringValue = ThemeIds.Classic;
+                so.FindProperty("m_DefaultThemeId").stringValue = ThemeIds.Crystal;
                 var themesProp = so.FindProperty("m_Themes");
                 themesProp.arraySize = 2;
+                // Picker order stays Classic-first; only the shipped default is Crystal.
                 themesProp.GetArrayElementAtIndex(0).objectReferenceValue = themeClassic;
                 themesProp.GetArrayElementAtIndex(1).objectReferenceValue = themeCrystal;
                 so.ApplyModifiedProperties();

@@ -29,15 +29,38 @@ namespace Line98.Tests.EditMode
         public void CatalogAsset_ExistsAndHasValidDefaultTheme()
         {
             Assert.GreaterOrEqual(m_Catalog.Count, 2, "V1 requires at least 2 shipping themes (classic and crystal).");
-            Assert.AreEqual(ThemeIds.Classic, m_Catalog.DefaultThemeId, "Default theme id must be 'classic'.");
+            Assert.AreEqual(ThemeIds.Crystal, m_Catalog.DefaultThemeId, "Default theme id must be 'crystal'.");
 
             var defaultTheme = m_Catalog.DefaultTheme;
             Assert.IsNotNull(defaultTheme, "DefaultTheme must resolve to a valid ThemeDefinitionSO.");
-            Assert.AreEqual(ThemeIds.Classic, defaultTheme.ThemeId, "Default theme's ThemeId must be 'classic'.");
+            Assert.AreEqual(ThemeIds.Crystal, defaultTheme.ThemeId, "Default theme's ThemeId must be 'crystal'.");
 
             var firstTheme = m_Catalog.ThemeAt(0);
             Assert.IsNotNull(firstTheme, "ThemeAt(0) must exist.");
-            Assert.AreEqual("classic", firstTheme.ThemeId, "Classic must be first in picker order.");
+            Assert.AreEqual("classic", firstTheme.ThemeId, "Classic must stay first in picker order, independently of the default.");
+        }
+
+        /// <summary>
+        /// Guards the shipped default: every category's default part must belong to the default pack,
+        /// so flipping the catalog's default theme moves all four parts together.
+        /// </summary>
+        [Test]
+        public void DefaultPartIds_AreOwnedByTheDefaultPack()
+        {
+            Assert.AreEqual(ThemeIds.Crystal, m_Catalog.DefaultTheme.ThemeId, "Precondition: the default pack is Crystal.");
+
+            var categories = new[] { ThemeCategory.Ball, ThemeCategory.Board, ThemeCategory.Ui, ThemeCategory.ClearEffect };
+            foreach (var category in categories)
+            {
+                string defaultPartId = m_Catalog.DefaultPartId(category);
+                Assert.IsTrue(
+                    m_Catalog.TryGetPackForPart(category, defaultPartId, out var owner),
+                    $"{category} default part '{defaultPartId}' must resolve to a pack.");
+                Assert.AreSame(
+                    m_Catalog.DefaultTheme,
+                    owner,
+                    $"{category} default part '{defaultPartId}' must be owned by the default pack.");
+            }
         }
 
         [Test]

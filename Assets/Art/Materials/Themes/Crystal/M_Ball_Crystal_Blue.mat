@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Ball_Crystal_Blue
-  m_Shader: {fileID: 4800000, guid: 49ebc6df8baa7b241b2c427fd1b2882b, type: 3}
+  m_Shader: {fileID: 4800000, guid: 07b6b99b1f984d54d9a459c88c1f17bf, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -29,6 +29,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _CoreRadius: 0.64
+    - _Depth: 1.6
     - _PatternStrength: 0
     m_Colors:
     - _BaseColor: {r: 0.14901961, g: 0.32156864, b: 0.9490196, a: 1}
