@@ -53,6 +53,7 @@ namespace Line98.Presentation
         public string PartId => m_PartId;
         public bool IsActive => m_IsActive;
         public bool IsApplied => m_IsApplied;
+        public bool IsBorderVisible => m_ActiveBorder != null && m_ActiveBorder.enabled;
         public Button CardButton => m_CardButton;
         public Button StatusButton => m_StatusButton;
 
@@ -87,6 +88,15 @@ namespace Line98.Presentation
                 if (badge != null)
                 {
                     m_StatusButton = badge.GetComponent<Button>();
+                }
+            }
+
+            if (m_ActiveBorder == null)
+            {
+                var border = transform.Find("ActiveBorder");
+                if (border != null)
+                {
+                    m_ActiveBorder = border.GetComponent<Image>();
                 }
             }
 
@@ -198,20 +208,13 @@ namespace Line98.Presentation
         public void SetIsActive(bool isActive)
         {
             m_IsActive = isActive;
-            if (m_ActiveBorder != null)
-            {
-                m_ActiveBorder.enabled = m_IsActive || m_IsApplied;
-            }
+            RefreshActiveBorder();
         }
 
         public void SetIsApplied(bool isApplied, bool punch = false)
         {
             m_IsApplied = isApplied;
-
-            if (m_ActiveBorder != null)
-            {
-                m_ActiveBorder.enabled = m_IsActive || m_IsApplied;
-            }
+            RefreshActiveBorder();
 
             if (m_StatusCheckIcon != null)
             {
@@ -241,6 +244,18 @@ namespace Line98.Presentation
             if (punch && m_TweenRunner != null && m_StatusButton != null)
             {
                 PunchStatusPill();
+            }
+        }
+
+        /// <summary>
+        /// The rim marks the focused (previewed) card only; applied state is
+        /// conveyed by the DEFAULT badge, so it must not keep a card outlined.
+        /// </summary>
+        private void RefreshActiveBorder()
+        {
+            if (m_ActiveBorder != null)
+            {
+                m_ActiveBorder.enabled = m_IsActive;
             }
         }
 
