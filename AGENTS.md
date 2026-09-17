@@ -5,7 +5,7 @@ You are working on a Unity 6 editor through its CLI.
 
 ## Guidelines
 - Do not read project asset file contents, unless .cs files or small-size text files. Use Unity CLI to work with them if applicable.
-- Use the CLI, UI skills /unity-cli, /ui-ugui if needed
+- Use the CLI, GUI skills /unity-cli, /ui-ugui if needed
 
 ## Coding convention
 **Private members**

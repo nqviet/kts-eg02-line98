@@ -70,5 +70,95 @@ namespace Line98.Tests.EditMode
             Assert.IsFalse(session.Mode.UndoAllowed);
             Assert.IsFalse(session.TryUndo());
         }
+
+        [Test]
+        public void FreeAllowance_ExhaustionAndRewardGating()
+        {
+            var nullGate = new NullAdGate();
+            var undoService = new UndoService(UndoRules.Default, nullGate);
+            var session = new GameSession(new ClassicMode(), undoService: undoService);
+            session.StartNewGame(1111U);
+
+            Assert.AreEqual(3, session.FreeUndosRemaining);
+
+            // Make 3 moves and undos
+            for (int i = 0; i < 3; i++)
+            {
+                MakeOneValidMove(session);
+                Assert.IsTrue(session.TryUndo(), $"Undo {i + 1} should succeed");
+                Assert.AreEqual(2 - i, session.FreeUndosRemaining);
+            }
+
+            Assert.AreEqual(0, session.FreeUndosRemaining);
+
+            // 4th move and undo should be denied because NullAdGate provides no rewarded ad
+            MakeOneValidMove(session);
+            bool fourthUndo = session.TryUndo();
+            Assert.IsFalse(fourthUndo, "4th undo without ad gate must be denied");
+        }
+
+        [Test]
+        public void RewardedUndo_SucceedsWithAlwaysGrantGate()
+        {
+            var grantGate = new AlwaysGrantAdGate();
+            var undoService = new UndoService(UndoRules.Default, grantGate);
+            var session = new GameSession(new ClassicMode(), undoService: undoService);
+            session.StartNewGame(2222U);
+
+            // Exhaust 3 free undos
+            for (int i = 0; i < 3; i++)
+            {
+                MakeOneValidMove(session);
+                Assert.IsTrue(session.TryUndo());
+            }
+
+            Assert.AreEqual(0, session.FreeUndosRemaining);
+
+            // 4th undo uses rewarded ad through AlwaysGrantAdGate
+            MakeOneValidMove(session);
+            bool fourthUndo = session.TryUndo();
+            Assert.IsTrue(fourthUndo, "4th undo with AlwaysGrantAdGate must succeed via rewarded path");
+        }
+
+        [Test]
+        public void ZenMode_UnlimitedUndos()
+        {
+            var session = new GameSession(new ZenMode());
+            session.StartNewGame(3333U);
+
+            Assert.IsTrue(session.Mode.UnlimitedUndo);
+
+            // Make 5 moves and undos in Zen mode
+            for (int i = 0; i < 5; i++)
+            {
+                MakeOneValidMove(session);
+                Assert.IsTrue(session.TryUndo());
+            }
+
+            // Free undos counter is not consumed in Zen mode
+            Assert.AreEqual(3, session.FreeUndosRemaining);
+        }
+
+        private static void MakeOneValidMove(GameSession session)
+        {
+            for (int y = 0; y < BoardModel.Size; y++)
+            {
+                for (int x = 0; x < BoardModel.Size; x++)
+                {
+                    GridPos p = new GridPos(x, y);
+                    if (!session.Board.IsEmpty(p))
+                    {
+                        if (x < BoardModel.Size - 1 && session.Board.IsEmpty(new GridPos(x + 1, y)))
+                        {
+                            session.TrySelect(p);
+                            if (session.ExecuteMove(new GridPos(x + 1, y)))
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

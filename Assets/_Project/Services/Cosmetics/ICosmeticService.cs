@@ -19,5 +19,9 @@ namespace Line98.Services
 
         void SetClearEffectTheme(string clearEffectId);
         void ResetToDefault();
+
+        ThemeSelection GetSelection();
+        bool IsPartAvailable(string partId);
+        void ReportPartSwapped(ThemeCategory category, string partId);
     }
 }

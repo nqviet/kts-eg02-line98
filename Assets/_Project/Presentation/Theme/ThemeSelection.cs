@@ -17,5 +17,11 @@ namespace Line98.Presentation
             Ui = ui;
             ClearEffect = clearEffect;
         }
+
+        public static implicit operator Line98.Data.ThemeSelection(ThemeSelection s)
+            => new Line98.Data.ThemeSelection(s.Ball, s.Board, s.Ui, s.ClearEffect);
+
+        public static implicit operator ThemeSelection(Line98.Data.ThemeSelection s)
+            => new ThemeSelection(s.Ball, s.Board, s.Ui, s.ClearEffect);
     }
 }

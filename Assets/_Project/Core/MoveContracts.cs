@@ -89,4 +89,18 @@ namespace Line98.Core
             ComboMultiplier = comboMultiplier;
         }
     }
+
+    public readonly struct MoveRejection
+    {
+        public readonly GridPos From;
+        public readonly GridPos To;
+        public readonly MoveOutcome Outcome;
+
+        public MoveRejection(GridPos from, GridPos to, MoveOutcome outcome)
+        {
+            From = from;
+            To = to;
+            Outcome = outcome;
+        }
+    }
 }

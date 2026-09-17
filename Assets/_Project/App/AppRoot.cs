@@ -31,6 +31,9 @@ namespace Line98.App
         [SerializeField] private Line98.Data.ThemeCatalogSO m_ThemeCatalog;
         [SerializeField] private Line98.Data.AudioCatalogSO m_AudioCatalog;
         [SerializeField] private UnityEngine.Audio.AudioMixer m_MainMixer;
+        [SerializeField] private Line98.Data.BrandConfigSO m_BrandConfig;
+        [SerializeField] private Line98.Data.DailyChallengeConfigSO m_DailyConfig;
+        [SerializeField] private Line98.Data.AchievementCatalogSO m_AchievementCatalog;
 
         private ServiceRegistry m_Registry;
         private ConfigService m_ConfigService;
@@ -39,6 +42,10 @@ namespace Line98.App
         private SaveService m_SaveService;
         private StatisticsService m_StatsService;
         private AchievementService m_AchievementService;
+        private SettingsService m_SettingsService;
+        private DailyChallengeService m_DailyChallengeService;
+        private MenuService m_MenuService;
+        private SessionEventRouter m_SessionEventRouter;
         private IAnalyticsService m_AnalyticsService;
         private IAdService m_AdService;
         private IIapService m_IapService;
@@ -61,6 +68,11 @@ namespace Line98.App
         public Presentation.PresentationRoot PresentationRoot => m_BoundPresentationRoot;
         public Presentation.MenuShowcaseRig ShowcaseRig => m_BoundShowcaseRig;
         public Line98.Data.ThemeCatalogSO ThemeCatalog => m_ThemeCatalog;
+        public Line98.Data.BrandConfigSO BrandConfig => m_BrandConfig;
+        public Line98.Data.DailyChallengeConfigSO DailyConfig => m_DailyConfig;
+        public SettingsService SettingsService => m_SettingsService;
+        public DailyChallengeService DailyChallengeService => m_DailyChallengeService;
+        public MenuService MenuService => m_MenuService;
 
         private void Awake()
         {
@@ -137,22 +149,48 @@ namespace Line98.App
             {
                 m_MainMixer = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Audio.AudioMixer>("Assets/_Project/Content/Audio/MainMixer.mixer");
             }
+            if (m_BrandConfig == null)
+            {
+                m_BrandConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.BrandConfigSO>("Assets/_Project/Content/Definitions/BrandConfig_Default.asset");
+            }
+            if (m_DailyConfig == null)
+            {
+                m_DailyConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.DailyChallengeConfigSO>("Assets/_Project/Content/Definitions/DailyChallengeConfig_Default.asset");
+            }
+            if (m_AchievementCatalog == null)
+            {
+                m_AchievementCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Line98.Data.AchievementCatalogSO>("Assets/_Project/Content/Definitions/AchievementCatalog_Default.asset");
+            }
 #endif
 
             m_ConfigService = new ConfigService(m_ScoreTable, m_SpawnColorPolicy, m_GameConfig);
             m_SaveService = new SaveService(CreateSaveBackend());
             SaveData loadedSave = m_SaveService.LoadGame();
-            PlayerStats initialStats = new PlayerStats
+
+            m_StatsService = new StatisticsService();
+            if (loadedSave != null)
             {
-                BestScore = loadedSave != null ? loadedSave.BestScore : 0,
-                CurrentDailyStreak = loadedSave != null ? loadedSave.DailyStreak : 0,
-                TotalLinesCleared = loadedSave != null ? loadedSave.LinesCleared : 0,
-                TotalMoves = loadedSave != null ? loadedSave.MoveCount : 0,
-                GamesPlayed = loadedSave != null ? loadedSave.TotalGamesPlayed : 0,
-                LongestLine = loadedSave != null ? loadedSave.LongestLine : 0
-            };
-            m_StatsService = new StatisticsService(initialStats);
-            m_AchievementService = new AchievementService();
+                m_StatsService.LoadFrom(loadedSave.Stats);
+            }
+
+            m_AchievementService = new AchievementService(m_AchievementCatalog);
+            if (loadedSave?.Progress != null)
+            {
+                m_AchievementService.LoadState(loadedSave.Progress.UnlockedAchievementIds);
+            }
+
+            m_SettingsService = new SettingsService();
+            if (loadedSave?.Settings != null)
+            {
+                m_SettingsService.Load(loadedSave.Settings);
+            }
+
+            m_DailyChallengeService = new DailyChallengeService(m_DailyConfig, loadedSave?.Daily);
+
+            string todayStr = m_DailyChallengeService.Today;
+            ResumeDecision resumeDecision = ResumeEvaluator.Evaluate(loadedSave, todayStr);
+            m_MenuService = new MenuService(m_StatsService, m_DailyChallengeService, resumeDecision);
+
             m_AnalyticsService = new DebugAnalyticsService();
             m_AdService = new NoOpAdService();
             m_IapService = new EditorStubIapService();
@@ -167,8 +205,14 @@ namespace Line98.App
 
             m_Registry.Register<ConfigService>(m_ConfigService);
             m_Registry.Register<SaveService>(m_SaveService);
+            m_Registry.Register<ISaveService>(m_SaveService);
             m_Registry.Register<StatisticsService>(m_StatsService);
             m_Registry.Register<AchievementService>(m_AchievementService);
+            m_Registry.Register<IAchievementService>(m_AchievementService);
+            m_Registry.Register<SettingsService>(m_SettingsService);
+            m_Registry.Register<ISettingsService>(m_SettingsService);
+            m_Registry.Register<DailyChallengeService>(m_DailyChallengeService);
+            m_Registry.Register<MenuService>(m_MenuService);
             m_Registry.Register<IAnalyticsService>(m_AnalyticsService);
             m_Registry.Register<IAdService>(m_AdService);
             m_Registry.Register<IIapService>(m_IapService);
@@ -192,6 +236,8 @@ namespace Line98.App
             }
 
             m_IsThemeChangeBound = false;
+            m_SessionEventRouter?.Dispose();
+            m_SessionEventRouter = null;
             m_SettingsPresenter?.Dispose();
             m_SettingsPresenter = null;
             m_BoundPresentationRoot = null;
@@ -215,6 +261,7 @@ namespace Line98.App
                 {
                     case Presentation.UiSceneNavigator.GameModeRequest.Daily:
                         m_GameManager?.StartDailyChallenge();
+                        AttachSessionRouter();
                         m_AudioService?.StopAmbience();
                         if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
                         {
@@ -223,12 +270,14 @@ namespace Line98.App
                         break;
                     case Presentation.UiSceneNavigator.GameModeRequest.Zen:
                         m_GameManager?.StartZenMode();
+                        AttachSessionRouter();
                         m_AudioService?.StopMusic(1.0f);
                         m_AudioService?.PlayAmbience("bgm_zen_ambience");
                         break;
                     case Presentation.UiSceneNavigator.GameModeRequest.Classic:
                     default:
                         m_GameManager?.StartClassicGame();
+                        AttachSessionRouter();
                         m_AudioService?.StopAmbience();
                         if (m_AudioService != null && !m_AudioService.IsMusicPlaying)
                         {
@@ -320,8 +369,8 @@ namespace Line98.App
             if (menuPresenter != null)
             {
                 m_BoundMenuPresenter = menuPresenter;
-                int best = m_StatsService?.Stats?.BestScore ?? 0;
-                int streak = m_StatsService?.Stats?.CurrentDailyStreak ?? 0;
+                int best = m_StatsService?.BestScore ?? 0;
+                int streak = m_DailyChallengeService != null ? m_DailyChallengeService.CurrentStreak : (m_StatsService?.CurrentStreak ?? 0);
                 m_BoundMenuPresenter.SetStats(best, streak, m_CosmeticService?.ActiveUiTheme);
             }
 
@@ -444,10 +493,23 @@ namespace Line98.App
             m_Registry.Register<GameSession>(m_Session);
             m_Registry.Register<GameManager>(m_GameManager);
 
-            m_Session.OnMoveCommitted += OnMoveCommitted;
-            m_Session.OnGameOver += OnGameOver;
+            AttachSessionRouter();
 
             BindPresentationRoot();
+        }
+
+        private void AttachSessionRouter()
+        {
+            m_SessionEventRouter?.Dispose();
+            m_SessionEventRouter = new SessionEventRouter(
+                m_Session,
+                m_StatsService,
+                m_AchievementService,
+                m_DailyChallengeService,
+                m_SaveService,
+                m_MenuService,
+                m_AnalyticsService,
+                m_Session.Mode);
         }
 
         private void Update()
@@ -483,7 +545,8 @@ namespace Line98.App
             if (m_SettingsPresenter != null &&
                 m_SettingsPresenter.View == m_BoundShell.SettingsPopup &&
                 m_SettingsPresenter.AudioService == audioService &&
-                m_SettingsPresenter.IapService == m_IapService)
+                m_SettingsPresenter.IapService == m_IapService &&
+                m_SettingsPresenter.SettingsService == m_SettingsService)
             {
                 return;
             }
@@ -493,7 +556,9 @@ namespace Line98.App
                 m_BoundShell.SettingsPopup,
                 audioService,
                 m_IapService,
-                m_BoundShell);
+                m_BoundShell,
+                m_SettingsService,
+                m_BrandConfig);
             m_SettingsPresenter.OnReduceEffectsChanged += HandleReduceEffectsChanged;
         }
 
@@ -509,27 +574,12 @@ namespace Line98.App
             }
         }
 
-        private void OnMoveCommitted(Core.MoveResult result)
+        private void OnApplicationFocus(bool hasFocus)
         {
-            m_StatsService?.RecordMove();
-            if (result.Outcome == Core.MoveOutcome.Cleared)
+            if (!hasFocus)
             {
-                m_StatsService?.RecordLineClear(result.Cleared.LongestRun, result.Cleared.RunCount, result.ScoreDelta);
-                m_AchievementService?.CheckLine(result.Cleared.LongestRun);
-                m_AchievementService?.CheckScore(m_Session.Score);
+                Autosave();
             }
-
-            Autosave();
-        }
-
-        private void OnGameOver(SessionSummary summary)
-        {
-            if (m_Session?.Mode is DailyChallengeMode)
-            {
-                m_StatsService?.RecordDailyCompletion();
-            }
-            m_StatsService?.RecordGameOver(summary.FinalScore);
-            Autosave();
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -551,6 +601,9 @@ namespace Line98.App
             {
                 s_Instance = null;
             }
+
+            m_SessionEventRouter?.Dispose();
+            m_SessionEventRouter = null;
 
             m_AudioService?.Dispose();
             m_AudioService = null;
@@ -577,12 +630,17 @@ namespace Line98.App
                 MoveCount = m_Session.MoveCount,
                 LinesCleared = m_Session.LinesCleared,
                 FreeUndos = m_Session.FreeUndosRemaining,
-                BestScore = m_StatsService.Stats.BestScore,
-                TotalGamesPlayed = m_StatsService.Stats.GamesPlayed,
-                LongestLine = m_StatsService.Stats.LongestLine,
-                DailyStreak = m_StatsService.Stats.CurrentDailyStreak
+                BestScore = m_StatsService?.BestScore ?? 0,
+                TotalGamesPlayed = m_StatsService?.GamesPlayed ?? 0,
+                LongestLine = m_StatsService?.LongestLine ?? 0,
+                DailyStreak = m_DailyChallengeService != null ? m_DailyChallengeService.CurrentStreak : (m_StatsService?.CurrentStreak ?? 0),
+                Stats = m_StatsService?.Snapshot() ?? new StatsSave(),
+                Progress = new ProgressSave { UnlockedAchievementIds = m_AchievementService?.SaveState() ?? new System.Collections.Generic.List<string>() },
+                Settings = m_SettingsService?.Snapshot() ?? new SettingsSave(),
+                Daily = m_DailyChallengeService?.SaveState() ?? new DailySave()
             };
 
+            data.Session = SessionSaveMapper.ToSave(m_Session.CaptureState(), DateTime.UtcNow.Ticks);
             m_SaveService.SaveGame(data);
         }
     }

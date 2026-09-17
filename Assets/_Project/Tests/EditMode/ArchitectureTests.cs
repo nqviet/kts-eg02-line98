@@ -6,6 +6,7 @@ using UnityEngine;
 using Line98.Core;
 using Line98.Gameplay;
 using Line98.Services;
+using Line98.App;
 
 namespace Line98.Tests.EditMode
 {
@@ -209,6 +210,40 @@ namespace Line98.Tests.EditMode
 
             Assert.IsTrue(typeof(IIapService).IsAssignableFrom(typeof(IPurchaseService)),
                 "IPurchaseService must inherit or alias IIapService per ADR D26");
+        }
+
+        [Test]
+        public void ReadModels_HaveNoSpriteOrColorFields()
+        {
+            Type[] readModelTypes = new[]
+            {
+                typeof(ProgressReadModel),
+                typeof(StatisticsReadModel),
+                typeof(AchievementReadModel),
+                typeof(SettingsReadModel),
+                typeof(MenuSnapshot)
+            };
+
+            foreach (Type type in readModelTypes)
+            {
+                var fields = type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                foreach (var field in fields)
+                {
+                    Assert.AreNotEqual(typeof(Sprite), field.FieldType, $"Field {field.Name} on {type.Name} must not be Sprite");
+                    Assert.AreNotEqual(typeof(Color), field.FieldType, $"Field {field.Name} on {type.Name} must not be Color");
+                }
+            }
+        }
+
+        [Test]
+        public void NewGame_Path_IsFreeOfAdGate()
+        {
+            var startMethod = typeof(GameSession).GetMethod(nameof(GameSession.StartNewGame));
+            Assert.IsNotNull(startMethod);
+            foreach (var param in startMethod.GetParameters())
+            {
+                Assert.IsFalse(typeof(IAdGate).IsAssignableFrom(param.ParameterType), "StartNewGame must not require IAdGate");
+            }
         }
 
         private static void AssertNoUnityRandomInDir(string dir)

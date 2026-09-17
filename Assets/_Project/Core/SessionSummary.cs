@@ -13,6 +13,7 @@ namespace Line98.Core
         public int LongestLine { get; }
         public int LinesCleared { get; }
         public int TotalMoves { get; }
+        public int MoveCount => TotalMoves;
         public bool CanContinue { get; }
 
         public SessionSummary(

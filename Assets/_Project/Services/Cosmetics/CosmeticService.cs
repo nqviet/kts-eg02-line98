@@ -107,6 +107,20 @@ namespace Line98.Services
             SetClearEffectTheme(DefaultPartId(ThemeCategory.ClearEffect));
         }
 
+        public ThemeSelection GetSelection()
+        {
+            return new ThemeSelection(m_ActiveBallTheme, m_ActiveBoardTheme, m_ActiveUiTheme, m_ActiveClearEffect);
+        }
+
+        public bool IsPartAvailable(string partId)
+        {
+            return true;
+        }
+
+        public void ReportPartSwapped(ThemeCategory category, string partId)
+        {
+        }
+
         private void LoadAndInitialize()
         {
             string json = m_Backend?.Load(s_SaveKey);
