@@ -278,5 +278,51 @@ namespace Line98.Tests.EditMode
             session2.StartNewGame(2222U);
             Assert.DoesNotThrow(() => m_Hud.Initialize(session2));
         }
+
+        [Test]
+        public void DebugHud_ThemeSelection_SelectsThemeAndUpdatesActiveThemeId()
+        {
+            m_Hud.SelectTheme("classic");
+            Assert.AreEqual("classic", m_Hud.ActiveThemeId);
+            Assert.AreEqual("Classic", m_Hud.GetActiveThemeDisplayName());
+
+            m_Hud.SelectTheme("crystal");
+            Assert.AreEqual("crystal", m_Hud.ActiveThemeId);
+            Assert.AreEqual("Crystal Garden", m_Hud.GetActiveThemeDisplayName());
+        }
+
+        [Test]
+        public void DebugHud_ThemeDropdown_TogglesDropdownState()
+        {
+            Assert.IsFalse(m_Hud.IsThemeDropdownOpen);
+
+            m_Hud.IsThemeDropdownOpen = true;
+            Assert.IsTrue(m_Hud.IsThemeDropdownOpen);
+
+            m_Hud.IsThemeDropdownOpen = false;
+            Assert.IsFalse(m_Hud.IsThemeDropdownOpen);
+        }
+
+        [Test]
+        public void DebugHud_ThemeSelection_IntegratesWithCosmeticServiceWhenRegistered()
+        {
+            var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Data.ThemeCatalogSO>(
+                "Assets/_Project/Content/Definitions/ThemeCatalog_Default.asset");
+            var cosmeticService = new Services.CosmeticService(catalog, new Services.InMemorySaveBackend());
+            ServiceRegistry.Instance.Register<Services.ICosmeticService>(cosmeticService);
+
+            try
+            {
+                m_Hud.SelectTheme("classic");
+                Assert.AreEqual("classic", cosmeticService.ActiveBoardThemeId);
+                Assert.AreEqual("classic", cosmeticService.ActiveBallThemeId);
+                Assert.AreEqual("classic", cosmeticService.ActiveClearEffectThemeId);
+                Assert.AreEqual("classic", m_Hud.ActiveThemeId);
+            }
+            finally
+            {
+                ServiceRegistry.Instance.Clear();
+            }
+        }
     }
 }

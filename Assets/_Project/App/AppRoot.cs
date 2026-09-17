@@ -60,6 +60,7 @@ namespace Line98.App
         public Presentation.IThemeSelector ThemeSelector => m_ThemeSelector;
         public Presentation.PresentationRoot PresentationRoot => m_BoundPresentationRoot;
         public Presentation.MenuShowcaseRig ShowcaseRig => m_BoundShowcaseRig;
+        public Line98.Data.ThemeCatalogSO ThemeCatalog => m_ThemeCatalog;
 
         private void Awake()
         {

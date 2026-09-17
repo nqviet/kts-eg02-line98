@@ -62,6 +62,7 @@ namespace Line98.App
 
         private static DebugHud s_Instance;
 
+        [SerializeField] private Data.ThemeCatalogSO m_ThemeCatalog;
         private GameSession m_Session;
         private GridPos? m_HintFrom;
         private GridPos? m_HintTo;
@@ -71,6 +72,11 @@ namespace Line98.App
         private bool m_IsHudVisible;
         private Vector2 m_ScrollPosition;
         private DebugTab m_ActiveTab = DebugTab.All;
+        private bool m_IsThemeDropdownOpen;
+        private string m_CurrentSelectedThemeId;
+
+        private static Texture2D s_SolidBgTexture;
+        private static Texture2D s_SolidBorderTexture;
 
         /// <summary>
         /// Mock game-over payloads covering every conditional branch of the popup:
@@ -137,6 +143,218 @@ namespace Line98.App
         {
             get => m_StatusMessage;
             set => m_StatusMessage = value;
+        }
+
+        // ---------------------------------------------------------------- theme selection
+
+        /// <summary>Allows configuring or overriding the ThemeCatalog used by the HUD.</summary>
+        public Data.ThemeCatalogSO ThemeCatalog
+        {
+            get => ResolveCatalog();
+            set => m_ThemeCatalog = value;
+        }
+
+        /// <summary>Theme id currently selected or active.</summary>
+        public string ActiveThemeId => GetActiveThemeId();
+
+        /// <summary>Whether the theme selection dropdown in the HUD is currently expanded.</summary>
+        public bool IsThemeDropdownOpen
+        {
+            get => m_IsThemeDropdownOpen;
+            set => m_IsThemeDropdownOpen = value;
+        }
+
+        /// <summary>Selects a theme pack across all active services and presentation components.</summary>
+        public void SelectTheme(string themeId)
+        {
+            if (string.IsNullOrEmpty(themeId))
+            {
+                return;
+            }
+
+            m_CurrentSelectedThemeId = themeId;
+            bool applied = false;
+
+            // 1. ICosmeticService via ServiceRegistry
+            if (ServiceRegistry.Instance.TryResolve<Services.ICosmeticService>(out var cosmeticService) && cosmeticService != null)
+            {
+                cosmeticService.SetBoardTheme(themeId);
+                cosmeticService.SetBallTheme(themeId);
+                cosmeticService.SetClearEffectTheme(themeId);
+                applied = true;
+            }
+
+            // 2. IThemeSelector via ServiceRegistry
+            if (ServiceRegistry.Instance.TryResolve<Presentation.IThemeSelector>(out var selector) && selector != null)
+            {
+                selector.RequestTheme(Data.ThemeCategory.Board, themeId);
+                selector.RequestTheme(Data.ThemeCategory.Ball, themeId);
+                selector.RequestTheme(Data.ThemeCategory.ClearEffect, themeId);
+                applied = true;
+            }
+
+            // 3. PresentationRoot in scene
+            var presRoot = FindAnyObjectByType<Presentation.PresentationRoot>();
+            if (presRoot != null && presRoot.ThemeSelector != null && presRoot.ThemeSelector != selector)
+            {
+                presRoot.ThemeSelector.RequestTheme(Data.ThemeCategory.Board, themeId);
+                presRoot.ThemeSelector.RequestTheme(Data.ThemeCategory.Ball, themeId);
+                presRoot.ThemeSelector.RequestTheme(Data.ThemeCategory.ClearEffect, themeId);
+                applied = true;
+            }
+
+            // 4. UiShell in scene
+            var shell = ResolveShell();
+            if (shell != null && shell.ThemeSelector != null && shell.ThemeSelector != selector)
+            {
+                shell.ThemeSelector.RequestTheme(Data.ThemeCategory.Board, themeId);
+                shell.ThemeSelector.RequestTheme(Data.ThemeCategory.Ball, themeId);
+                shell.ThemeSelector.RequestTheme(Data.ThemeCategory.ClearEffect, themeId);
+                applied = true;
+            }
+
+            // 5. Direct catalog fallback application if needed
+            var catalog = ResolveCatalog();
+            if (catalog != null && catalog.TryGetTheme(themeId, out var themeDef) && themeDef != null)
+            {
+                if (presRoot != null && !applied)
+                {
+                    if (themeDef.BoardTheme != null && themeDef.UiTheme != null)
+                    {
+                        presRoot.ApplyBoardAndUi(themeDef.BoardTheme, themeDef.UiTheme);
+                    }
+                    if (themeDef.BallTheme != null)
+                    {
+                        presRoot.ApplyBallTheme(themeDef.BallTheme);
+                    }
+                    if (themeDef.ClearEffect != null)
+                    {
+                        presRoot.ApplyClearEffect(themeDef.ClearEffect);
+                    }
+                    applied = true;
+                }
+
+                if (shell != null)
+                {
+                    if (themeDef.UiTheme != null) shell.ApplyTheme(themeDef.UiTheme);
+                    if (themeDef.BallTheme != null) shell.ApplyBallTheme(themeDef.BallTheme);
+                }
+            }
+
+            m_StatusMessage = applied
+                ? $"Switched theme to '{themeId}'."
+                : $"Selected theme '{themeId}'.";
+        }
+
+        /// <summary>Resolves the currently active theme identifier.</summary>
+        public string GetActiveThemeId()
+        {
+            if (ServiceRegistry.Instance.TryResolve<Services.ICosmeticService>(out var cosmeticService) && cosmeticService != null)
+            {
+                return cosmeticService.ActiveBoardThemeId;
+            }
+
+            if (ServiceRegistry.Instance.TryResolve<Presentation.IThemeSelector>(out var selector) && selector != null)
+            {
+                return selector.ActiveBoardThemeId;
+            }
+
+            var presRoot = FindAnyObjectByType<Presentation.PresentationRoot>();
+            if (presRoot != null && presRoot.ThemeSelector != null)
+            {
+                return presRoot.ThemeSelector.ActiveBoardThemeId;
+            }
+
+            var shell = ResolveShell();
+            if (shell != null && shell.ThemeSelector != null)
+            {
+                return shell.ThemeSelector.ActiveBoardThemeId;
+            }
+
+            if (!string.IsNullOrEmpty(m_CurrentSelectedThemeId))
+            {
+                return m_CurrentSelectedThemeId;
+            }
+
+            var catalog = ResolveCatalog();
+            return catalog != null ? catalog.DefaultThemeId : Data.ThemeIds.Crystal;
+        }
+
+        /// <summary>Resolves the display name of the currently active theme.</summary>
+        public string GetActiveThemeDisplayName()
+        {
+            string currentId = GetActiveThemeId();
+            var catalog = ResolveCatalog();
+            if (catalog != null && catalog.TryGetTheme(currentId, out var themeDef) && themeDef != null)
+            {
+                return themeDef.DisplayName;
+            }
+
+            if (string.Equals(currentId, Data.ThemeIds.Crystal, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Crystal";
+            }
+
+            if (string.Equals(currentId, Data.ThemeIds.Classic, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Classic";
+            }
+
+            return currentId;
+        }
+
+        private Data.ThemeCatalogSO ResolveCatalog()
+        {
+            if (m_ThemeCatalog != null)
+            {
+                return m_ThemeCatalog;
+            }
+
+            Presentation.UiShell shell = ResolveShell();
+            if (shell != null && shell.ThemeCatalog != null)
+            {
+                return shell.ThemeCatalog;
+            }
+
+            if (AppRoot.Instance != null && AppRoot.Instance.ThemeCatalog != null)
+            {
+                return AppRoot.Instance.ThemeCatalog;
+            }
+
+#if UNITY_EDITOR
+            m_ThemeCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Data.ThemeCatalogSO>("Assets/_Project/Content/Definitions/ThemeCatalog_Default.asset");
+            if (m_ThemeCatalog != null)
+            {
+                return m_ThemeCatalog;
+            }
+#endif
+
+            return null;
+        }
+
+        private List<(string id, string name)> GetAvailableThemes()
+        {
+            var list = new List<(string id, string name)>();
+            var catalog = ResolveCatalog();
+            if (catalog != null && catalog.Count > 0)
+            {
+                for (int i = 0; i < catalog.Count; i++)
+                {
+                    var theme = catalog.ThemeAt(i);
+                    if (theme != null)
+                    {
+                        list.Add((theme.ThemeId, theme.DisplayName));
+                    }
+                }
+            }
+
+            if (list.Count == 0)
+            {
+                list.Add((Data.ThemeIds.Crystal, "Crystal"));
+                list.Add((Data.ThemeIds.Classic, "Classic"));
+            }
+
+            return list;
         }
 
         // ---------------------------------------------------------------- session and gameplay
@@ -463,11 +681,14 @@ namespace Line98.App
                 return;
             }
 
+            EnsureSolidTextures();
+
             int prevLabelSize = GUI.skin.label.fontSize;
             int prevButtonSize = GUI.skin.button.fontSize;
             bool prevWordWrap = GUI.skin.label.wordWrap;
             bool prevRichText = GUI.skin.label.richText;
             Color prevBg = GUI.backgroundColor;
+            Color prevColor = GUI.color;
 
             try
             {
@@ -475,50 +696,90 @@ namespace Line98.App
                 GUI.skin.label.richText = true;
                 GUI.skin.button.fontSize = 12;
 
-                float maxWidth = 420f;
-                float width = Mathf.Min(maxWidth, Screen.width - 20f);
-                float maxHeight = Mathf.Max(240f, Screen.height - 20f);
-                float targetHeight = m_ActiveTab == DebugTab.PopupHub ? Mathf.Min(430f, maxHeight) : maxHeight;
-                Rect hudRect = new Rect(10, 10, width, targetHeight);
+                var themes = GetAvailableThemes();
+                int themeCount = themes.Count;
+                float dropdownHeight = m_IsThemeDropdownOpen ? (themeCount * 26f + 8f) : 0f;
+                float width = 280f;
+                float baseHeight = 150f;
+                float height = baseHeight + dropdownHeight;
 
-                GUILayout.BeginArea(hudRect, GUI.skin.box);
+                Rect hudRect = new Rect(10, 10, width, height);
+
+                // 1. Draw solid, 100% opaque background and border - NO TRANSPARENCY
+                GUI.color = Color.white;
+                GUI.DrawTexture(hudRect, s_SolidBorderTexture);
+                Rect innerRect = new Rect(hudRect.x + 1, hudRect.y + 1, hudRect.width - 2, hudRect.height - 2);
+                GUI.DrawTexture(innerRect, s_SolidBgTexture);
+
+                // 2. Draw content inside area
+                Rect contentRect = new Rect(hudRect.x + 10, hudRect.y + 8, hudRect.width - 20, hudRect.height - 16);
+                GUILayout.BeginArea(contentRect, GUIStyle.none);
 
                 // Window Header
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("<b>LINE 98 — Debug Hub</b>", GUI.skin.label);
-                if (GUILayout.Button(new GUIContent("—", "Hide the Debug Hub (F1)"), GUILayout.Width(26), GUILayout.Height(20)))
+                GUILayout.Label("<b>LINE 98 — Debug HUD</b>", GUI.skin.label);
+                if (GUILayout.Button(new GUIContent("—", "Hide Debug HUD (F1)"), GUILayout.Width(24), GUILayout.Height(20)))
                 {
                     m_IsHudVisible = false;
                 }
                 GUILayout.EndHorizontal();
 
-                // Tab Switcher
+                GUILayout.Space(6);
+
+                // Game-Over Popup
+                GUILayout.Label("<b>Game Over Popup</b>");
                 GUILayout.BeginHorizontal();
-                DrawTabButton("All", DebugTab.All);
-                DrawTabButton("Popup Hub", DebugTab.PopupHub);
-                DrawTabButton("Gameplay", DebugTab.Gameplay);
+                bool isGameOverOpen = IsPopupOpen(Presentation.UiPopupId.GameOver);
+                GUI.backgroundColor = isGameOverOpen
+                    ? new Color(0.95f, 0.4f, 0.35f, 1f)
+                    : new Color(0.35f, 0.8f, 0.45f, 1f);
+                string toggleText = isGameOverOpen ? "Hide Popup" : "Show Popup";
+                if (GUILayout.Button(toggleText, GUILayout.Height(28)))
+                {
+                    ToggleMockPopup(Presentation.UiPopupId.GameOver);
+                }
+                GUI.backgroundColor = prevBg;
+
+                if (GUILayout.Button($"Fixture {m_MockSummaryIndex + 1}/{s_MockSummaries.Length} ↻", GUILayout.Width(92), GUILayout.Height(28)))
+                {
+                    CycleMockFixture();
+                }
                 GUILayout.EndHorizontal();
 
-                GUILayout.Space(4);
+                GUILayout.Space(8);
 
-                m_ScrollPosition = GUILayout.BeginScrollView(m_ScrollPosition, false, false);
+                // Theme Select Box
+                GUILayout.Label("<b>Theme</b>");
+                string currentId = GetActiveThemeId();
+                string currentName = GetActiveThemeDisplayName();
 
-                if (m_ActiveTab == DebugTab.All || m_ActiveTab == DebugTab.Gameplay)
+                string arrow = m_IsThemeDropdownOpen ? "▲" : "▼";
+                if (GUILayout.Button($" {currentName}  {arrow}", GUILayout.Height(28)))
                 {
-                    DrawGameplaySection();
+                    m_IsThemeDropdownOpen = !m_IsThemeDropdownOpen;
                 }
 
-                if (m_ActiveTab == DebugTab.All)
+                if (m_IsThemeDropdownOpen)
                 {
-                    GUILayout.Space(8);
+                    GUILayout.Space(2);
+                    for (int i = 0; i < themes.Count; i++)
+                    {
+                        var (id, name) = themes[i];
+                        bool isSelected = string.Equals(id, currentId, StringComparison.OrdinalIgnoreCase);
+                        GUI.backgroundColor = isSelected
+                            ? new Color(0.35f, 0.75f, 1f, 1f)
+                            : new Color(0.22f, 0.25f, 0.30f, 1f);
+
+                        string marker = isSelected ? "● " : "   ";
+                        if (GUILayout.Button($"{marker}{name}", GUILayout.Height(24)))
+                        {
+                            SelectTheme(id);
+                            m_IsThemeDropdownOpen = false;
+                        }
+                    }
+                    GUI.backgroundColor = prevBg;
                 }
 
-                if (m_ActiveTab == DebugTab.All || m_ActiveTab == DebugTab.PopupHub)
-                {
-                    DrawPopupDebugSection();
-                }
-
-                GUILayout.EndScrollView();
                 GUILayout.EndArea();
             }
             finally
@@ -528,150 +789,27 @@ namespace Line98.App
                 GUI.skin.label.wordWrap = prevWordWrap;
                 GUI.skin.label.richText = prevRichText;
                 GUI.backgroundColor = prevBg;
+                GUI.color = prevColor;
             }
         }
 
-        private void DrawTabButton(string label, DebugTab tab)
+        private static void EnsureSolidTextures()
         {
-            Color prev = GUI.backgroundColor;
-            if (m_ActiveTab == tab)
+            if (s_SolidBgTexture == null)
             {
-                GUI.backgroundColor = new Color(0.35f, 0.7f, 1f);
-            }
-            if (GUILayout.Button(label, GUILayout.Height(22)))
-            {
-                m_ActiveTab = tab;
-            }
-            GUI.backgroundColor = prev;
-        }
-
-        private void DrawGameplaySection()
-        {
-            if (m_Session == null)
-            {
-                GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("<color=#FFA726><b>Gameplay Session Inactive</b></color>\n(Scene tested in isolation outside Boot)");
-                if (GUILayout.Button("Start Standalone Game Session"))
-                {
-                    StartStandaloneSession();
-                }
-                GUILayout.EndVertical();
-                return;
+                s_SolidBgTexture = new Texture2D(1, 1);
+                s_SolidBgTexture.hideFlags = HideFlags.DontSave;
+                s_SolidBgTexture.SetPixel(0, 0, new Color(0.12f, 0.13f, 0.16f, 1.0f));
+                s_SolidBgTexture.Apply();
             }
 
-            // Session Stats
-            GUILayout.Label($"Mode: {m_Session.Mode?.DisplayName ?? "None"} | Phase: {m_Session.Phase}");
-            GUILayout.Label($"Score: <b>{m_Session.Score}</b> | Moves: {m_Session.MoveCount} | Cleared: {m_Session.LinesCleared}");
-            GUILayout.Label($"Free Undos: {m_Session.FreeUndosRemaining} | Empty Cells: {m_Session.Board?.EmptyCount ?? 0}/81");
-
-            // Preview Queue Display
-            if (m_Session.PreviewQueue != null)
+            if (s_SolidBorderTexture == null)
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Next 3: ", GUILayout.Width(50));
-                for (int i = 0; i < m_Session.PreviewQueue.Capacity; i++)
-                {
-                    BallColor color = m_Session.PreviewQueue[i];
-                    Color oldColor = GUI.backgroundColor;
-                    GUI.backgroundColor = GetBallUiColor(color);
-                    GUILayout.Button(color.ToString(), GUILayout.Width(64), GUILayout.Height(22));
-                    GUI.backgroundColor = oldColor;
-                }
-                GUILayout.EndHorizontal();
+                s_SolidBorderTexture = new Texture2D(1, 1);
+                s_SolidBorderTexture.hideFlags = HideFlags.DontSave;
+                s_SolidBorderTexture.SetPixel(0, 0, new Color(0.30f, 0.34f, 0.40f, 1.0f));
+                s_SolidBorderTexture.Apply();
             }
-
-            GUILayout.Space(4);
-            GUILayout.Label($"Status: {m_StatusMessage}");
-            GUILayout.Space(4);
-
-            // 9x9 Board Grid
-            float cellSize = 36f;
-            for (int y = 0; y < BoardModel.Size; y++)
-            {
-                GUILayout.BeginHorizontal();
-                for (int x = 0; x < BoardModel.Size; x++)
-                {
-                    GridPos pos = new GridPos(x, y);
-                    BallColor color = m_Session.Board.ColorAt(pos);
-
-                    Color prevBg = GUI.backgroundColor;
-
-                    bool isSelected = m_Session.HasSelection && m_Session.SelectedPos == pos;
-                    bool isHint = (m_HintFrom.HasValue && m_HintFrom.Value == pos) ||
-                                  (m_HintTo.HasValue && m_HintTo.Value == pos);
-
-                    if (isSelected)
-                    {
-                        GUI.backgroundColor = Color.cyan;
-                    }
-                    else if (isHint)
-                    {
-                        GUI.backgroundColor = Color.yellow;
-                    }
-                    else if (color != BallColor.None)
-                    {
-                        GUI.backgroundColor = GetBallUiColor(color);
-                    }
-                    else
-                    {
-                        GUI.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
-                    }
-
-                    string cellLabel = color != BallColor.None ? GetColorShortCode(color) : "";
-                    if (GUILayout.Button(cellLabel, GUILayout.Width(cellSize), GUILayout.Height(cellSize)))
-                    {
-                        OnCellClicked(pos);
-                    }
-
-                    GUI.backgroundColor = prevBg;
-                }
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.Space(6);
-
-            // Control Buttons
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Classic"))
-            {
-                StartClassicGame();
-            }
-
-            if (GUILayout.Button("Daily"))
-            {
-                StartDailyChallenge();
-            }
-
-            if (GUILayout.Button("Zen"))
-            {
-                StartZenGame();
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUI.enabled = CanUndo(m_Session);
-            if (GUILayout.Button("Undo Move"))
-            {
-                UndoMove();
-            }
-            GUI.enabled = true;
-
-            if (GUILayout.Button("Hint"))
-            {
-                RequestHint();
-            }
-
-            if (m_Session.Phase == GamePhase.GameOver)
-            {
-                Color prevCol = GUI.backgroundColor;
-                GUI.backgroundColor = Color.green;
-                if (GUILayout.Button("Revive (+3 Free)"))
-                {
-                    Revive(3);
-                }
-                GUI.backgroundColor = prevCol;
-            }
-            GUILayout.EndHorizontal();
         }
 
         /// <summary>
@@ -731,104 +869,6 @@ namespace Line98.App
             }
         }
 
-        private void DrawPopupDebugSection()
-        {
-            GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label("<b>Popup Debug Hub (Mock Data)</b>", GUI.skin.label);
-
-            Presentation.UiShell shell = ResolveShell();
-            if (shell == null)
-            {
-                GUILayout.Label("<color=#FF7043>No UiShell detected in scene.</color>");
-                GUILayout.EndVertical();
-                return;
-            }
-
-            int registered = shell.PopupRegistry != null ? shell.PopupRegistry.RegisteredCount : 0;
-            string topPopupName = shell.IsAnyPopupOpen ? (shell.TopPopup != null ? shell.TopPopup.GetType().Name : "Open") : "None";
-            GUILayout.Label($"<b>Modal State:</b> Open: <b>{shell.IsAnyPopupOpen}</b> | Reg: <b>{registered}</b> | Top: <b>{topPopupName}</b>");
-
-            SessionSummary summary = s_MockSummaries[m_MockSummaryIndex];
-            bool isNewBest = summary.FinalScore > 0 && summary.FinalScore >= summary.BestScore;
-
-            // Structured Fixture Card with clean word wrap and N0 formatting
-            GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label($"<b>Fixture {m_MockSummaryIndex + 1}/{s_MockSummaries.Length}</b> " +
-                            (isNewBest ? "<color=#FFD54F>★ [NEW BEST]</color>" : ""),
-                            new GUIStyle(GUI.skin.label) { richText = true });
-            if (GUILayout.Button("Cycle Next ↻", GUILayout.Width(100), GUILayout.Height(22)))
-            {
-                CycleMockFixture();
-            }
-            GUILayout.EndHorizontal();
-
-            GUIStyle statStyle = new GUIStyle(GUI.skin.label) { richText = true, fontSize = 12, wordWrap = true };
-            GUILayout.Label($"Score: <b>{summary.FinalScore:N0}</b>   |   Best: <b>{summary.BestScore:N0}</b>", statStyle);
-            GUILayout.Label($"Lines: <b>{summary.LinesCleared}</b>   |   Longest: <b>{summary.LongestLine}</b>   |   Moves: <b>{summary.TotalMoves}</b>", statStyle);
-            GUILayout.Label($"Can Continue: <b>{(summary.CanContinue ? "<color=#81C784>Yes</color>" : "<color=#E57373>No</color>")}</b>", statStyle);
-            GUILayout.EndVertical();
-
-            // Game-Over Main Toggle Button
-            bool isGameOverOpen = IsPopupOpen(Presentation.UiPopupId.GameOver);
-            Color prevBg = GUI.backgroundColor;
-            GUI.backgroundColor = isGameOverOpen
-                ? new Color(0.95f, 0.4f, 0.35f)
-                : new Color(0.35f, 0.8f, 0.45f);
-            if (GUILayout.Button(isGameOverOpen ? "Hide Game-Over Popup" : "Show Game-Over Popup", GUILayout.Height(30)))
-            {
-                ToggleMockPopup(Presentation.UiPopupId.GameOver);
-            }
-            GUI.backgroundColor = prevBg;
-
-            // Secondary Popups
-            GUILayout.BeginHorizontal();
-            DrawPopupToggleButton(Presentation.UiPopupId.Confirm, "Confirm");
-            DrawPopupToggleButton(Presentation.UiPopupId.Settings, "Settings");
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            DrawPopupToggleButton(Presentation.UiPopupId.Statistics, "Stats");
-            DrawPopupToggleButton(Presentation.UiPopupId.Cosmetics, "Themes");
-            GUILayout.EndHorizontal();
-
-            if (GUILayout.Button("Close All Popups", GUILayout.Height(24)))
-            {
-                CloseAllPopups();
-            }
-
-            // Inline Feedback inside the Popup Debug Hub
-            if (!string.IsNullOrEmpty(m_StatusMessage))
-            {
-                GUIStyle feedbackStyle = new GUIStyle(GUI.skin.label)
-                {
-                    richText = true,
-                    fontSize = 11,
-                    wordWrap = true,
-                    fontStyle = FontStyle.Italic
-                };
-                GUILayout.Label($"<color=#90A4AE>Status: {m_StatusMessage}</color>", feedbackStyle);
-            }
-
-            GUILayout.EndVertical();
-        }
-
-        private void DrawPopupToggleButton(Presentation.UiPopupId id, string label)
-        {
-            bool isOpen = IsPopupOpen(id);
-            Color prevBg = GUI.backgroundColor;
-            GUI.backgroundColor = isOpen
-                ? new Color(0.95f, 0.4f, 0.35f)
-                : new Color(0.45f, 0.65f, 0.85f);
-
-            string btnText = isOpen ? $"Hide {label} (Open)" : $"Show {label}";
-            if (GUILayout.Button(btnText, GUILayout.Height(26)))
-            {
-                ToggleMockPopup(id);
-            }
-            GUI.backgroundColor = prevBg;
-        }
-
         private bool OpenMockPopupOn(Presentation.UiShell shell, Presentation.UiPopupId id)
         {
             // Settings and Themes read shell-owned state (catalog, selector, active theme id),
@@ -882,61 +922,6 @@ namespace Line98.App
             string bestTag = summary.FinalScore > 0 && summary.FinalScore >= summary.BestScore ? " [NEW BEST]" : "";
             return $"score {summary.FinalScore:N0}, best {summary.BestScore:N0}{bestTag}, " +
                    $"lines {summary.LinesCleared}, longest {summary.LongestLine}, moves {summary.TotalMoves}, continue {summary.CanContinue}";
-        }
-
-        private void OnCellClicked(GridPos pos)
-        {
-            if (m_Session == null || m_Session.Phase != GamePhase.Playing)
-            {
-                return;
-            }
-
-            if (m_Session.Board != null && !m_Session.Board.IsEmpty(pos))
-            {
-                // Select or switch selection
-                m_Session.TrySelect(pos);
-            }
-            else
-            {
-                // If a ball is selected, move it to this empty cell
-                if (m_Session.HasSelection)
-                {
-                    if (!m_Session.ExecuteMove(pos))
-                    {
-                        m_StatusMessage = $"Cannot move to {pos}: Path blocked or unreachable!";
-                    }
-                }
-            }
-        }
-
-        private static Color GetBallUiColor(BallColor color)
-        {
-            switch (color)
-            {
-                case BallColor.Red: return new Color(0.95f, 0.2f, 0.2f);
-                case BallColor.Orange: return new Color(1f, 0.55f, 0.1f);
-                case BallColor.Yellow: return new Color(0.98f, 0.88f, 0.2f);
-                case BallColor.Green: return new Color(0.2f, 0.8f, 0.25f);
-                case BallColor.Cyan: return new Color(0.15f, 0.8f, 0.95f);
-                case BallColor.Purple: return new Color(0.65f, 0.25f, 0.9f);
-                case BallColor.Blue: return new Color(0.08f, 0.4f, 0.75f);
-                default: return Color.gray;
-            }
-        }
-
-        private static string GetColorShortCode(BallColor color)
-        {
-            switch (color)
-            {
-                case BallColor.Red: return "R";
-                case BallColor.Orange: return "O";
-                case BallColor.Yellow: return "Y";
-                case BallColor.Green: return "G";
-                case BallColor.Cyan: return "C";
-                case BallColor.Purple: return "P";
-                case BallColor.Blue: return "B";
-                default: return "";
-            }
         }
     }
 }
