@@ -21,6 +21,7 @@ namespace Line98.Presentation
         [SerializeField] private TMP_Text[] m_WeekdayTexts = Array.Empty<TMP_Text>();
         [SerializeField] private Image[] m_DayBadges = Array.Empty<Image>();
         [SerializeField] private UiCheckGraphic[] m_DayChecks = Array.Empty<UiCheckGraphic>();
+        [SerializeField] private UiGlyphGraphic[] m_DayGlows = Array.Empty<UiGlyphGraphic>();
 
         [Header("Board Preview")]
         [SerializeField] private Image[] m_BoardBalls = Array.Empty<Image>();
@@ -29,6 +30,17 @@ namespace Line98.Presentation
         [Header("Actions")]
         [SerializeField] private Button m_PlayButton;
         [SerializeField] private Button m_HowToPlayButton;
+
+        [Header("Crystal Styling")]
+        [SerializeField] private RawImage m_Backdrop;
+        [SerializeField] private Texture2D m_CrystalBackdropTexture;
+        [SerializeField] private Image m_BackdropWash;
+        [SerializeField] private Color m_CrystalBackdropWash = new Color(0.98f, 0.97f, 0.93f, 0.3f);
+        [SerializeField] private TMP_Text m_HeaderTitle;
+        [SerializeField] private Image[] m_CardSurfaces = Array.Empty<Image>();
+        [SerializeField] private Image[] m_BoardCells = Array.Empty<Image>();
+        [SerializeField] private Color m_CrystalCardTint = Color.white;
+        [SerializeField] private Color m_CrystalCellTint = new Color(0.9f, 0.91f, 0.88f, 0.75f);
 
         private UiThemeSO m_UiTheme;
         private BallThemeSO m_BallTheme;
@@ -44,9 +56,21 @@ namespace Line98.Presentation
             if (ModalContainer == null) return;
             const float referenceWidth = 940f;
             const float referenceHeight = 1670f;
+
+            // The safe-area fitter reports an empty layout on screens without HUD slots (main menu).
+            // Fall back to the popup's own full-screen rect instead of collapsing to the minimum scale.
+            RectTransform host = transform as RectTransform;
+            if ((layoutWidth <= 1f || middleHeight <= 1f) && host != null && host.rect.width > 1f && host.rect.height > 1f)
+            {
+                layoutWidth = host.rect.width;
+                middleHeight = host.rect.height;
+            }
+            if (layoutWidth <= 1f || middleHeight <= 1f) return;
+
+            // The 940x1670 composition is a full page, so it fills the available layout.
             float scale = Mathf.Clamp(Mathf.Min(
-                (layoutWidth - 24f) / referenceWidth,
-                (middleHeight - 24f) / referenceHeight), 0.45f, 1f);
+                layoutWidth / referenceWidth,
+                middleHeight / referenceHeight), 0.45f, 1.5f);
             ModalContainer.anchorMin = new Vector2(0.5f, 0.5f);
             ModalContainer.anchorMax = new Vector2(0.5f, 0.5f);
             ModalContainer.pivot = new Vector2(0.5f, 0.5f);
@@ -98,10 +122,57 @@ namespace Line98.Presentation
 
             UiThemeApplier[] appliers = GetComponentsInChildren<UiThemeApplier>(true);
             for (int i = 0; i < appliers.Length; i++) appliers[i].Apply(m_UiTheme);
+            ApplySurfaceStyle();
 
             PopulateWeek();
             PopulateBoard();
             PopulateMissionBalls();
+        }
+
+        public override void Show(Action onComplete = null)
+        {
+            // The responsive callback can run before the canvas has a size; re-fit against the real rect.
+            ApplyResponsiveLayout(0f, 0f);
+            base.Show(onComplete);
+        }
+
+        private void ApplySurfaceStyle()
+        {
+            bool crystal = m_UiTheme != null && m_UiTheme.CardBackgroundSprite != null;
+
+            if (m_Backdrop != null)
+            {
+                m_Backdrop.texture = crystal ? m_CrystalBackdropTexture : null;
+                m_Backdrop.color = crystal ? Color.white : m_UiTheme != null ? m_UiTheme.LightScrim : Color.clear;
+            }
+
+            if (m_BackdropWash != null)
+            {
+                m_BackdropWash.color = m_CrystalBackdropWash;
+                m_BackdropWash.enabled = crystal;
+            }
+
+            if (!crystal)
+            {
+                if (m_HeaderTitle != null) m_HeaderTitle.enableVertexGradient = false;
+                return;
+            }
+
+            for (int i = 0; i < m_CardSurfaces.Length; i++)
+            {
+                if (m_CardSurfaces[i] != null) m_CardSurfaces[i].color = m_CrystalCardTint;
+            }
+            for (int i = 0; i < m_BoardCells.Length; i++)
+            {
+                if (m_BoardCells[i] != null) m_BoardCells[i].color = m_CrystalCellTint;
+            }
+            if (m_HeaderTitle != null)
+            {
+                Color top = new Color(0.118f, 0.290f, 0.549f, 1f);
+                m_HeaderTitle.enableVertexGradient = true;
+                m_HeaderTitle.colorGradient = new VertexGradient(top, top, m_UiTheme.BrandNavy, m_UiTheme.BrandNavy);
+                m_HeaderTitle.color = Color.white;
+            }
         }
 
         private void PopulateWeek()
@@ -126,6 +197,10 @@ namespace Line98.Presentation
                 {
                     m_DayChecks[i].gameObject.SetActive(complete);
                     m_DayChecks[i].color = Color.white;
+                }
+                if (i < m_DayGlows.Length && m_DayGlows[i] != null)
+                {
+                    m_DayGlows[i].gameObject.SetActive(cell.IsToday && complete);
                 }
             }
         }
@@ -153,7 +228,7 @@ namespace Line98.Presentation
         private void PopulateMissionBalls()
         {
             UiPreviewSpriteSetSO sprites = m_BallTheme != null ? m_BallTheme.PreviewSpriteSet : m_UiTheme != null ? m_UiTheme.PreviewSpriteSet : null;
-            int[] spriteIndices = { 4, 3, 6 };
+            int[] spriteIndices = { 4, 3, 5 };
             for (int i = 0; i < m_MissionBalls.Length; i++)
             {
                 Image image = m_MissionBalls[i];

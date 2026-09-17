@@ -152,6 +152,11 @@ MonoBehaviour:
   m_SpawnColorPolicy: {fileID: 0}
   m_GameConfig: {fileID: 0}
   m_ThemeCatalog: {fileID: 11400000, guid: ea797b60fa200374497d9313bb5d1ffc, type: 2}
+  m_AudioCatalog: {fileID: 0}
+  m_MainMixer: {fileID: 0}
+  m_BrandConfig: {fileID: 0}
+  m_DailyConfig: {fileID: 0}
+  m_AchievementCatalog: {fileID: 0}
 --- !u!4 &1561168647
 Transform:
   m_ObjectHideFlags: 0

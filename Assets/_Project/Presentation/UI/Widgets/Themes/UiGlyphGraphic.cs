@@ -17,7 +17,12 @@ namespace Line98.Presentation
             Grid,
             Sparkle,
             Leaf,
-            Halo
+            Halo,
+            Star,
+            Bars,
+            Gamepad,
+            Lock,
+            Trophy
         }
 
         public enum GradientMode
@@ -61,6 +66,11 @@ namespace Line98.Presentation
                 case GlyphShape.Sparkle: PopulateSparkle(vertexHelper); break;
                 case GlyphShape.Leaf: PopulateLeaf(vertexHelper); break;
                 case GlyphShape.Halo: PopulateHalo(vertexHelper); break;
+                case GlyphShape.Star: PopulateStar(vertexHelper); break;
+                case GlyphShape.Bars: PopulateBars(vertexHelper); break;
+                case GlyphShape.Gamepad: PopulateGamepad(vertexHelper); break;
+                case GlyphShape.Lock: PopulateLock(vertexHelper); break;
+                case GlyphShape.Trophy: PopulateTrophy(vertexHelper); break;
             }
         }
 
@@ -176,18 +186,158 @@ namespace Line98.Presentation
             }
         }
 
+        private void PopulateStar(VertexHelper vertexHelper)
+        {
+            // Five-point star; the visual center sits slightly below the geometric one.
+            float outer = Mathf.Min(m_Rect.width, m_Rect.height) * 0.52f;
+            float inner = outer * 0.47f;
+            Vector2 center = m_Rect.center + new Vector2(0f, -outer * 0.06f);
+            var points = new Vector2[10];
+            for (int i = 0; i < 10; i++)
+            {
+                float angle = Mathf.PI * 0.5f + i * Mathf.PI / 5f;
+                float radius = i % 2 == 0 ? outer : inner;
+                points[i] = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            }
+            AddFan(vertexHelper, center, points, 1f);
+        }
+
+        private void PopulateBars(VertexHelper vertexHelper)
+        {
+            float[] heights = { 0.55f, 1f, 0.76f };
+            float barWidth = m_Rect.width / 4.2f;
+            float gap = (m_Rect.width - barWidth * 3f) * 0.5f;
+            for (int i = 0; i < 3; i++)
+            {
+                float height = m_Rect.height * heights[i];
+                Vector2 center = new Vector2(m_Rect.xMin + barWidth * 0.5f + i * (barWidth + gap), m_Rect.yMin + height * 0.5f);
+                AddFan(vertexHelper, center, RoundedRectPoints(center, new Vector2(barWidth, height) * 0.5f, barWidth * 0.3f), 1f);
+            }
+        }
+
+        private void PopulateGamepad(VertexHelper vertexHelper)
+        {
+            // Body plus two rounded grips; the d-pad and buttons are child glyphs in the surface color.
+            float width = m_Rect.width;
+            float height = m_Rect.height;
+            Vector2 bodyCenter = m_Rect.center + new Vector2(0f, height * 0.14f);
+            Vector2 bodyHalf = new Vector2(width * 0.5f, height * 0.34f);
+            AddFan(vertexHelper, bodyCenter, RoundedRectPoints(bodyCenter, bodyHalf, height * 0.3f), 1f);
+
+            float gripRadius = width * 0.19f;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Vector2 gripCenter = new Vector2(m_Rect.center.x + side * (width * 0.5f - gripRadius * 1.05f), m_Rect.yMin + gripRadius);
+                AddFan(vertexHelper, gripCenter, CirclePoints(gripCenter, gripRadius), 1f);
+                Vector2 bridgeCenter = new Vector2(gripCenter.x - side * gripRadius * 0.2f, (gripCenter.y + bodyCenter.y) * 0.5f);
+                AddFan(vertexHelper, bridgeCenter, RoundedRectPoints(bridgeCenter, new Vector2(gripRadius, (bodyCenter.y - gripCenter.y) * 0.5f), 0f), 1f);
+            }
+        }
+
+        private void PopulateLock(VertexHelper vertexHelper)
+        {
+            float width = m_Rect.width;
+            float height = m_Rect.height;
+            float bodyHeight = height * 0.58f;
+            Vector2 bodyCenter = new Vector2(m_Rect.center.x, m_Rect.yMin + bodyHeight * 0.5f);
+            AddFan(vertexHelper, bodyCenter, RoundedRectPoints(bodyCenter, new Vector2(width * 0.5f, bodyHeight * 0.5f), width * 0.14f), 1f);
+
+            float thickness = width * 0.15f;
+            float radius = width * 0.36f - thickness * 0.5f;
+            Vector2 arcCenter = new Vector2(m_Rect.center.x, m_Rect.yMax - radius - thickness * 0.5f);
+            AddArc(vertexHelper, arcCenter, radius, thickness, 0f, Mathf.PI);
+            float legBottom = m_Rect.yMin + bodyHeight - 1f;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Vector2 legCenter = new Vector2(arcCenter.x + side * radius, (arcCenter.y + legBottom) * 0.5f);
+                AddFan(vertexHelper, legCenter, RoundedRectPoints(legCenter, new Vector2(thickness * 0.5f, (arcCenter.y - legBottom) * 0.5f), 0f), 1f);
+            }
+        }
+
+        private void PopulateTrophy(VertexHelper vertexHelper)
+        {
+            float width = m_Rect.width;
+            float height = m_Rect.height;
+            float cupRadius = width * 0.3f;
+            float rimY = m_Rect.yMax;
+            float bowlY = rimY - height * 0.2f;
+
+            // Cup: a straight upper band closed by a half ellipse.
+            Vector2 bandCenter = new Vector2(m_Rect.center.x, (rimY + bowlY) * 0.5f);
+            AddFan(vertexHelper, bandCenter, RoundedRectPoints(bandCenter, new Vector2(cupRadius, (rimY - bowlY) * 0.5f + 1f), 0f), 1f);
+            var bowl = new Vector2[m_Segments + 1];
+            Vector2 bowlCenter = new Vector2(m_Rect.center.x, bowlY);
+            for (int i = 0; i <= m_Segments; i++)
+            {
+                float angle = Mathf.PI + i * Mathf.PI / m_Segments;
+                bowl[i] = bowlCenter + new Vector2(Mathf.Cos(angle) * cupRadius, Mathf.Sin(angle) * height * 0.3f);
+            }
+            AddFan(vertexHelper, bowlCenter, bowl, 1f);
+
+            float handleRadius = width * 0.14f;
+            float handleThickness = width * 0.07f;
+            float handleY = rimY - height * 0.2f;
+            AddArc(vertexHelper, new Vector2(m_Rect.center.x - cupRadius, handleY), handleRadius, handleThickness, Mathf.PI * 0.5f, Mathf.PI * 1.6f);
+            AddArc(vertexHelper, new Vector2(m_Rect.center.x + cupRadius, handleY), handleRadius, handleThickness, -Mathf.PI * 0.6f, Mathf.PI * 0.5f);
+
+            float baseHeight = height * 0.13f;
+            Vector2 baseCenter = new Vector2(m_Rect.center.x, m_Rect.yMin + baseHeight * 0.5f);
+            AddFan(vertexHelper, baseCenter, RoundedRectPoints(baseCenter, new Vector2(width * 0.3f, baseHeight * 0.5f), baseHeight * 0.3f), 1f);
+            float stemTop = bowlY - height * 0.28f;
+            float stemBottom = m_Rect.yMin + baseHeight - 1f;
+            Vector2 stemCenter = new Vector2(m_Rect.center.x, (stemTop + stemBottom) * 0.5f);
+            AddFan(vertexHelper, stemCenter, RoundedRectPoints(stemCenter, new Vector2(width * 0.07f, (stemTop - stemBottom) * 0.5f), 0f), 1f);
+        }
+
+        private void AddArc(VertexHelper vertexHelper, Vector2 center, float radius, float thickness, float startAngle, float endAngle)
+        {
+            int start = vertexHelper.currentVertCount;
+            float innerRadius = radius - thickness * 0.5f;
+            float outerRadius = radius + thickness * 0.5f;
+            for (int i = 0; i <= m_Segments; i++)
+            {
+                float angle = Mathf.Lerp(startAngle, endAngle, i / (float)m_Segments);
+                var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                AddVertex(vertexHelper, center + direction * innerRadius, 1f);
+                AddVertex(vertexHelper, center + direction * outerRadius, 1f);
+            }
+            for (int i = 0; i < m_Segments; i++)
+            {
+                int index = start + i * 2;
+                vertexHelper.AddTriangle(index, index + 1, index + 3);
+                vertexHelper.AddTriangle(index, index + 3, index + 2);
+            }
+        }
+
+        private Vector2[] CirclePoints(Vector2 center, float radius)
+        {
+            var points = new Vector2[m_Segments];
+            for (int i = 0; i < m_Segments; i++)
+            {
+                float angle = i * Mathf.PI * 2f / m_Segments;
+                points[i] = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            }
+            return points;
+        }
+
         private Vector2[] RoundedRectPoints(Vector2 center, float halfSize, float corner)
         {
+            return RoundedRectPoints(center, new Vector2(halfSize, halfSize), corner);
+        }
+
+        private Vector2[] RoundedRectPoints(Vector2 center, Vector2 halfExtents, float corner)
+        {
             const int cornerSegments = 4;
+            corner = Mathf.Min(corner, Mathf.Min(halfExtents.x, halfExtents.y));
             var points = new Vector2[(cornerSegments + 1) * 4];
-            float inner = halfSize - corner;
+            Vector2 inner = halfExtents - Vector2.one * corner;
             int index = 0;
 
             for (int quadrant = 0; quadrant < 4; quadrant++)
             {
                 Vector2 cornerCenter = center + new Vector2(
-                    quadrant == 0 || quadrant == 3 ? inner : -inner,
-                    quadrant < 2 ? inner : -inner);
+                    quadrant == 0 || quadrant == 3 ? inner.x : -inner.x,
+                    quadrant < 2 ? inner.y : -inner.y);
                 for (int s = 0; s <= cornerSegments; s++)
                 {
                     float angle = (quadrant + s / (float)cornerSegments) * Mathf.PI * 0.5f;
