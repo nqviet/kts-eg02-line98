@@ -9,6 +9,12 @@ namespace Line98.Presentation.Animation
     /// </summary>
     public static class Easing
     {
+        public static float OutQuad(float t)
+        {
+            float f = 1.0f - Mathf.Clamp01(t);
+            return 1.0f - f * f;
+        }
+
         public static float OutCubic(float t)
         {
             float f = 1.0f - Mathf.Clamp01(t);

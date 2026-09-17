@@ -773,6 +773,12 @@ namespace Line98.Editor
                 TextMeshProUGUI nameText = ConfigureLabel(nameRt.GetComponent<TextMeshProUGUI>(), font, "THEME NAME", 44f, defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, TextAlignmentOptions.MidlineLeft);
                 AddApplier(nameRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
+                // Label_ItemSub: shown on BOARD tab ("UI follows this style")
+                RectTransform subLabelRt = CreateUi("Label_ItemSub", root.transform, typeof(TextMeshProUGUI));
+                Place(subLabelRt, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(55f, -80f), new Vector2(520f, 36f));
+                TextMeshProUGUI subLabelText = ConfigureLabel(subLabelRt.GetComponent<TextMeshProUGUI>(), font, "UI follows this style", 24f, defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, TextAlignmentOptions.MidlineLeft);
+                subLabelRt.gameObject.SetActive(false);
+
                 // StatusBadge: DEFAULT = glossy green capsule + bare white check; SELECT = white capsule + sky rim.
                 RectTransform badgeRt = CreateUi("StatusBadge", root.transform, typeof(CanvasRenderer), typeof(Image), typeof(Outline), typeof(Button), typeof(UiButtonFx));
                 Place(badgeRt, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-44f, -30f), new Vector2(282f, 82f));
@@ -835,11 +841,62 @@ namespace Line98.Editor
                     swatchImages[i] = ConfigureImage(iconRt.GetComponent<Image>(), null, Color.white, sliced: false);
                 }
 
+                // BoardSwatch: mini 3x3 board swatch for BOARD tab items
+                RectTransform boardSwatchRt = CreateUi("BoardSwatch", root.transform);
+                boardSwatchRt.anchorMin = new Vector2(0f, 0f);
+                boardSwatchRt.anchorMax = new Vector2(1f, 0f);
+                boardSwatchRt.pivot = new Vector2(0.5f, 0f);
+                boardSwatchRt.anchoredPosition = new Vector2(0f, 21f);
+                boardSwatchRt.sizeDelta = new Vector2(0f, 164f);
+                boardSwatchRt.gameObject.SetActive(false);
+
+                RectTransform plateRt = CreateUi("Plate", boardSwatchRt, typeof(CanvasRenderer), typeof(Image));
+                Place(plateRt, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(164f, 164f));
+                Image plateImg = ConfigureImage(plateRt.GetComponent<Image>(), null, Color.white, sliced: true);
+                var classicBoardTheme = AssetDatabase.LoadAssetAtPath<BoardThemeSO>("Assets/_Project/Content/Definitions/BoardTheme_Classic.asset");
+                if (classicBoardTheme != null)
+                {
+                    plateImg.material = classicBoardTheme.BoardFrameMaterial;
+                }
+
+                RectTransform cellsRootRt = CreateUi("Cells", plateRt, typeof(GridLayoutGroup));
+                Stretch(cellsRootRt, Vector2.zero, Vector2.zero);
+                var cellsGrid = cellsRootRt.GetComponent<GridLayoutGroup>();
+                cellsGrid.cellSize = new Vector2(46f, 46f);
+                cellsGrid.spacing = new Vector2(3f, 3f);
+                cellsGrid.padding = new RectOffset(8, 8, 8, 8);
+                cellsGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                cellsGrid.constraintCount = 3;
+                cellsGrid.childAlignment = TextAnchor.MiddleCenter;
+
+                var swatchCells = new Image[9];
+                for (int i = 0; i < 9; i++)
+                {
+                    RectTransform cellRt = CreateUi($"Cell_{i}", cellsRootRt, typeof(CanvasRenderer), typeof(Image));
+                    Image cellImg = ConfigureImage(cellRt.GetComponent<Image>(), null, Color.white, sliced: true);
+                    if (classicBoardTheme != null)
+                    {
+                        cellImg.material = classicBoardTheme.BoardCellMaterial;
+                    }
+                    swatchCells[i] = cellImg;
+                }
+
                 // Wire UiThemeListItem
                 var itemSo = new SerializedObject(listItem);
                 itemSo.FindProperty("m_CardButton").objectReferenceValue = cardButton;
                 itemSo.FindProperty("m_ActiveBorder").objectReferenceValue = borderImg;
                 itemSo.FindProperty("m_ItemNameLabel").objectReferenceValue = nameText;
+                itemSo.FindProperty("m_ItemSubLabel").objectReferenceValue = subLabelText;
+                itemSo.FindProperty("m_ThumbRow").objectReferenceValue = rowRt;
+                itemSo.FindProperty("m_BoardSwatch").objectReferenceValue = boardSwatchRt;
+                itemSo.FindProperty("m_BoardSwatchPlate").objectReferenceValue = plateImg;
+                var swatchCellsProp = itemSo.FindProperty("m_BoardSwatchCells");
+                swatchCellsProp.arraySize = 9;
+                for (int i = 0; i < 9; i++)
+                {
+                    swatchCellsProp.GetArrayElementAtIndex(i).objectReferenceValue = swatchCells[i];
+                }
+
                 itemSo.FindProperty("m_StatusButton").objectReferenceValue = badgeBtn;
                 itemSo.FindProperty("m_StatusBadgeBg").objectReferenceValue = badgeImg;
                 itemSo.FindProperty("m_StatusBadgeOutline").objectReferenceValue = badgeOutline;
@@ -1103,35 +1160,31 @@ namespace Line98.Editor
                 TextMeshProUGUI pNameText = ConfigureLabel(pNameRt.GetComponent<TextMeshProUGUI>(), font, "CRYSTAL GARDEN", 46f, defaultTheme != null ? defaultTheme.BrandNavy : s_ThemesNavy, TextAlignmentOptions.Center);
                 AddApplier(pNameRt.gameObject, colorToken: UiThemeApplier.ColorToken.BrandNavy);
 
-                // BoardMockRoot: 5 x 6 recessed cells
+                // BoardMockRoot: 5 x 5 recessed cells (526x526 plate with 13px padding, 100x100 cells)
                 RectTransform boardMockRt = CreateUi("BoardMockRoot", previewRt, typeof(CanvasRenderer), typeof(Image));
-                Place(boardMockRt, middle, middle, new Vector2(0f, 19f), new Vector2(526f, 552f));
+                Place(boardMockRt, middle, middle, new Vector2(0f, 19f), new Vector2(526f, 526f));
                 Image boardMockImg = ConfigureImage(boardMockRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelTray : ParseHex("#FBFAF6"), sliced: true);
                 boardMockImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
-                AddApplier(boardMockRt.gameObject,
-                    colorToken: UiThemeApplier.ColorToken.PanelTray,
-                    spriteToken: UiThemeApplier.SpriteToken.CardBackground,
-                    materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
+                // NOTE: No UiThemeApplier on BoardMockRoot per board_tab_plan.md Step 2 (panel owns pixels)
 
                 RectTransform gridRt = CreateUi("Grid", boardMockRt, typeof(GridLayoutGroup));
                 Stretch(gridRt, Vector2.zero, Vector2.zero);
                 var gridLayout = gridRt.GetComponent<GridLayoutGroup>();
-                gridLayout.cellSize = new Vector2(90f, 78f);
-                gridLayout.spacing = new Vector2(13f, 12f);
-                gridLayout.padding = new RectOffset(12, 12, 12, 12);
+                gridLayout.cellSize = new Vector2(100f, 100f);
+                gridLayout.spacing = Vector2.zero;
+                gridLayout.padding = new RectOffset(13, 13, 13, 13);
                 gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 gridLayout.constraintCount = 5;
                 gridLayout.childAlignment = TextAnchor.MiddleCenter;
 
-                for (int i = 0; i < 30; i++)
+                var cellImages = new Image[25];
+                for (int i = 0; i < 25; i++)
                 {
                     RectTransform cellRt = CreateUi($"Cell_{i}", gridRt, typeof(CanvasRenderer), typeof(Image));
                     Image cellImg = ConfigureImage(cellRt.GetComponent<Image>(), null, defaultTheme != null ? defaultTheme.PanelCell : ParseHex("#F3F2EE"), sliced: true);
                     cellImg.material = defaultTheme != null ? defaultTheme.SurfaceMaterialCard : null;
-                    AddApplier(cellRt.gameObject,
-                        colorToken: UiThemeApplier.ColorToken.PanelCell,
-                        spriteToken: UiThemeApplier.SpriteToken.CardBackground,
-                        materialToken: UiThemeApplier.MaterialToken.SurfaceMaterialCard);
+                    // NOTE: No UiThemeApplier on Cell_0..24 per board_tab_plan.md Step 2 (panel owns pixels)
+                    cellImages[i] = cellImg;
                 }
 
                 RectTransform slotsRootRt = CreateUi("SlotsRoot", boardMockRt);
@@ -1223,6 +1276,13 @@ namespace Line98.Editor
                 var panelSo = new SerializedObject(previewPanel);
                 panelSo.FindProperty("m_ThemeNameLabel").objectReferenceValue = pNameText;
                 panelSo.FindProperty("m_BoardMockRoot").objectReferenceValue = boardMockRt.gameObject;
+                panelSo.FindProperty("m_BoardMockPlate").objectReferenceValue = boardMockImg;
+                var cellsProp = panelSo.FindProperty("m_CellImages");
+                cellsProp.arraySize = 25;
+                for (int i = 0; i < 25; i++)
+                {
+                    cellsProp.GetArrayElementAtIndex(i).objectReferenceValue = cellImages[i];
+                }
                 panelSo.FindProperty("m_PreviewGlow").objectReferenceValue = glow;
                 panelSo.FindProperty("m_SelectedBadge").objectReferenceValue = selRt.gameObject;
                 panelSo.FindProperty("m_EmptyStateRoot").objectReferenceValue = emptyRt.gameObject;

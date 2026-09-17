@@ -60,7 +60,11 @@ namespace Line98.Presentation
                         Sprite effectGlyph = bundle.Thumbnail;
                         bool isUnlocked = boardTheme.UnlockedByDefault && bundle.UnlockedByDefault;
 
-                        results.Add(new ThemeItemModel(partId, displayName, bundle, Array.Empty<Sprite>(), effectGlyph, isUnlocked));
+                        Material[] boardMats = (boardTheme.BoardFrameMaterial != null || boardTheme.BoardCellMaterial != null)
+                            ? new Material[] { boardTheme.BoardFrameMaterial, boardTheme.BoardCellMaterial }
+                            : Array.Empty<Material>();
+
+                        results.Add(new ThemeItemModel(partId, displayName, bundle, Array.Empty<Sprite>(), effectGlyph, isUnlocked, boardMats));
                         break;
                     }
                     case ThemeCategory.ClearEffect:

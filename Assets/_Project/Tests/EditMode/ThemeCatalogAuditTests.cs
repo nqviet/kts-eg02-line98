@@ -213,5 +213,33 @@ namespace Line98.Tests.EditMode
                 }
             }
         }
+
+        [Test]
+        public void AllBoardThemes_FrostedPanelShaderAndSharedSdfInvariants()
+        {
+            for (int i = 0; i < m_Catalog.Count; i++)
+            {
+                var theme = m_Catalog.ThemeAt(i);
+                var board = theme.BoardTheme;
+                if (board == null) continue;
+
+                Assert.IsNotNull(board.BoardCellMaterial, $"Board cell material must not be null on '{theme.ThemeId}'");
+                Assert.IsNotNull(board.BoardFrameMaterial, $"Board frame material must not be null on '{theme.ThemeId}'");
+
+                Assert.AreEqual("Line98/FrostedPanel", board.BoardCellMaterial.shader.name, $"Cell material on '{theme.ThemeId}' must use Line98/FrostedPanel shader");
+                Assert.AreEqual("Line98/FrostedPanel", board.BoardFrameMaterial.shader.name, $"Frame material on '{theme.ThemeId}' must use Line98/FrostedPanel shader");
+
+                Assert.AreEqual(15f, board.BoardCellMaterial.GetFloat("_Radius"), 0.001f, $"Cell material _Radius on '{theme.ThemeId}' must be 15");
+                Assert.AreEqual(0f, board.BoardCellMaterial.GetFloat("_Border"), 0.001f, $"Cell material _Border on '{theme.ThemeId}' must be 0");
+                Assert.AreEqual(0.13f, board.BoardCellMaterial.GetFloat("_Inset"), 0.001f, $"Cell material _Inset on '{theme.ThemeId}' must be 0.13");
+                Vector4 cellSize = board.BoardCellMaterial.GetVector("_Size");
+                Assert.AreEqual(100f, cellSize.x, 0.001f, $"Cell material _Size.x on '{theme.ThemeId}' must be 100");
+                Assert.AreEqual(100f, cellSize.y, 0.001f, $"Cell material _Size.y on '{theme.ThemeId}' must be 100");
+
+                Assert.AreEqual(34f, board.BoardFrameMaterial.GetFloat("_Radius"), 0.001f, $"Frame material _Radius on '{theme.ThemeId}' must be 34");
+                Assert.AreEqual(4f, board.BoardFrameMaterial.GetFloat("_Border"), 0.001f, $"Frame material _Border on '{theme.ThemeId}' must be 4");
+                Assert.AreEqual(0f, board.BoardFrameMaterial.GetFloat("_Inset"), 0.001f, $"Frame material _Inset on '{theme.ThemeId}' must be 0");
+            }
+        }
     }
 }

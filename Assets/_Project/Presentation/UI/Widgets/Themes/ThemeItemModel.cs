@@ -16,6 +16,7 @@ namespace Line98.Presentation
         public readonly Sprite[] Swatches; // 3 ball sprites (indices 0, 3, 6)
         public readonly Sprite EffectGlyph;
         public readonly bool IsUnlocked;
+        public readonly Material[] BoardMaterials; // [0] = Frame material, [1] = Cell material
 
         public ThemeItemModel(
             string partId,
@@ -23,7 +24,8 @@ namespace Line98.Presentation
             ThemeDefinitionSO bundle,
             Sprite[] swatches,
             Sprite effectGlyph = null,
-            bool isUnlocked = true)
+            bool isUnlocked = true,
+            Material[] boardMaterials = null)
         {
             PartId = partId ?? string.Empty;
             DisplayName = displayName ?? string.Empty;
@@ -31,6 +33,7 @@ namespace Line98.Presentation
             Swatches = swatches ?? Array.Empty<Sprite>();
             EffectGlyph = effectGlyph;
             IsUnlocked = isUnlocked;
+            BoardMaterials = boardMaterials ?? Array.Empty<Material>();
         }
     }
 }

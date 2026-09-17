@@ -232,6 +232,11 @@ namespace Line98.Presentation
 
             ResolveSelectedPartId();
 
+            if (m_FooterNote != null)
+            {
+                m_FooterNote.text = m_ActiveTab == ThemeCategory.Board ? "BOARD SETS THE UI STYLE" : "THEMES CHANGE VISUALS ONLY";
+            }
+
             if (m_ItemsContainer != null) m_ItemsContainer.gameObject.SetActive(true);
             RebuildItems();
             UpdatePreview(animate: true);
@@ -302,7 +307,7 @@ namespace Line98.Presentation
                 bool isActive = string.Equals(model.PartId, m_ActivePartId, StringComparison.OrdinalIgnoreCase);
                 bool isApplied = ComponentIsApplied(model);
 
-                listItem.Bind(model, isActive, isApplied);
+                listItem.Bind(model, m_ActiveTab, isActive, isApplied);
                 if (m_CurrentTheme != null)
                 {
                     listItem.ApplyTheme(m_CurrentTheme);
@@ -338,18 +343,39 @@ namespace Line98.Presentation
 
             // Preview item: active item if tapped, otherwise the applied item for this tab
             string previewId = !string.IsNullOrEmpty(m_ActivePartId) ? m_ActivePartId : m_SelectedPartId;
+            bool onBoard = m_ActiveTab == ThemeCategory.Board;
+
             m_Catalog.TryGetPackForPart(m_ActiveTab, previewId, out ThemeDefinitionSO pack);
-            string themeName = pack != null ? pack.DisplayName : previewId;
+            m_Catalog.TryGetBoardTheme(onBoard ? previewId : GetAppliedPartId(ThemeCategory.Board), out BoardThemeSO board);
+            m_Catalog.TryGetBallTheme(onBoard ? GetAppliedPartId(ThemeCategory.Ball) : previewId, out BallThemeSO ball);
 
-            // Gems always come from a ball theme: the previewed one on the BALLS tab, otherwise the
-            // applied one, so mixed packs (e.g. Crystal balls on a Classic board) preview correctly.
-            string ballId = m_ActiveTab == ThemeCategory.Ball ? previewId : GetAppliedPartId(ThemeCategory.Ball);
-            m_Catalog.TryGetBallTheme(ballId, out BallThemeSO ballTheme);
-            var previewSprites = ThemePartResolver.ResolvePreviewSprites(m_Catalog, ballTheme);
+            string themeName;
+            if (onBoard)
+            {
+                themeName = board != null && !string.IsNullOrEmpty(board.DisplayName)
+                    ? board.DisplayName
+                    : (pack != null ? pack.DisplayName : previewId);
+            }
+            else
+            {
+                themeName = ball != null && !string.IsNullOrEmpty(ball.DisplayName)
+                    ? ball.DisplayName
+                    : (pack != null ? pack.DisplayName : previewId);
+            }
 
+            var previewSprites = ThemePartResolver.ResolvePreviewSprites(m_Catalog, ball);
             bool showSelectedBadge = !string.IsNullOrEmpty(m_ActivePartId) && IsAppliedPartId(m_ActivePartId);
 
-            m_PreviewPanel.Show(themeName, previewSprites, showSelectedBadge, animate);
+            var request = new ThemePreviewRequest(
+                displayName: themeName,
+                board: board,
+                ball: ball,
+                gemSprites: previewSprites,
+                emphasis: onBoard ? PreviewEmphasis.Board : PreviewEmphasis.Gems,
+                isApplied: showSelectedBadge,
+                animate: animate);
+
+            m_PreviewPanel.Show(in request);
         }
 
         private void HandleCardClicked(string partId)
@@ -377,6 +403,11 @@ namespace Line98.Presentation
 
             OnThemeRequested?.Invoke(m_ActiveTab, partId);
 
+            if (m_ActiveTab == ThemeCategory.Board)
+            {
+                PlayBoardSelectionCue();
+            }
+
             // Update items with punch animation on status badge
             for (int i = 0; i < m_SpawnedItems.Count; i++)
             {
@@ -391,6 +422,55 @@ namespace Line98.Presentation
             }
 
             UpdatePreview(animate: false);
+        }
+
+        private void PlayBoardSelectionCue()
+        {
+            if (m_ContentRoot == null) return;
+
+            var cg = m_ContentRoot.GetComponent<CanvasGroup>();
+            if (cg == null)
+            {
+                cg = m_ContentRoot.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            var tr = TweenRunner ?? FindAnyObjectByType<PresentationRoot>()?.TweenRunner;
+            if (tr != null)
+            {
+                tr.CancelByOwner(cg);
+                cg.alpha = 1.0f;
+
+                Animation.Tween dipIn = new Animation.Tween
+                {
+                    From = 1.0f,
+                    To = 0.72f,
+                    Duration = 0.12f,
+                    Ease = Animation.Easing.OutCubic,
+                    Owner = cg,
+                    OnUpdate = val =>
+                    {
+                        if (cg != null) cg.alpha = val;
+                    },
+                    OnComplete = () =>
+                    {
+                        if (cg == null) return;
+                        Animation.Tween dipOut = new Animation.Tween
+                        {
+                            From = 0.72f,
+                            To = 1.0f,
+                            Duration = 0.12f,
+                            Ease = Animation.Easing.OutCubic,
+                            Owner = cg,
+                            OnUpdate = v =>
+                            {
+                                if (cg != null) cg.alpha = v;
+                            }
+                        };
+                        tr.Play(in dipOut);
+                    }
+                };
+                tr.Play(in dipIn);
+            }
         }
 
         private bool IsAppliedPartId(string partId)
@@ -480,7 +560,7 @@ namespace Line98.Presentation
             if (m_FooterNote != null)
             {
                 // The flanking rules are separate Images in the prefab.
-                m_FooterNote.text = "THEMES CHANGE VISUALS ONLY";
+                m_FooterNote.text = m_ActiveTab == ThemeCategory.Board ? "BOARD SETS THE UI STYLE" : "THEMES CHANGE VISUALS ONLY";
                 m_FooterNote.color = m_CurrentTheme != null ? m_CurrentTheme.InkLabel : m_BrandNavy;
                 m_FooterNote.alignment = TextAlignmentOptions.Center;
                 m_FooterNote.raycastTarget = false;

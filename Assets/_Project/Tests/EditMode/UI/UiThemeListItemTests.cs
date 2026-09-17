@@ -148,5 +148,75 @@ namespace Line98.Tests.EditMode.UI
                 Object.DestroyImmediate(otherInstance);
             }
         }
+
+        [Test]
+        public void Bind_BoardCategory_ShowsBoardSwatch_HidesThumbRow()
+        {
+            var model = new ThemeItemModel(
+                partId: "crystal",
+                displayName: "Crystal",
+                bundle: null,
+                swatches: null);
+
+            m_Item.Bind(model, ThemeCategory.Board, isActive: false, isApplied: false);
+
+            Assert.IsNotNull(m_Item.BoardSwatch, "BoardSwatch must exist on prefab");
+            Assert.IsNotNull(m_Item.ThumbRow, "ThumbRow must exist on prefab");
+            Assert.IsNotNull(m_Item.ItemSubLabel, "ItemSubLabel must exist on prefab");
+
+            Assert.IsTrue(m_Item.BoardSwatch.gameObject.activeSelf, "Board swatch must be visible on BOARD tab");
+            Assert.IsFalse(m_Item.ThumbRow.gameObject.activeSelf, "ThumbRow must be hidden on BOARD tab");
+            Assert.IsTrue(m_Item.ItemSubLabel.gameObject.activeSelf, "Sub-label must be visible on BOARD tab");
+        }
+
+        [Test]
+        public void Bind_BallCategory_ShowsThumbRow_HidesBoardSwatch()
+        {
+            var model = new ThemeItemModel(
+                partId: "classic",
+                displayName: "Classic",
+                bundle: null,
+                swatches: null);
+
+            m_Item.Bind(model, ThemeCategory.Ball, isActive: false, isApplied: false);
+
+            Assert.IsNotNull(m_Item.BoardSwatch, "BoardSwatch must exist on prefab");
+            Assert.IsNotNull(m_Item.ThumbRow, "ThumbRow must exist on prefab");
+            Assert.IsNotNull(m_Item.ItemSubLabel, "ItemSubLabel must exist on prefab");
+
+            Assert.IsFalse(m_Item.BoardSwatch.gameObject.activeSelf, "Board swatch must be hidden on BALLS tab");
+            Assert.IsTrue(m_Item.ThumbRow.gameObject.activeSelf, "ThumbRow must be visible on BALLS tab");
+            Assert.IsFalse(m_Item.ItemSubLabel.gameObject.activeSelf, "Sub-label must be hidden on BALLS tab");
+        }
+
+        [Test]
+        public void Bind_BoardCategory_Applied_DisplaysInUseLabel()
+        {
+            var model = new ThemeItemModel(
+                partId: "crystal",
+                displayName: "Crystal",
+                bundle: null,
+                swatches: null);
+
+            m_Item.Bind(model, ThemeCategory.Board, isActive: false, isApplied: true);
+
+            Assert.IsNotNull(m_Item.StatusLabel, "StatusLabel must exist");
+            Assert.AreEqual("IN USE", m_Item.StatusLabel.text, "Applied board item must display 'IN USE'");
+        }
+
+        [Test]
+        public void Bind_BallCategory_Applied_DisplaysDefaultLabel()
+        {
+            var model = new ThemeItemModel(
+                partId: "classic",
+                displayName: "Classic",
+                bundle: null,
+                swatches: null);
+
+            m_Item.Bind(model, ThemeCategory.Ball, isActive: false, isApplied: true);
+
+            Assert.IsNotNull(m_Item.StatusLabel, "StatusLabel must exist");
+            Assert.AreEqual("DEFAULT", m_Item.StatusLabel.text, "Applied ball item must display 'DEFAULT'");
+        }
     }
 }

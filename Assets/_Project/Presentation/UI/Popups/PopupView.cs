@@ -91,6 +91,8 @@ namespace Line98.Presentation
             m_TweenRunner = tweenRunner;
         }
 
+        protected TweenRunner TweenRunner => m_TweenRunner;
+
         public void SetContent(string title, string body = "")
         {
             if (m_TitleText != null) m_TitleText.text = title;

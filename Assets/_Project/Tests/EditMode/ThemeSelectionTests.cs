@@ -92,5 +92,26 @@ namespace Line98.Tests.EditMode
                 Assert.IsTrue(seen.Add(items[i].PartId), $"Duplicate part ID '{items[i].PartId}' detected.");
             }
         }
+
+        [Test]
+        public void ThemePartResolver_BoardCategory_PopulatesBoardMaterials()
+        {
+            var boardItems = ThemePartResolver.ResolveItems(m_Catalog, ThemeCategory.Board);
+            Assert.GreaterOrEqual(boardItems.Count, 2, "Should resolve at least 2 board items");
+
+            for (int i = 0; i < boardItems.Count; i++)
+            {
+                var item = boardItems[i];
+                Assert.IsNotNull(item.BoardMaterials, $"Item '{item.PartId}' must have non-null BoardMaterials");
+                Assert.GreaterOrEqual(item.BoardMaterials.Length, 2, $"Item '{item.PartId}' must have at least 2 board materials");
+
+                Assert.IsNotNull(item.BoardMaterials[0], $"Item '{item.PartId}' board frame material must not be null");
+                Assert.IsNotNull(item.BoardMaterials[1], $"Item '{item.PartId}' board cell material must not be null");
+
+                Assert.IsNotNull(item.Bundle?.BoardTheme);
+                Assert.AreSame(item.Bundle.BoardTheme.BoardFrameMaterial, item.BoardMaterials[0]);
+                Assert.AreSame(item.Bundle.BoardTheme.BoardCellMaterial, item.BoardMaterials[1]);
+            }
+        }
     }
 }

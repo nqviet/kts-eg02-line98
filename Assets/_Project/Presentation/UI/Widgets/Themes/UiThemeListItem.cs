@@ -33,7 +33,14 @@ namespace Line98.Presentation
         [SerializeField] private Sprite m_SelectBadgeSprite;
 
         [Header("Swatches")]
+        [SerializeField] private RectTransform m_ThumbRow;
         [SerializeField] private Image[] m_SwatchSlots = new Image[4];
+
+        [Header("Board Swatch")]
+        [SerializeField] private RectTransform m_BoardSwatch;
+        [SerializeField] private Image m_BoardSwatchPlate;
+        [SerializeField] private Image[] m_BoardSwatchCells = new Image[9];
+        [SerializeField] private TMP_Text m_ItemSubLabel;
 
         [Header("Styling")]
         [SerializeField] private Color m_DefaultBgColor = Color.white;
@@ -43,6 +50,7 @@ namespace Line98.Presentation
         [SerializeField] private Color m_SelectBorderColor = new Color(0.353f, 0.651f, 0.863f, 1f); // Sky #5AA6DC
 
         private string m_PartId;
+        private ThemeCategory m_Category = ThemeCategory.Ball;
         private bool m_IsActive;
         private bool m_IsApplied;
         private TweenRunner m_TweenRunner;
@@ -51,11 +59,18 @@ namespace Line98.Presentation
         public event Action<string> OnSelectClicked;
 
         public string PartId => m_PartId;
+        public ThemeCategory Category => m_Category;
         public bool IsActive => m_IsActive;
         public bool IsApplied => m_IsApplied;
         public bool IsBorderVisible => m_ActiveBorder != null && m_ActiveBorder.enabled;
         public Button CardButton => m_CardButton;
         public Button StatusButton => m_StatusButton;
+        public TMP_Text StatusLabel => m_StatusLabel;
+        public RectTransform ThumbRow => m_ThumbRow;
+        public RectTransform BoardSwatch => m_BoardSwatch;
+        public Image BoardSwatchPlate => m_BoardSwatchPlate;
+        public Image[] BoardSwatchCells => m_BoardSwatchCells;
+        public TMP_Text ItemSubLabel => m_ItemSubLabel;
 
         private void Awake()
         {
@@ -91,6 +106,15 @@ namespace Line98.Presentation
                 }
             }
 
+            if (m_StatusLabel == null)
+            {
+                var badge = transform.Find("StatusBadge");
+                if (badge != null)
+                {
+                    m_StatusLabel = badge.GetComponentInChildren<TMP_Text>(true);
+                }
+            }
+
             if (m_ActiveBorder == null)
             {
                 var border = transform.Find("ActiveBorder");
@@ -98,6 +122,43 @@ namespace Line98.Presentation
                 {
                     m_ActiveBorder = border.GetComponent<Image>();
                 }
+            }
+
+            if (m_ThumbRow == null)
+            {
+                var thumb = transform.Find("ThumbRow");
+                if (thumb != null) m_ThumbRow = thumb as RectTransform;
+            }
+
+            if (m_BoardSwatch == null)
+            {
+                var swatch = transform.Find("BoardSwatch");
+                if (swatch != null) m_BoardSwatch = swatch as RectTransform;
+            }
+
+            if (m_BoardSwatch != null)
+            {
+                if (m_BoardSwatchPlate == null)
+                {
+                    var plate = m_BoardSwatch.Find("Plate");
+                    if (plate != null) m_BoardSwatchPlate = plate.GetComponent<Image>();
+                }
+
+                if (m_BoardSwatchCells == null || m_BoardSwatchCells.Length == 0)
+                {
+                    var plate = m_BoardSwatch.Find("Plate");
+                    var cellsRoot = plate != null ? plate.Find("Cells") : m_BoardSwatch.Find("Cells");
+                    if (cellsRoot != null)
+                    {
+                        m_BoardSwatchCells = cellsRoot.GetComponentsInChildren<Image>(true);
+                    }
+                }
+            }
+
+            if (m_ItemSubLabel == null)
+            {
+                var sub = transform.Find("Label_ItemSub");
+                if (sub != null) m_ItemSubLabel = sub.GetComponent<TMP_Text>();
             }
 
             if (m_CardButton != null)
@@ -155,6 +216,11 @@ namespace Line98.Presentation
                 m_ItemNameLabel.color = theme.BrandNavy;
             }
 
+            if (m_ItemSubLabel != null)
+            {
+                m_ItemSubLabel.color = theme.BrandNavy;
+            }
+
             var appliers = GetComponentsInChildren<UiThemeApplier>(true);
             for (int i = 0; i < appliers.Length; i++)
             {
@@ -170,9 +236,23 @@ namespace Line98.Presentation
             bool isApplied,
             TweenRunner tweenRunner = null)
         {
+            ThemeCategory inferredCat = (model.BoardMaterials != null && model.BoardMaterials.Length > 0)
+                ? ThemeCategory.Board
+                : ThemeCategory.Ball;
+            Bind(model, inferredCat, isActive, isApplied, tweenRunner);
+        }
+
+        public void Bind(
+            ThemeItemModel model,
+            ThemeCategory category,
+            bool isActive,
+            bool isApplied,
+            TweenRunner tweenRunner = null)
+        {
             EnsureControls();
             if (tweenRunner != null) m_TweenRunner = tweenRunner;
             m_PartId = model.PartId;
+            m_Category = category;
 
             if (m_ItemNameLabel != null)
             {
@@ -181,24 +261,65 @@ namespace Line98.Presentation
                     : m_PartId.ToUpperInvariant();
             }
 
-            // Bind 3 swatches
-            for (int i = 0; i < 3 && i < m_SwatchSlots.Length; i++)
+            bool isBoard = category == ThemeCategory.Board;
+            if (m_ThumbRow != null) m_ThumbRow.gameObject.SetActive(!isBoard);
+            if (m_BoardSwatch != null) m_BoardSwatch.gameObject.SetActive(isBoard);
+            if (m_ItemSubLabel != null)
             {
-                var slot = m_SwatchSlots[i];
-                if (slot == null) continue;
-
-                Sprite sp = (model.Swatches != null && i < model.Swatches.Length) ? model.Swatches[i] : null;
-                slot.sprite = sp;
-                slot.enabled = sp != null;
-                slot.preserveAspect = true;
+                m_ItemSubLabel.gameObject.SetActive(isBoard);
+                m_ItemSubLabel.text = "UI follows this style";
             }
 
-            // Bind 4th slot (effect glyph)
-            if (m_SwatchSlots.Length > 3 && m_SwatchSlots[3] != null)
+            if (isBoard)
             {
-                m_SwatchSlots[3].sprite = model.EffectGlyph;
-                m_SwatchSlots[3].enabled = model.EffectGlyph != null;
-                m_SwatchSlots[3].preserveAspect = true;
+                Material frameMat = (model.BoardMaterials != null && model.BoardMaterials.Length > 0)
+                    ? model.BoardMaterials[0]
+                    : model.Bundle?.BoardTheme?.BoardFrameMaterial;
+
+                Material cellMat = (model.BoardMaterials != null && model.BoardMaterials.Length > 1)
+                    ? model.BoardMaterials[1]
+                    : model.Bundle?.BoardTheme?.BoardCellMaterial;
+
+                if (m_BoardSwatchPlate != null)
+                {
+                    m_BoardSwatchPlate.material = frameMat;
+                    m_BoardSwatchPlate.color = Color.white;
+                }
+
+                if (m_BoardSwatchCells != null)
+                {
+                    for (int i = 0; i < m_BoardSwatchCells.Length; i++)
+                    {
+                        var cellImg = m_BoardSwatchCells[i];
+                        if (cellImg != null)
+                        {
+                            cellImg.material = cellMat;
+                            cellImg.color = Color.white;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Bind 3 swatches
+                for (int i = 0; i < 3 && i < m_SwatchSlots.Length; i++)
+                {
+                    var slot = m_SwatchSlots[i];
+                    if (slot == null) continue;
+
+                    Sprite sp = (model.Swatches != null && i < model.Swatches.Length) ? model.Swatches[i] : null;
+                    slot.sprite = sp;
+                    slot.enabled = sp != null;
+                    slot.preserveAspect = true;
+                }
+
+                // Bind 4th slot (effect glyph)
+                if (m_SwatchSlots.Length > 3 && m_SwatchSlots[3] != null)
+                {
+                    m_SwatchSlots[3].sprite = model.EffectGlyph;
+                    m_SwatchSlots[3].enabled = model.EffectGlyph != null;
+                    m_SwatchSlots[3].preserveAspect = true;
+                }
             }
 
             SetIsActive(isActive);
@@ -237,7 +358,8 @@ namespace Line98.Presentation
 
             if (m_StatusLabel != null)
             {
-                m_StatusLabel.text = isApplied ? "DEFAULT" : "SELECT";
+                string appliedLabel = m_Category == ThemeCategory.Board ? "IN USE" : "DEFAULT";
+                m_StatusLabel.text = isApplied ? appliedLabel : "SELECT";
                 m_StatusLabel.color = isApplied ? m_DefaultTextColor : m_SelectTextColor;
             }
 
