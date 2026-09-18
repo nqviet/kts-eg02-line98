@@ -213,7 +213,12 @@ namespace Line98.Tests.EditMode
             Assert.AreEqual(session.LongestLine, receivedSummary.LongestLine);
             Assert.AreEqual(session.LinesCleared, receivedSummary.LinesCleared);
             Assert.AreEqual(session.MoveCount, receivedSummary.TotalMoves);
-            Assert.IsTrue(receivedSummary.CanContinue);
+
+            // TODO(P4.3): flip back to IsTrue once IAdService.ShowRewarded is wired. A rewarded
+            // revive cannot be served yet, so CONTINUE must not be offered.
+            Assert.IsFalse(
+                receivedSummary.CanContinue,
+                "Game over must not offer CONTINUE while no rewarded ad exists to pay for it.");
         }
 
         [Test]

@@ -11,6 +11,10 @@ namespace Line98.Presentation
     [DisallowMultipleComponent]
     public sealed class SettingsPopup : UiPopupBase
     {
+        // Honest, specific copy: name what is missing rather than a bare "coming soon".
+        private const string LanguageComingSoonSubtitle = "MORE LANGUAGES COMING SOON";
+        private const string PurchasesComingSoonSubtitle = "PURCHASES ARRIVE IN A LATER UPDATE";
+
         [Header("Header")]
         [SerializeField] private Button m_BackButton;
 
@@ -78,13 +82,35 @@ namespace Line98.Presentation
             m_SfxToggle?.SetState(sfx, notify: false, animate: false);
             m_VibrationToggle?.SetState(haptics, notify: false, animate: false);
             m_ReduceEffectsToggle?.SetState(reduceEffects, notify: false, animate: false);
-            m_LanguageRow?.Configure(null, language, "TIẾNG VIỆT AVAILABLE");
+            m_LanguageRow?.Configure(null, language, LanguageComingSoonSubtitle);
             if (m_VersionText != null) m_VersionText.text = $"VERSION {version}";
         }
 
         public void SetRemoveAdsAvailable(bool available)
         {
             if (m_RemoveAdsButton != null) m_RemoveAdsButton.interactable = available;
+            UiDimState.Apply(m_RemoveAdsButton != null ? m_RemoveAdsButton.gameObject : null, available);
+        }
+
+        /// <summary>
+        /// Grays out the language row. TODO(P5.2): drop this and open the locale picker once
+        /// Localization ships (GDD P5.2) -- the row is inert because only one locale is built.
+        /// </summary>
+        public void SetLanguageComingSoon()
+        {
+            m_LanguageRow?.SetSubtitle(LanguageComingSoonSubtitle);
+            m_LanguageRow?.SetInteractable(false);
+        }
+
+        /// <summary>
+        /// Grays out both purchase controls. TODO(P4.1): drop this once a real store implementation
+        /// replaces EditorStubIapService -- today the stub would fake a purchase with no store.
+        /// </summary>
+        public void SetPurchasesComingSoon()
+        {
+            SetRemoveAdsAvailable(false);
+            m_RestorePurchasesRow?.SetSubtitle(PurchasesComingSoonSubtitle);
+            m_RestorePurchasesRow?.SetInteractable(false);
         }
 
         public void ApplyTheme(Line98.Data.UiThemeSO theme)

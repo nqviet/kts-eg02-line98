@@ -32,6 +32,12 @@ namespace Line98.Presentation.Animation
             return 1.0f + (s + 1.0f) * f * f * f + s * f * f;
         }
 
+        /// <summary>Mirror of <see cref="OutBack(float)"/>: undershoots before accelerating away.</summary>
+        public static float InBack(float t)
+        {
+            return 1f - OutBack(1f - t);
+        }
+
         public static float InExpo(float t)
         {
             float clamped = Mathf.Clamp01(t);

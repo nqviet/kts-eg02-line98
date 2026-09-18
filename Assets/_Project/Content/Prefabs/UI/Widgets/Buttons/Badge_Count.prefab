@@ -109,6 +109,10 @@ MonoBehaviour:
   - {fileID: 6969976410514889258}
   m_FontSizeToken: 0
   m_FontTargets: []
+  m_SpriteToken: 0
+  m_SpriteTargets: []
+  m_MaterialToken: 0
+  m_MaterialTargets: []
 --- !u!1 &4766975744849747963
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,8 +205,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26
-  m_fontSizeBase: 26
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

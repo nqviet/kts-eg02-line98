@@ -66,10 +66,7 @@ namespace Line98.Presentation
                 m_Button.interactable = interactable;
             }
 
-            if (m_CanvasGroup != null)
-            {
-                m_CanvasGroup.alpha = interactable ? 1f : 0.55f;
-            }
+            UiDimState.Apply(m_CanvasGroup, interactable);
         }
 
         private void HandlePressed()

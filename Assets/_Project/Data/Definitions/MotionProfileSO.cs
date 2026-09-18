@@ -29,6 +29,21 @@ namespace Line98.Data
         [SerializeField] private float m_ScorePopupMs = 480f;
         [SerializeField] private float m_SlowMoMs = 400f;
 
+        [Header("Destination Indicator")]
+        [Tooltip("Settle-in of the destination ring once a target cell is chosen.")]
+        [SerializeField] private float m_DestRingInMs = 160f;
+        [Tooltip("Interval between converging rings. The convergence is what reads as 'target inside this cell'.")]
+        [SerializeField] private float m_DestRingHoldMs = 700f;
+        [Tooltip("Travel time of one converging ring, from the outer radius down into the cell.")]
+        [SerializeField] private float m_DestRingConvergeMs = 520f;
+        [Tooltip("Fade of the whole indicator. Runs before the ball lands so nothing is drawn under it.")]
+        [SerializeField] private float m_DestRingFadeMs = 120f;
+        [Tooltip("Collapse of the indicator on an unreachable cell, so invalid reads as 'not allowed'.")]
+        [SerializeField] private float m_DestRingInvalidMs = 200f;
+        [Range(0f, 1f)]
+        [Tooltip("Alpha of the ghost ball shown inside the ring, identifying which ball lands there.")]
+        [SerializeField] private float m_GhostAlpha = 0.20f;
+
         [Header("Landing Damped Sine")]
         [SerializeField] private float m_LandingDecay = 9f;
         [SerializeField] private float m_LandingFrequency = 28f;
@@ -60,6 +75,12 @@ namespace Line98.Data
         public float PathPreviewMs => m_PathPreviewMs;
         public float ScorePopupMs => m_ScorePopupMs;
         public float SlowMoMs => m_SlowMoMs;
+        public float DestRingInMs => m_DestRingInMs;
+        public float DestRingHoldMs => m_DestRingHoldMs;
+        public float DestRingConvergeMs => m_DestRingConvergeMs;
+        public float DestRingFadeMs => m_DestRingFadeMs;
+        public float DestRingInvalidMs => m_DestRingInvalidMs;
+        public float GhostAlpha => m_GhostAlpha;
         public float LandingDecay => m_LandingDecay;
         public float LandingFrequency => m_LandingFrequency;
 

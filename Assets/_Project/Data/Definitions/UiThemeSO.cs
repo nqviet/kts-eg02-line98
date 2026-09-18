@@ -49,7 +49,7 @@ namespace Line98.Data
         [SerializeField] private float m_ScoreFontSize = 68f;
         [SerializeField] private float m_BestFontSize = 57f;
         [SerializeField] private float m_ButtonFontSize = 27f;
-        [SerializeField] private float m_BadgeFontSize = 26f;
+        [SerializeField] private float m_BadgeFontSize = 22f;
         [SerializeField] private float m_TitleFontSize = 36f;
         [SerializeField] private float m_BodyFontSize = 26f;
 

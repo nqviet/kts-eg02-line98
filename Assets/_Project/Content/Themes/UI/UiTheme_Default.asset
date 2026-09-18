@@ -43,7 +43,7 @@ MonoBehaviour:
   m_ScoreFontSize: 68
   m_BestFontSize: 57
   m_ButtonFontSize: 27
-  m_BadgeFontSize: 26
+  m_BadgeFontSize: 22
   m_TitleFontSize: 36
   m_BodyFontSize: 26
   m_SurfaceCardGold: {r: 1, g: 0.973, b: 0.906, a: 1}

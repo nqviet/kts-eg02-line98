@@ -41,6 +41,14 @@ namespace Line98.Presentation
         [SerializeField] private Material m_GlowMaterial;
         [SerializeField] private Material[] m_BallMaterials;
 
+        [Header("Path Preview")]
+        [Tooltip("Additive material with a dot strip texture, tiled and scrolled by the LineRenderer.")]
+        [SerializeField] private Material m_PathDotMaterial;
+        [Tooltip("Additive ring material for the destination indicator and its converging ring.")]
+        [SerializeField] private Material m_PathDestRingMaterial;
+        [Tooltip("Soft halo material for the glow disc inside the destination ring.")]
+        [SerializeField] private Material m_PathDestGlowMaterial;
+
         [Header("Runtime Hierarchies")]
         [SerializeField] private CameraRig m_CameraRig;
         [SerializeField] private BoardView m_BoardView;
@@ -247,7 +255,16 @@ namespace Line98.Presentation
             m_InputRouter.OnInvalidMoveAttempted += HandleInvalidMoveAttempted;
 
             // 7. Initialize PathPreviewView and MovePacer and bind to GameSession
-            m_PathPreviewView = new PathPreviewView(m_BoardView, null, null, transform);
+            m_PathPreviewView = new PathPreviewView(
+                m_BoardView,
+                m_PathDotMaterial,
+                m_PathDestRingMaterial,
+                transform,
+                m_PathDestGlowMaterial,
+                m_MotionProfile ?? MotionProfileSO.Default);
+            // Lets the destination indicator draw a faint ghost of the ball that is about to land.
+            m_PathPreviewView.SetGhostSource(m_BallManager);
+            m_InputRouter.OnInvalidDestination += HandleInvalidDestination;
             m_MovePacer = new MovePacer(m_MoveAnimator, m_BoardAnimator, m_InputRouter, m_PathPreviewView, m_MotionProfile ?? MotionProfileSO.Default);
             if (m_Session != null)
             {
@@ -451,6 +468,15 @@ namespace Line98.Presentation
             m_AudioService?.PlaySfx("sfx_ball_invalid");
         }
 
+        /// <summary>
+        /// Collapses the destination indicator on the cell the player tapped, so a refused move
+        /// reads as "not allowed there" rather than as a dropped input.
+        /// </summary>
+        private void HandleInvalidDestination(GridPos pos)
+        {
+            m_PathPreviewView?.ShowInvalid(pos, this);
+        }
+
         private void HandleMoveCommitted(MoveResult result)
         {
             // Visual commit sync if not handled by pacer
@@ -537,7 +563,9 @@ namespace Line98.Presentation
             if (m_InputRouter != null)
             {
                 m_InputRouter.OnInvalidMoveAttempted -= HandleInvalidMoveAttempted;
+                m_InputRouter.OnInvalidDestination -= HandleInvalidDestination;
             }
+            m_PathPreviewView?.Dispose();
             if (m_Session != null)
             {
                 m_Session.OnBallSelected -= HandleBallSelected;

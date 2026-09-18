@@ -74,7 +74,8 @@ namespace Line98.App
                     readModel.ReduceEffects,
                     readModel.CurrentLocale.DisplayName,
                     readModel.VersionLabel);
-                m_View.SetRemoveAdsAvailable(readModel.RemoveAdsState == PurchaseState.NotOwned);
+                // TODO(P4.1): restore SetRemoveAdsAvailable(readModel.RemoveAdsState == PurchaseState.NotOwned).
+                m_View.SetPurchasesComingSoon();
             }
             else
             {
@@ -84,8 +85,12 @@ namespace Line98.App
                 bool reduceEffects = IsReduceEffectsEnabled;
                 string version = m_BrandConfig?.VersionLabel ?? Application.version;
                 m_View.SetInitialStates(music, sfx, vibration, reduceEffects, "ENGLISH", version);
-                m_View.SetRemoveAdsAvailable(!(m_IapService?.HasRemovedAds ?? false));
+                // TODO(P4.1): restore SetRemoveAdsAvailable(!m_IapService.HasRemovedAds).
+                m_View.SetPurchasesComingSoon();
             }
+
+            // TODO(P5.2): drop this once Localization ships and the locale picker can open (GDD P5.2).
+            m_View.SetLanguageComingSoon();
         }
 
         private void BindEvents()
@@ -133,22 +138,25 @@ namespace Line98.App
             OnReduceEffectsChanged?.Invoke(enabled);
         }
 
+        // The three handlers below are deliberately inert. Their controls are grayed out and
+        // non-interactable, so they should never fire -- but they must not touch a service even if
+        // something re-enables the control, because the only implementations available are stubs
+        // that would fake a result (EditorStubIapService instantly "grants" Remove Ads).
+
         private void HandleLanguageClicked()
         {
-            Debug.Log("[Settings] Language selector requested. Connect a localization provider to handle language changes.");
+            // TODO(P5.2): open the locale picker once Localization ships (GDD P5.2).
         }
 
         private void HandleRemoveAds()
         {
-            m_IapService?.BuyRemoveAds(success =>
-            {
-                if (success) m_View?.SetRemoveAdsAvailable(false);
-            });
+            // TODO(P4.1): call IIapService.BuyRemoveAds once a real store implementation replaces
+            // EditorStubIapService, then re-enable the button via SetRemoveAdsAvailable.
         }
 
         private void HandleRestorePurchases()
         {
-            m_IapService?.RestorePurchases(success => Debug.Log($"[Settings] Restore purchases completed: {success}."));
+            // TODO(P4.1): same as Remove Ads -- there is no store to restore from yet.
         }
 
         private void HandlePrivacyPolicy()

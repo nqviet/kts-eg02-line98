@@ -93,7 +93,10 @@ namespace Line98.Gameplay
             m_Resolver = new MoveResolver();
             m_UndoStack = new Stack<GameSnapshot>();
             m_OccupiedIndicesCache = new List<int>(BoardModel.CellCount);
-            m_UndoService = undoService ?? new UndoService();
+            // TODO(P4.3): inject the rewarded gate once the rewarded-ad SDK is integrated. Until then
+            // no rewarded undo can actually be served, so the gate must deny instead of granting for
+            // free -- otherwise the Undo button stays lit after the free allowance is spent.
+            m_UndoService = undoService ?? new UndoService(gate: new NullAdGate());
 
             m_Mode = mode ?? new ClassicMode();
             m_Pacer = pacer ?? ImmediatePacer.Instance;
@@ -321,7 +324,10 @@ namespace Line98.Gameplay
             if (plan.IsGameOver)
             {
                 SetPhase(GamePhase.GameOver);
-                SessionSummary summary = GetSummary();
+                // TODO(P4.3): pass the real continue availability once IAdService.ShowRewarded is
+                // wired (GDD P4.3). No rewarded ad exists yet, so CONTINUE must stay hidden rather
+                // than advertise a revive the player cannot buy.
+                SessionSummary summary = GetSummary(canContinue: false);
                 OnGameOver?.Invoke(summary);
             }
             else

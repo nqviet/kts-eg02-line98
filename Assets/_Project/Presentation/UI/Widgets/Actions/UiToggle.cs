@@ -30,8 +30,11 @@ namespace Line98.Presentation
         [Header("State")]
         [SerializeField] private bool m_IsOn = true;
 
+        private bool m_IsInteractable = true;
+
         public event Action<bool> OnToggled;
         public bool IsOn => m_IsOn;
+        public bool IsInteractable => m_IsInteractable;
 
         private void Awake()
         {
@@ -68,7 +71,14 @@ namespace Line98.Presentation
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (!m_IsInteractable) return;
             SetState(!m_IsOn, notify: true, animate: true);
+        }
+
+        /// <summary>Makes the toggle ignore taps. Callers own the dimming.</summary>
+        public void SetInteractable(bool interactable)
+        {
+            m_IsInteractable = interactable;
         }
 
         private void UpdateVisuals(bool animate)

@@ -29,6 +29,15 @@ namespace Line98.Presentation
         private bool m_IsInitialized;
 
         public float CellPitch => m_CellPitch;
+
+        /// <summary>
+        /// Overrides the cell pitch. Board visuals and anything sized off the pitch must be
+        /// refreshed afterwards; used by the responsive fit pass and by tests.
+        /// </summary>
+        public void SetCellPitch(float cellPitch)
+        {
+            m_CellPitch = Mathf.Max(0.0001f, cellPitch);
+        }
         public BoardThemeSO Theme => m_Theme;
         public float BoardExtent => BoardDimension * m_CellPitch;
         public float RowPitchScale => m_Theme != null ? m_Theme.RowPitchScale : 1f;

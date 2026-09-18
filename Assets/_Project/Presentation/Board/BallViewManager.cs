@@ -12,7 +12,7 @@ namespace Line98.Presentation
     /// Pre-allocates up to 81 instances to guarantee 0 B heap allocation during gameplay.
     /// Maps the 7 canonical BallColors to shared materials without MaterialPropertyBlock.
     /// </summary>
-    public sealed class BallViewManager
+    public sealed class BallViewManager : Line98.Presentation.Animation.IGhostBallSource
     {
         private static readonly int s_BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int s_RimColorId = Shader.PropertyToID("_RimColor");
@@ -111,6 +111,26 @@ namespace Line98.Presentation
                 return m_GlowMaterials[index];
             }
             return m_GlowMaterial;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetGhost(GridPos from, out Mesh mesh, out Material material, out float restHeight)
+        {
+            BallView ball = GetBallAt(from);
+            if (ball == null || m_BallMesh == null)
+            {
+                mesh = null;
+                material = null;
+                restHeight = 0f;
+                return false;
+            }
+
+            mesh = m_BallMesh;
+            // The glow material is already transparent and tinted per color, so the ghost only has
+            // to dial its alpha down rather than build a transparent variant of the opaque ball.
+            material = GetGlowMaterial(ball.Color);
+            restHeight = ball.RestHeight;
+            return material != null;
         }
 
         public BallView GetBallAt(GridPos pos)

@@ -24,6 +24,7 @@ namespace Line98.Presentation.Animation
         private Action m_PendingCommit;
         private bool m_IsPacing;
         private float m_PathPreviewDelay;
+        private float m_DestFadeDelay;
 
         public bool IsPacing => m_IsPacing;
 
@@ -59,7 +60,9 @@ namespace Line98.Presentation.Animation
             if (previewSeconds > 0.001f && m_PathPreviewView != null && plan.Path != null && plan.Path.Count > 1)
             {
                 m_PathPreviewDelay = previewSeconds;
-                m_PathPreviewView.ShowPath(plan.Path, previewSeconds, this);
+                // Hold of 0 means "no self-expiry": the pacer owns the indicator's lifetime, so it
+                // survives the route dwell and stays on the target cell for the whole flight.
+                m_PathPreviewView.ShowPath(plan.Path, 0f, this);
             }
             else
             {
@@ -72,12 +75,40 @@ namespace Line98.Presentation.Animation
         {
             if (m_CurrentPlan == null) return;
 
+            // The route has been read; from here the destination indicator carries the intent.
+            m_PathPreviewView?.HidePath();
+
             m_MoveAnimator.AnimateMove(
                 m_CurrentPlan.From,
                 m_CurrentPlan.To,
                 m_CurrentPlan.Path,
                 onLanding: OnBallLanded,
                 onComplete: OnFlightSettleComplete);
+
+            ScheduleDestinationFade();
+        }
+
+        /// <summary>
+        /// Starts the destination fade so it completes just as the ball arrives, instead of the ball
+        /// landing on top of a lit indicator. Flight duration is only known once AnimateMove has
+        /// planned the waypoints, so this has to run after it.
+        /// </summary>
+        private void ScheduleDestinationFade()
+        {
+            if (m_PathPreviewView == null || m_MoveAnimator == null)
+            {
+                m_DestFadeDelay = 0f;
+                return;
+            }
+
+            float fadeSeconds = m_PathPreviewView.FadeDurationSeconds;
+            m_DestFadeDelay = Mathf.Max(0f, m_MoveAnimator.TotalFlightDuration - fadeSeconds);
+
+            // Flight shorter than the fade: fade immediately rather than overshoot the landing.
+            if (m_DestFadeDelay <= 0f)
+            {
+                m_PathPreviewView.FadeOut();
+            }
         }
 
         private void OnBallLanded()
@@ -128,6 +159,7 @@ namespace Line98.Presentation.Animation
             m_CurrentPlan = null;
             m_PendingCommit = null;
             m_PathPreviewDelay = 0f;
+            m_DestFadeDelay = 0f;
             m_PathPreviewView?.CancelByOwner(this);
 
             if (m_MoveAnimator != null) m_MoveAnimator.SpeedMultiplier = 1.0f;
@@ -155,7 +187,6 @@ namespace Line98.Presentation.Animation
                 if (m_PathPreviewDelay > 0f)
                 {
                     m_PathPreviewDelay = 0f;
-                    m_PathPreviewView?.Hide();
                     StartFlight();
                 }
 
@@ -173,8 +204,16 @@ namespace Line98.Presentation.Animation
                 if (m_PathPreviewDelay <= 0f)
                 {
                     m_PathPreviewDelay = 0f;
-                    m_PathPreviewView?.Hide();
                     StartFlight();
+                }
+            }
+            else if (m_DestFadeDelay > 0f)
+            {
+                m_DestFadeDelay -= dt;
+                if (m_DestFadeDelay <= 0f)
+                {
+                    m_DestFadeDelay = 0f;
+                    m_PathPreviewView?.FadeOut();
                 }
             }
 

@@ -33,6 +33,19 @@ namespace Line98.Presentation
         public const float UndoLeftMargin = 71f;
         public const float NewGameRightMargin = 73f;
 
+        // Undo counter badge. Sized for legibility rather than for the 48px source sprite: at 3x
+        // density 1080 canvas units span 360dp, so 72 units is ~24dp of badge carrying a ~12dp
+        // digit -- clear of the 10sp mobile floor the old 48/26 pair fell well below.
+        // The digit sits at half the badge diameter: at 44 its line box overran the badge's
+        // circle, and since the font floors at MinCaption while the badge keeps scaling down,
+        // any headroom given up at reference scale is lost again on shorter windows.
+        public const float BadgeSize = 72f;
+        public const float BadgeFontSize = 40f;
+
+        // Horizontal distance from the Undo card's right edge to the badge centre. The badge
+        // deliberately overhangs the corner, and its centre stays put as the badge grows.
+        public const float BadgeCenterInsetX = 14f;
+
         private const float PortraitAspect = 9f / 16f;
         private const float BoardSurplusShare = 0.35f;
         private const float MaxBoardSurplusOffset = 240f;
@@ -56,11 +69,15 @@ namespace Line98.Presentation
             public readonly Rect UndoBtnRect;
             public readonly Rect HintBtnRect;
             public readonly Rect NewGameBtnRect;
+            public readonly Rect UndoBadgeRect;
 
             public readonly float Scale;
             public readonly float Pitch;
             public readonly float BottomMargin;
             public readonly Rect BoardViewportRect;
+
+            /// <summary>Resolved badge digit size in canvas units, floored for readability.</summary>
+            public readonly float UndoBadgeFontSize;
 
             public LayoutResult(
                 Rect layoutRect,
@@ -77,10 +94,12 @@ namespace Line98.Presentation
                 Rect undoBtnRect,
                 Rect hintBtnRect,
                 Rect newGameBtnRect,
+                Rect undoBadgeRect,
                 float scale,
                 float pitch,
                 float bottomMargin,
-                Rect boardViewportRect)
+                Rect boardViewportRect,
+                float undoBadgeFontSize)
             {
                 LayoutRect = layoutRect;
                 TopGroupRect = topGroupRect;
@@ -96,10 +115,12 @@ namespace Line98.Presentation
                 UndoBtnRect = undoBtnRect;
                 HintBtnRect = hintBtnRect;
                 NewGameBtnRect = newGameBtnRect;
+                UndoBadgeRect = undoBadgeRect;
                 Scale = scale;
                 Pitch = pitch;
                 BottomMargin = bottomMargin;
                 BoardViewportRect = boardViewportRect;
+                UndoBadgeFontSize = undoBadgeFontSize;
             }
         }
 
@@ -186,6 +207,14 @@ namespace Line98.Presentation
                 actionCardWidth,
                 actionCardHeight);
 
+            float badgeSize = BadgeSize * scale;
+            Rect undoBadgeRect = new Rect(
+                undoBtnRect.xMax - BadgeCenterInsetX * scale - badgeSize * 0.5f,
+                undoBtnRect.yMin - badgeSize * 0.5f,
+                badgeSize,
+                badgeSize);
+            float undoBadgeFontSize = BadgeFontSize * scale;
+
             Rect topGroupRect = Rect.MinMaxRect(layoutX, safeTop, layoutX + layoutWidth, hudRect.yMax);
             Rect middleRect = Rect.MinMaxRect(layoutX, hudRect.yMax, layoutX + layoutWidth, Mathf.Max(hudRect.yMax, actionRect.yMin));
             Rect bottomGroupRect = Rect.MinMaxRect(layoutX, actionRect.yMin, layoutX + layoutWidth, safeTop + safeHeight);
@@ -208,10 +237,12 @@ namespace Line98.Presentation
                 undoBtnRect,
                 hintBtnRect,
                 newGameBtnRect,
+                undoBadgeRect,
                 scale,
                 pitch,
                 bottomMargin,
-                boardViewportRect);
+                boardViewportRect,
+                undoBadgeFontSize);
         }
 
         private static Rect BuildViewportRect(Rect boardRect, float canvasWidth, float canvasHeight)

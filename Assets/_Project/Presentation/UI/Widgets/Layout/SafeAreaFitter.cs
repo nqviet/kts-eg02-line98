@@ -38,10 +38,20 @@ namespace Line98.Presentation
             public readonly TMP_Text Text;
             public readonly float FontSize;
 
+            /// <summary>Floor in canvas units, or 0 when this text carries no floor.</summary>
+            public readonly float MinFontSize;
+
             public ResponsiveText(TMP_Text text)
             {
                 Text = text;
                 FontSize = text.fontSize;
+
+                // Floors are opt-in, via UiMinFontSize. A global floor would also raise the ~50
+                // strings authored below MinBody up to it at scale 1, which reflows the layout
+                // instead of fixing a readability bug: the floor is here to stop the responsive
+                // pass shrinking text on short or wide windows, never to enlarge an authored size.
+                UiMinFontSize floorOverride = text.GetComponent<UiMinFontSize>();
+                MinFontSize = floorOverride != null ? floorOverride.MinFontSize : 0f;
             }
         }
 
@@ -68,6 +78,11 @@ namespace Line98.Presentation
         [SerializeField] private RectTransform m_UndoBadge;
         private UnityEngine.UI.CanvasScaler m_CanvasScaler;
         private CameraRig m_CameraRig;
+
+        // The undo counter is sized straight from the solver rather than from its authored 48/26
+        // pair, so it is excluded from the generic scale passes that would otherwise overwrite it.
+        private TMP_Text m_UndoBadgeText;
+        private RectTransform m_UndoBadgeTextRect;
 
         private readonly List<UiResponsiveModal> m_ResponsivePopups = new List<UiResponsiveModal>();
 
@@ -229,13 +244,21 @@ namespace Line98.Presentation
                 m_CanvasScaler = m_StaticCanvas.GetComponent<UnityEngine.UI.CanvasScaler>();
             }
 
+            if (m_UndoBadge != null)
+            {
+                m_UndoBadgeText = m_UndoBadge.GetComponentInChildren<TMP_Text>(true);
+                m_UndoBadgeTextRect = m_UndoBadgeText != null
+                    ? m_UndoBadgeText.rectTransform
+                    : null;
+            }
+
             CacheResponsiveChildren(m_BrandBar, m_StaticElements);
             CacheResponsiveChildren(m_CardRow, m_StaticElements);
             CacheResponsiveChildren(m_ActionBar, m_StaticElements);
             CacheResponsiveChildren(m_PreviewQueue, m_PreviewElements);
-            CacheResponsiveChildren(m_UndoBadge, m_BadgeElements);
+            CacheResponsiveChildren(m_UndoBadge, m_BadgeElements, m_UndoBadgeTextRect);
             CacheTexts(m_StaticCanvas, m_StaticTexts);
-            CacheTexts(m_DynamicCanvas, m_DynamicTexts);
+            CacheTexts(m_DynamicCanvas, m_DynamicTexts, m_UndoBadgeText);
 
             m_CameraRig = UnityEngine.Object.FindAnyObjectByType<CameraRig>();
         }
@@ -264,7 +287,7 @@ namespace Line98.Presentation
                 m_CurrentLayout.LayoutRect.height);
         }
 
-        private static void CacheResponsiveChildren(RectTransform root, List<ResponsiveRect> elements)
+        private static void CacheResponsiveChildren(RectTransform root, List<ResponsiveRect> elements, RectTransform skip = null)
         {
             if (root == null)
             {
@@ -274,14 +297,14 @@ namespace Line98.Presentation
             RectTransform[] descendants = root.GetComponentsInChildren<RectTransform>(true);
             for (int i = 0; i < descendants.Length; i++)
             {
-                if (descendants[i] != root)
+                if (descendants[i] != root && descendants[i] != skip)
                 {
                     elements.Add(new ResponsiveRect(descendants[i]));
                 }
             }
         }
 
-        private static void CacheTexts(RectTransform root, List<ResponsiveText> texts)
+        private static void CacheTexts(RectTransform root, List<ResponsiveText> texts, TMP_Text skip = null)
         {
             if (root == null)
             {
@@ -291,6 +314,11 @@ namespace Line98.Presentation
             TMP_Text[] descendants = root.GetComponentsInChildren<TMP_Text>(true);
             for (int i = 0; i < descendants.Length; i++)
             {
+                if (descendants[i] == skip)
+                {
+                    continue;
+                }
+
                 texts.Add(new ResponsiveText(descendants[i]));
             }
         }
@@ -353,14 +381,11 @@ namespace Line98.Presentation
                 layout.HudRect.yMin + 70f * layout.Scale,
                 260f * layout.Scale,
                 80f * layout.Scale), canvasWidth);
-            PlaceTopCenter(m_UndoBadge, new Rect(
-                layout.UndoBtnRect.xMax - 38f * layout.Scale,
-                layout.UndoBtnRect.yMin - 24f * layout.Scale,
-                48f * layout.Scale,
-                48f * layout.Scale), canvasWidth);
+            PlaceTopCenter(m_UndoBadge, layout.UndoBadgeRect, canvasWidth);
             ApplyScale(m_PreviewElements, layout.Scale);
             ApplyScale(m_BadgeElements, layout.Scale);
             ApplyTextScale(m_DynamicTexts, layout.Scale);
+            ApplyUndoBadgeText(layout);
 
             if (m_CameraRig != null)
             {
@@ -380,6 +405,27 @@ namespace Line98.Presentation
                     layout.LayoutRect.width,
                     layout.MiddleRect.height,
                     layout.LayoutRect.height);
+            }
+        }
+
+        /// <summary>
+        /// Sizes the undo counter from the solver. The digit rect fills the badge so a larger badge
+        /// actually gets a larger digit, and the font size carries the readability floor.
+        /// </summary>
+        private void ApplyUndoBadgeText(HudLayoutSolver.LayoutResult layout)
+        {
+            if (m_UndoBadgeTextRect != null)
+            {
+                m_UndoBadgeTextRect.anchorMin = new Vector2(0.5f, 0.5f);
+                m_UndoBadgeTextRect.anchorMax = new Vector2(0.5f, 0.5f);
+                m_UndoBadgeTextRect.pivot = new Vector2(0.5f, 0.5f);
+                m_UndoBadgeTextRect.anchoredPosition = Vector2.zero;
+                m_UndoBadgeTextRect.sizeDelta = layout.UndoBadgeRect.size;
+            }
+
+            if (m_UndoBadgeText != null)
+            {
+                m_UndoBadgeText.fontSize = layout.UndoBadgeFontSize;
             }
         }
 
@@ -462,7 +508,9 @@ namespace Line98.Presentation
                 ResponsiveText text = texts[i];
                 if (text.Text != null)
                 {
-                    text.Text.fontSize = text.FontSize * scale;
+                    text.Text.fontSize = text.MinFontSize > 0f
+                        ? UiTypography.ResolveFontSize(text.FontSize, scale, text.MinFontSize)
+                        : text.FontSize * scale;
                 }
             }
         }

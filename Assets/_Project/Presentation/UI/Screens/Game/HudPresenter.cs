@@ -320,7 +320,9 @@ namespace Line98.Presentation
                 m_UndoButtonView.SetUndoState(
                     m_Session.FreeUndosRemaining,
                     canUndo,
-                    isAdAvailable: true,
+                    // TODO(P4.3): flip to the real availability when the rewarded-ad SDK is
+                    // integrated (GDD P4.3). No rewarded undo exists yet.
+                    isAdAvailable: false,
                     isModeAllowed: undoAllowed);
             }
 

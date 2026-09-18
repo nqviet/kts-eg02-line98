@@ -7,7 +7,7 @@ namespace Line98.Presentation
 {
     /// <summary>
     /// Governs the Undo action card presentation:
-    /// Displays remaining free undos on the top-right badge, transitions to "AD" when exhausted,
+    /// Displays remaining free undos on the top-right badge, grays out once they are exhausted,
     /// and manages interactable / dimmed visual state per game mode rules.
     /// </summary>
     [DisallowMultipleComponent]
@@ -58,10 +58,12 @@ namespace Line98.Presentation
             }
             else
             {
-                // Exhausted free undos -> Rewarded Ad state
+                // Exhausted free undos. TODO(P4.3): restore the "AD" badge and the rewarded path
+                // once a rewarded undo can actually be served; advertising an ad that never plays
+                // reads as a broken button, so the exhausted state shows a plain "0" and grays out.
                 if (m_BadgeText != null)
                 {
-                    m_BadgeText.text = "AD";
+                    m_BadgeText.text = "0";
                 }
                 SetInteractable(canUndo && isAdAvailable);
             }
@@ -74,10 +76,7 @@ namespace Line98.Presentation
                 m_Button.interactable = interactable;
             }
 
-            if (m_CanvasGroup != null)
-            {
-                m_CanvasGroup.alpha = interactable ? 1.0f : 0.55f;
-            }
+            UiDimState.Apply(m_CanvasGroup, interactable);
         }
     }
 }

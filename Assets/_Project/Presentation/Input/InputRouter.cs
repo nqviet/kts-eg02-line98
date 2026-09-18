@@ -34,6 +34,12 @@ namespace Line98.Presentation
         public event Action<GridPos> OnBallSelected;
         public event Action<GridPos> OnBallDeselected;
         public event Action<GridPos> OnInvalidMoveAttempted;
+
+        /// <summary>
+        /// The unreachable cell the player actually tapped. Separate from
+        /// <see cref="OnInvalidMoveAttempted"/>, which reports the source ball that shakes.
+        /// </summary>
+        public event Action<GridPos> OnInvalidDestination;
         public event Action OnFastForwardRequested;
 
         public InputState State => m_State;
@@ -177,6 +183,7 @@ namespace Line98.Presentation
                     {
                         // Path is blocked or move is invalid
                         OnInvalidMoveAttempted?.Invoke(from);
+                        OnInvalidDestination?.Invoke(to);
                         // Short refusal lock: 240 ms per specification
                         LockInput(0.24f);
                     }

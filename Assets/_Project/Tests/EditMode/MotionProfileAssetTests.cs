@@ -131,6 +131,15 @@ namespace Line98.Tests.EditMode
             Assert.AreEqual(10, asset.MaxFlightWaypoints);
             Assert.GreaterOrEqual(asset.PathPreviewMs, 0f);
 
+            // Destination indicator timings live in config, never hardcoded (GDD P2.3).
+            Assert.Greater(asset.DestRingInMs, 0f, "The destination ring must settle in over time, not pop.");
+            Assert.Greater(asset.DestRingConvergeMs, 0f);
+            Assert.Greater(asset.DestRingHoldMs, 0f);
+            Assert.Greater(asset.DestRingFadeMs, 0f, "The ring must fade rather than vanish under the landing ball.");
+            Assert.Greater(asset.DestRingInvalidMs, 0f);
+            Assert.Less(asset.DestRingFadeMs, asset.MoveBaseMs, "The fade has to fit inside a flight to finish before landing.");
+            Assert.That(asset.GhostAlpha, Is.InRange(0.05f, 0.45f), "The ghost ball must read as a hint, not as a second ball.");
+
             var reduced = AssetDatabase.LoadAssetAtPath<MotionProfileSO>(MotionPresetReducedMotionPath);
             Assert.IsNotNull(reduced, "Missing reduced motion preset");
             Assert.AreEqual(0f, reduced.PathPreviewMs, "Reduced motion preset must set PathPreviewMs to 0");
